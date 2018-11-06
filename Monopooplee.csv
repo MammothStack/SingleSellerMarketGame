@@ -1,4 +1,4 @@
-"Name","Color","level","purchase_price","rent_price","sell_price","position"
+"name","color","level","purchase_price","rent_price","sell_price","position"
 "Marvin Gardens","brown",0,100,10,30,1
 "Marvin Gardens","brown",1,120,20,50,1
 "Marvin Gardens","brown",2,140,40,70,1
