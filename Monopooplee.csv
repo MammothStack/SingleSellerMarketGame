@@ -1,2 +1,13 @@
 "Name","Color","level","purchase_price","rent_price","sell_price"
-"First","brown",0,100,10,90
+"First","brown",0,100,10,30
+"First","brown",1,120,20,50
+"First","brown",2,140,40,70
+"First","brown",3,160,80,90
+"First","brown",4,180,160,110
+"First","brown",5,200,320,130
+"Second","brown",0,100,10,30
+"Second","brown",1,120,20,50
+"Second","brown",2,140,40,70
+"Second","brown",3,160,80,90
+"Second","brown",4,180,160,110
+"Second","brown",5,200,320,130
