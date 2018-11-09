@@ -1,4 +1,10 @@
 "name","color","level","purchase_price","rent_price","sell_price","position"
+"Railroad 1","black",0,200,100,150,5
+"Railroad 2","black",0,200,100,150,15
+"Railroad 3","black",0,200,100,150,25
+"Railroad 4","black",0,200,100,150,35
+"Electric Company","black",0,200,100,150,12
+"Water Works","black",0,200,100,150,28
 "Marvin Gardens","brown",0,100,10,30,1
 "Marvin Gardens","brown",1,120,20,50,1
 "Marvin Gardens","brown",2,140,40,70,1
