@@ -1,4 +1,4 @@
-"Name","Color","Upgradeable","level","purchase_price","rent_price","sell_price","position"
+"name","color","upgradeable","level","purchase_price","rent_price","sell_price","position"
 "Railroad 1","black","FALSE",0,200,100,150,5
 "Railroad 2","black","FALSE",0,200,100,150,15
 "Railroad 3","black","FALSE",0,200,100,150,25
