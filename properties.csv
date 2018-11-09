@@ -1,139 +1,139 @@
-"name","color","level","purchase_price","rent_price","sell_price","position"
-"Railroad 1","black",0,200,100,150,5
-"Railroad 2","black",0,200,100,150,15
-"Railroad 3","black",0,200,100,150,25
-"Railroad 4","black",0,200,100,150,35
-"Electric Company","black",0,200,100,150,12
-"Water Works","black",0,200,100,150,28
-"Marvin Gardens","brown",0,100,10,30,1
-"Marvin Gardens","brown",1,120,20,50,1
-"Marvin Gardens","brown",2,140,40,70,1
-"Marvin Gardens","brown",3,160,80,90,1
-"Marvin Gardens","brown",4,180,160,110,1
-"Marvin Gardens","brown",5,200,320,130,1
-"Baltic Avenue","brown",0,100,10,30,3
-"Baltic Avenue","brown",1,120,20,50,3
-"Baltic Avenue","brown",2,140,40,70,3
-"Baltic Avenue","brown",3,160,80,90,3
-"Baltic Avenue","brown",4,180,160,110,3
-"Baltic Avenue","brown",5,200,320,130,3
-"Oriental Avenue","light blue",0,100,10,30,6
-"Oriental Avenue","light blue",1,120,20,50,6
-"Oriental Avenue","light blue",2,140,40,70,6
-"Oriental Avenue","light blue",3,160,80,90,6
-"Oriental Avenue","light blue",4,180,160,110,6
-"Oriental Avenue","light blue",5,200,320,130,6
-"States Avenue","light blue",0,100,10,30,8
-"States Avenue","light blue",1,120,20,50,8
-"States Avenue","light blue",2,140,40,70,8
-"States Avenue","light blue",3,160,80,90,8
-"States Avenue","light blue",4,180,160,110,8
-"States Avenue","light blue",5,200,320,130,8
-"Vermont Avenue","light blue",0,100,10,30,9
-"Vermont Avenue","light blue",1,120,20,50,9
-"Vermont Avenue","light blue",2,140,40,70,9
-"Vermont Avenue","light blue",3,160,80,90,9
-"Vermont Avenue","light blue",4,180,160,110,9
-"Vermont Avenue","light blue",5,200,320,130,9
-"Connecticut Avenue","pink",0,100,10,30,11
-"Connecticut Avenue","pink",1,120,20,50,11
-"Connecticut Avenue","pink",2,140,40,70,11
-"Connecticut Avenue","pink",3,160,80,90,11
-"Connecticut Avenue","pink",4,180,160,110,11
-"Connecticut Avenue","pink",5,200,320,130,11
-"New York Avenue","pink",0,100,10,30,13
-"New York Avenue","pink",1,120,20,50,13
-"New York Avenue","pink",2,140,40,70,13
-"New York Avenue","pink",3,160,80,90,13
-"New York Avenue","pink",4,180,160,110,13
-"New York Avenue","pink",5,200,320,130,13
-"St. James Place","pink",0,100,10,30,14
-"St. James Place","pink",1,120,20,50,14
-"St. James Place","pink",2,140,40,70,14
-"St. James Place","pink",3,160,80,90,14
-"St. James Place","pink",4,180,160,110,14
-"St. James Place","pink",5,200,320,130,14
-"Boardwalk","red",0,100,10,30,16
-"Boardwalk","red",1,120,20,50,16
-"Boardwalk","red",2,140,40,70,16
-"Boardwalk","red",3,160,80,90,16
-"Boardwalk","red",4,180,160,110,16
-"Boardwalk","red",5,200,320,130,16
-"St. Charles Place","red",0,100,10,30,18
-"St. Charles Place","red",1,120,20,50,18
-"St. Charles Place","red",2,140,40,70,18
-"St. Charles Place","red",3,160,80,90,18
-"St. Charles Place","red",4,180,160,110,18
-"St. Charles Place","red",5,200,320,130,18
-"Mediterranean Avenue","red",0,100,10,30,19
-"Mediterranean Avenue","red",1,120,20,50,19
-"Mediterranean Avenue","red",2,140,40,70,19
-"Mediterranean Avenue","red",3,160,80,90,19
-"Mediterranean Avenue","red",4,180,160,110,19
-"Mediterranean Avenue","red",5,200,320,130,19
-"Indiana Avenue","yellow",0,100,10,30,21
-"Indiana Avenue","yellow",1,120,20,50,21
-"Indiana Avenue","yellow",2,140,40,70,21
-"Indiana Avenue","yellow",3,160,80,90,21
-"Indiana Avenue","yellow",4,180,160,110,21
-"Indiana Avenue","yellow",5,200,320,130,21
-"Ventnor Avenue","yellow",0,100,10,30,23
-"Ventnor Avenue","yellow",1,120,20,50,23
-"Ventnor Avenue","yellow",2,140,40,70,23
-"Ventnor Avenue","yellow",3,160,80,90,23
-"Ventnor Avenue","yellow",4,180,160,110,23
-"Ventnor Avenue","yellow",5,200,320,130,23
-"Park Place","yellow",0,100,10,30,24
-"Park Place","yellow",1,120,20,50,24
-"Park Place","yellow",2,140,40,70,24
-"Park Place","yellow",3,160,80,90,24
-"Park Place","yellow",4,180,160,110,24
-"Park Place","yellow",5,200,320,130,24
-"Pacific Avenue","orange",0,100,10,30,26
-"Pacific Avenue","orange",1,120,20,50,26
-"Pacific Avenue","orange",2,140,40,70,26
-"Pacific Avenue","orange",3,160,80,90,26
-"Pacific Avenue","orange",4,180,160,110,26
-"Pacific Avenue","orange",5,200,320,130,26
-"Pennsylvania Avenue","orange",0,100,10,30,27
-"Pennsylvania Avenue","orange",1,120,20,50,27
-"Pennsylvania Avenue","orange",2,140,40,70,27
-"Pennsylvania Avenue","orange",3,160,80,90,27
-"Pennsylvania Avenue","orange",4,180,160,110,27
-"Pennsylvania Avenue","orange",5,200,320,130,27
-"Illinois Avenue","orange",0,100,10,30,29
-"Illinois Avenue","orange",1,120,20,50,29
-"Illinois Avenue","orange",2,140,40,70,29
-"Illinois Avenue","orange",3,160,80,90,29
-"Illinois Avenue","orange",4,180,160,110,29
-"Illinois Avenue","orange",5,200,320,130,29
-"North Carolina Avenue","green",0,100,10,30,31
-"North Carolina Avenue","green",1,120,20,50,31
-"North Carolina Avenue","green",2,140,40,70,31
-"North Carolina Avenue","green",3,160,80,90,31
-"North Carolina Avenue","green",4,180,160,110,31
-"North Carolina Avenue","green",5,200,320,130,31
-"Tennessee Avenue","green",0,100,10,30,32
-"Tennessee Avenue","green",1,120,20,50,32
-"Tennessee Avenue","green",2,140,40,70,32
-"Tennessee Avenue","green",3,160,80,90,32
-"Tennessee Avenue","green",4,180,160,110,32
-"Tennessee Avenue","green",5,200,320,130,32
-"Virginia Avenue","green",0,100,10,30,34
-"Virginia Avenue","green",1,120,20,50,34
-"Virginia Avenue","green",2,140,40,70,34
-"Virginia Avenue","green",3,160,80,90,34
-"Virginia Avenue","green",4,180,160,110,34
-"Virginia Avenue","green",5,200,320,130,34
-"Kentucky Avenue","dark blue",0,100,10,30,37
-"Kentucky Avenue","dark blue",1,120,20,50,37
-"Kentucky Avenue","dark blue",2,140,40,70,37
-"Kentucky Avenue","dark blue",3,160,80,90,37
-"Kentucky Avenue","dark blue",4,180,160,110,37
-"Kentucky Avenue","dark blue",5,200,320,130,37
-"Atlantic Avenue","dark blue",0,100,10,30,39
-"Atlantic Avenue","dark blue",1,120,20,50,39
-"Atlantic Avenue","dark blue",2,140,40,70,39
-"Atlantic Avenue","dark blue",3,160,80,90,39
-"Atlantic Avenue","dark blue",4,180,160,110,39
-"Atlantic Avenue","dark blue",5,200,320,130,39
+"Name","Color","Upgradeable","level","purchase_price","rent_price","sell_price","position"
+"Railroad 1","black","FALSE",0,200,100,150,5
+"Railroad 2","black","FALSE",0,200,100,150,15
+"Railroad 3","black","FALSE",0,200,100,150,25
+"Railroad 4","black","FALSE",0,200,100,150,35
+"Electric Company","black","FALSE",0,200,100,150,12
+"Water Works","black","FALSE",0,200,100,150,28
+"Marvin Gardens","brown","TRUE",0,100,10,30,1
+"Marvin Gardens","brown","TRUE",1,120,20,50,1
+"Marvin Gardens","brown","TRUE",2,140,40,70,1
+"Marvin Gardens","brown","TRUE",3,160,80,90,1
+"Marvin Gardens","brown","TRUE",4,180,160,110,1
+"Marvin Gardens","brown","TRUE",5,200,320,130,1
+"Baltic Avenue","brown","TRUE",0,100,10,30,3
+"Baltic Avenue","brown","TRUE",1,120,20,50,3
+"Baltic Avenue","brown","TRUE",2,140,40,70,3
+"Baltic Avenue","brown","TRUE",3,160,80,90,3
+"Baltic Avenue","brown","TRUE",4,180,160,110,3
+"Baltic Avenue","brown","TRUE",5,200,320,130,3
+"Oriental Avenue","light blue","TRUE",0,100,10,30,6
+"Oriental Avenue","light blue","TRUE",1,120,20,50,6
+"Oriental Avenue","light blue","TRUE",2,140,40,70,6
+"Oriental Avenue","light blue","TRUE",3,160,80,90,6
+"Oriental Avenue","light blue","TRUE",4,180,160,110,6
+"Oriental Avenue","light blue","TRUE",5,200,320,130,6
+"States Avenue","light blue","TRUE",0,100,10,30,8
+"States Avenue","light blue","TRUE",1,120,20,50,8
+"States Avenue","light blue","TRUE",2,140,40,70,8
+"States Avenue","light blue","TRUE",3,160,80,90,8
+"States Avenue","light blue","TRUE",4,180,160,110,8
+"States Avenue","light blue","TRUE",5,200,320,130,8
+"Vermont Avenue","light blue","TRUE",0,100,10,30,9
+"Vermont Avenue","light blue","TRUE",1,120,20,50,9
+"Vermont Avenue","light blue","TRUE",2,140,40,70,9
+"Vermont Avenue","light blue","TRUE",3,160,80,90,9
+"Vermont Avenue","light blue","TRUE",4,180,160,110,9
+"Vermont Avenue","light blue","TRUE",5,200,320,130,9
+"Connecticut Avenue","pink","TRUE",0,100,10,30,11
+"Connecticut Avenue","pink","TRUE",1,120,20,50,11
+"Connecticut Avenue","pink","TRUE",2,140,40,70,11
+"Connecticut Avenue","pink","TRUE",3,160,80,90,11
+"Connecticut Avenue","pink","TRUE",4,180,160,110,11
+"Connecticut Avenue","pink","TRUE",5,200,320,130,11
+"New York Avenue","pink","TRUE",0,100,10,30,13
+"New York Avenue","pink","TRUE",1,120,20,50,13
+"New York Avenue","pink","TRUE",2,140,40,70,13
+"New York Avenue","pink","TRUE",3,160,80,90,13
+"New York Avenue","pink","TRUE",4,180,160,110,13
+"New York Avenue","pink","TRUE",5,200,320,130,13
+"St. James Place","pink","TRUE",0,100,10,30,14
+"St. James Place","pink","TRUE",1,120,20,50,14
+"St. James Place","pink","TRUE",2,140,40,70,14
+"St. James Place","pink","TRUE",3,160,80,90,14
+"St. James Place","pink","TRUE",4,180,160,110,14
+"St. James Place","pink","TRUE",5,200,320,130,14
+"Boardwalk","red","TRUE",0,100,10,30,16
+"Boardwalk","red","TRUE",1,120,20,50,16
+"Boardwalk","red","TRUE",2,140,40,70,16
+"Boardwalk","red","TRUE",3,160,80,90,16
+"Boardwalk","red","TRUE",4,180,160,110,16
+"Boardwalk","red","TRUE",5,200,320,130,16
+"St. Charles Place","red","TRUE",0,100,10,30,18
+"St. Charles Place","red","TRUE",1,120,20,50,18
+"St. Charles Place","red","TRUE",2,140,40,70,18
+"St. Charles Place","red","TRUE",3,160,80,90,18
+"St. Charles Place","red","TRUE",4,180,160,110,18
+"St. Charles Place","red","TRUE",5,200,320,130,18
+"Mediterranean Avenue","red","TRUE",0,100,10,30,19
+"Mediterranean Avenue","red","TRUE",1,120,20,50,19
+"Mediterranean Avenue","red","TRUE",2,140,40,70,19
+"Mediterranean Avenue","red","TRUE",3,160,80,90,19
+"Mediterranean Avenue","red","TRUE",4,180,160,110,19
+"Mediterranean Avenue","red","TRUE",5,200,320,130,19
+"Indiana Avenue","yellow","TRUE",0,100,10,30,21
+"Indiana Avenue","yellow","TRUE",1,120,20,50,21
+"Indiana Avenue","yellow","TRUE",2,140,40,70,21
+"Indiana Avenue","yellow","TRUE",3,160,80,90,21
+"Indiana Avenue","yellow","TRUE",4,180,160,110,21
+"Indiana Avenue","yellow","TRUE",5,200,320,130,21
+"Ventnor Avenue","yellow","TRUE",0,100,10,30,23
+"Ventnor Avenue","yellow","TRUE",1,120,20,50,23
+"Ventnor Avenue","yellow","TRUE",2,140,40,70,23
+"Ventnor Avenue","yellow","TRUE",3,160,80,90,23
+"Ventnor Avenue","yellow","TRUE",4,180,160,110,23
+"Ventnor Avenue","yellow","TRUE",5,200,320,130,23
+"Park Place","yellow","TRUE",0,100,10,30,24
+"Park Place","yellow","TRUE",1,120,20,50,24
+"Park Place","yellow","TRUE",2,140,40,70,24
+"Park Place","yellow","TRUE",3,160,80,90,24
+"Park Place","yellow","TRUE",4,180,160,110,24
+"Park Place","yellow","TRUE",5,200,320,130,24
+"Pacific Avenue","orange","TRUE",0,100,10,30,26
+"Pacific Avenue","orange","TRUE",1,120,20,50,26
+"Pacific Avenue","orange","TRUE",2,140,40,70,26
+"Pacific Avenue","orange","TRUE",3,160,80,90,26
+"Pacific Avenue","orange","TRUE",4,180,160,110,26
+"Pacific Avenue","orange","TRUE",5,200,320,130,26
+"Pennsylvania Avenue","orange","TRUE",0,100,10,30,27
+"Pennsylvania Avenue","orange","TRUE",1,120,20,50,27
+"Pennsylvania Avenue","orange","TRUE",2,140,40,70,27
+"Pennsylvania Avenue","orange","TRUE",3,160,80,90,27
+"Pennsylvania Avenue","orange","TRUE",4,180,160,110,27
+"Pennsylvania Avenue","orange","TRUE",5,200,320,130,27
+"Illinois Avenue","orange","TRUE",0,100,10,30,29
+"Illinois Avenue","orange","TRUE",1,120,20,50,29
+"Illinois Avenue","orange","TRUE",2,140,40,70,29
+"Illinois Avenue","orange","TRUE",3,160,80,90,29
+"Illinois Avenue","orange","TRUE",4,180,160,110,29
+"Illinois Avenue","orange","TRUE",5,200,320,130,29
+"North Carolina Avenue","green","TRUE",0,100,10,30,31
+"North Carolina Avenue","green","TRUE",1,120,20,50,31
+"North Carolina Avenue","green","TRUE",2,140,40,70,31
+"North Carolina Avenue","green","TRUE",3,160,80,90,31
+"North Carolina Avenue","green","TRUE",4,180,160,110,31
+"North Carolina Avenue","green","TRUE",5,200,320,130,31
+"Tennessee Avenue","green","TRUE",0,100,10,30,32
+"Tennessee Avenue","green","TRUE",1,120,20,50,32
+"Tennessee Avenue","green","TRUE",2,140,40,70,32
+"Tennessee Avenue","green","TRUE",3,160,80,90,32
+"Tennessee Avenue","green","TRUE",4,180,160,110,32
+"Tennessee Avenue","green","TRUE",5,200,320,130,32
+"Virginia Avenue","green","TRUE",0,100,10,30,34
+"Virginia Avenue","green","TRUE",1,120,20,50,34
+"Virginia Avenue","green","TRUE",2,140,40,70,34
+"Virginia Avenue","green","TRUE",3,160,80,90,34
+"Virginia Avenue","green","TRUE",4,180,160,110,34
+"Virginia Avenue","green","TRUE",5,200,320,130,34
+"Kentucky Avenue","dark blue","TRUE",0,100,10,30,37
+"Kentucky Avenue","dark blue","TRUE",1,120,20,50,37
+"Kentucky Avenue","dark blue","TRUE",2,140,40,70,37
+"Kentucky Avenue","dark blue","TRUE",3,160,80,90,37
+"Kentucky Avenue","dark blue","TRUE",4,180,160,110,37
+"Kentucky Avenue","dark blue","TRUE",5,200,320,130,37
+"Atlantic Avenue","dark blue","TRUE",0,100,10,30,39
+"Atlantic Avenue","dark blue","TRUE",1,120,20,50,39
+"Atlantic Avenue","dark blue","TRUE",2,140,40,70,39
+"Atlantic Avenue","dark blue","TRUE",3,160,80,90,39
+"Atlantic Avenue","dark blue","TRUE",4,180,160,110,39
+"Atlantic Avenue","dark blue","TRUE",5,200,320,130,39
