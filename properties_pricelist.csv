@@ -1,4 +1,4 @@
-"purchase_price","upgrade_price","rent_level_0","rent_level_1","rent_level_2","rent_level_3","rent_level_4","rent_level_5","position"
+"purchase_price","upgrade_price","rent_level_1","rent_level_2","rent_level_3","rent_level_4","rent_level_5","rent_level_6","position"
 60,50,2,10,30,90,160,250,1
 60,50,4,20,60,180,320,450,3
 100,50,6,30,90,270,400,550,6
