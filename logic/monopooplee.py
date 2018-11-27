@@ -16,8 +16,12 @@ class Player():
         if self.model:
             return model.evaluate(gamestate)
         else:
-            option = [0 for x in range(0,56)]
-            option[int(input("0-21=buy, 22-43=sell,44-49=buySpec, 50-55=sellSpec, 56 = pass"))] = 1
+            option = [0] * 57
+            print(option)
+            print(len(option))
+            prop_choice = int(input("0-21=buy, 22-43=sell,44-49=buySpec, 50-55=sellSpec, 56 = pass"))
+            print(prop_choice)
+            option[prop_choice] = 1
             return option
 
 class Board():
@@ -283,7 +287,14 @@ class Board():
         sell = ["sell:" + str(x) for x in self.field_positions_normal]
         sell_spec = ["sell:" + str(x) for x in self.field_positions_special]
         index = buy + sell + buy_spec + sell_spec + ["pass"]
+		
+        print(len(index))
+        print(index)
         data = self.getPlayerByColor(player_color).makeDecision(gamestate)
+		
+        print(len(data))
+        print(data)
+		
         return pd.Series(data, index=index, name="Decision")
     
     def isPlayerAlive(self, player_color):
@@ -532,45 +543,27 @@ class Board():
         
         #move the player to the new position
         self.movePlayer(player_color, old_position, new_position)
-        
-        #Check if the position is a normal property
-        if new_position in self.field_positions_normal:
-            
-            owner_color = self.getOwnerColor(new_position)
-            if player_color == owner_color:
+		
+        if new_position in self.field_positions_normal or new_position in self.field_positions_special:
+			
+			owner_color = self.getOwnerColor(new_position)
+		
+			if player_color == owner_color:
                 pass
-            elif owner_color is None:
-                if self.canUpgradeProperty(player_color, new_position):
-                    
-                    #MAKE DECISION HERE
-                    gs = self.getGamestate(player_color, new_position)
-                    decision = self.getPlayerDecision(player_color, gs)
-                    if self.validateDecision(player_color, decision, gs):
-                        self.executeDecision(player_color, decision)
-                    else:
-                        pass
-                    
-            else:
-                self.landOpponentProperty(player_color, new_position)
-                
-        #Check if the position is a special property
-        elif new_position in self.field_positions_special:
-            owner_color = self.getOwnerColor(new_position)
-            if player_color == owner_color:
-                pass
-            elif owner_color is None:
-                if self.canUpgradePropertySpecial(player_color, new_position):
-                    
-                    #MAKE DECISION HERE
-                    gs = self.getGamestate(player_color, new_position)
-                    decision = self.getPlayerDecision(player_color, gs)
-                    if self.validateDecision(player_color, decision, gs):
-                        self.executeDecision(player_color, decision)
-                    else:
-                        pass
-            else:
-                self.landOpponentPropertySpecial(player_color, new_position, dice_roll)
-        
+			elif owner_color is None:
+				#MAKE DECISION HERE
+				gs = self.getGamestate(player_color, new_position)
+				decision = self.getPlayerDecision(player_color, gs)
+				if self.validateDecision(player_color, decision, gs):
+					self.executeDecision(player_color, decision)
+				else:
+					pass
+			else:
+				if new_position in self.field_positions_normal: 
+					self.landOpponentProperty(player_color, new_position)
+				else:	
+					self.landOpponentPropertySpecial(player_color, new_position, dice_roll)
+				        
         #Check if the position is an action field
         elif new_position in self.field_positions_action:
             self.landActionField(player_color, new_position)
