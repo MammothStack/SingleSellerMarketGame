@@ -501,7 +501,7 @@ class Board():
         index = decision.index.get_loc(decision.idxmax())
         
         #Get the validation table
-        res = gamestate.loc[["upgradeable" in x or "downgradeable" in x for x in ser.index]]
+        res = gamestate.loc[["upgradeable" in x or "downgradeable" in x for x in gamestate.index]]
         
         try:
             return res.iat[index]
