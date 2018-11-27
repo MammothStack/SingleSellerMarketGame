@@ -546,23 +546,23 @@ class Board():
 		
         if new_position in self.field_positions_normal or new_position in self.field_positions_special:
 			
-			owner_color = self.getOwnerColor(new_position)
+            owner_color = self.getOwnerColor(new_position)
 		
-			if player_color == owner_color:
+            if player_color == owner_color:
                 pass
-			elif owner_color is None:
-				#MAKE DECISION HERE
-				gs = self.getGamestate(player_color, new_position)
-				decision = self.getPlayerDecision(player_color, gs)
-				if self.validateDecision(player_color, decision, gs):
-					self.executeDecision(player_color, decision)
-				else:
-					pass
-			else:
-				if new_position in self.field_positions_normal: 
-					self.landOpponentProperty(player_color, new_position)
-				else:	
-					self.landOpponentPropertySpecial(player_color, new_position, dice_roll)
+            elif owner_color is None:
+                #MAKE DECISION HERE
+                gs = self.getGamestate(player_color, new_position)
+                decision = self.getPlayerDecision(player_color, gs)
+                if self.validateDecision(player_color, decision, gs):
+                    self.executeDecision(player_color, decision)
+                else:
+                    pass
+            else:
+                if new_position in self.field_positions_normal: 
+                    self.landOpponentProperty(player_color, new_position)
+                else:	
+                    self.landOpponentPropertySpecial(player_color, new_position, dice_roll)
 				        
         #Check if the position is an action field
         elif new_position in self.field_positions_action:
