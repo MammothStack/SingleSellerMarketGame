@@ -91,11 +91,11 @@ class Board():
             
             return temp_con.set_index("position")
 
-        self.properties_pricetable = pd.read_csv("https://raw.githubusercontent.com/MammothStack/Monopooplee/master/properties_pricelist.csv")
+        self.properties_pricetable = pd.read_csv("Monopooplee/data/properties_pricelist.csv")
         self.properties_pricetable.set_index("position", inplace=True)
           
-        property_table_normal = pd.read_csv("https://raw.githubusercontent.com/MammothStack/Monopooplee/master/properties_normal.csv")
-        property_table_special = pd.read_csv("https://raw.githubusercontent.com/MammothStack/Monopooplee/master/properties_special.csv")
+        property_table_normal = pd.read_csv("Monopooplee/data/properties_normal.csv")
+        property_table_special = pd.read_csv("Monopooplee/data/properties_special.csv")
         
         self.properties = _makeOwnerTable(property_table_normal)
         self.properties_special = _makeOwnerTable(property_table_special, level=False)
