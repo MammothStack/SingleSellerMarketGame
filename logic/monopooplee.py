@@ -1,7 +1,9 @@
 import random
 from random import randrange
 import pandas as pd
-
+import numpy as np
+from functools import lru_cache as cache
+from sklearn.preprocessing import StandardScaler
 
 class Player():
     def __init__(self, color, cash=1500, position=0, model=None):
@@ -11,18 +13,29 @@ class Player():
         self.networth = 0
         self.alive = True
         self.model = model
+        self.valid_decisions = 0
+        self.invalid_decisions = 0
         
-    def makeDecision(self, gamestate):
+    def makeDecision(self, field_info, player_info):
         if self.model:
-            return model.evaluate(gamestate)
+            
+            field_arr = field_info.values.flatten("F")
+            player_arr = player_info.values.flatten()
+            state = np.concatenate((player_arr, field_arr))
+            pred = self.model.predict(np.array((state,)))
+            return pred[0]
         else:
-            option = [0] * 57
-            print(option)
-            print(len(option))
-            prop_choice = int(input("0-21=buy, 22-43=sell,44-49=buySpec, 50-55=sellSpec, 56 = pass"))
-            print(prop_choice)
-            option[prop_choice] = 1
-            return option
+            option = [0] * 56
+            user_input = input("pick")
+            
+            #print(user_input)
+
+            try:
+                option[field_info.index.get_loc(int(user_input))] = 1
+                return option
+            except ValueError:
+                return option
+
 
 class Board():
     
@@ -43,14 +56,21 @@ class Board():
         self.action_fields = dict(zip(self.field_positions_action, action_field_order))
         self.action_field_options = {
             "go to jail": "goto:10",
-            "community chest": [20,30,40,50,80,100,200],
-            "chance": [-30,-40,-50,-50,-80,-100,-150, 20,30,40,50,80,100,200, "goto:10","goto:0", "goto:20"],
+            "community chest": [20,30,40,50,80,100],
+            "chance": [-30,-40,-50,-50,-80,-100,-150, 20,30,40,50,80,100,150, "goto:10","goto:0", "goto:20"],
             "go": None,
             "income tax": -200,
             "luxury tax": -100,
             "free parking": "free parking",
             "jail": None
         }
+        
+        self.scaler_value = StandardScaler().fit([[0],[1400]])
+        self.scaler_rent = StandardScaler().fit([[0],[2000]])
+        self.scaler_updown_cost = StandardScaler().fit([[0],[200]])
+        self.scaler_updown = StandardScaler().fit([[0],[1]])
+        self.scaler_position = StandardScaler().fit([[0],[39]])
+        self.scaler_cash = StandardScaler().fit([[0],[5000]])
         
         self.free_parking_cash = 0
         self._setTables()
@@ -60,9 +80,9 @@ class Board():
         def _makeOwnerTable(df, level=True):
             positions = list(df["position"])
             if level:
-                cols = ["level"]+[p for p in self.players]
+                cols = ["level"]+[p for p in self.players] + ["value"]
             else:
-                cols = [p for p in self.players]
+                cols = [p for p in self.players] + ["value"]
                 
             zeros = pd.np.zeros((len(positions), len(cols)))
             temp = pd.DataFrame(zeros, columns=cols, dtype="int64")
@@ -81,57 +101,72 @@ class Board():
         self.properties_special = _makeOwnerTable(property_table_special, level=False)
 
         
-    def canUpgradeProperty(self, player_color, position):
-        prop = self.properties.loc[position]
-        prop_color = self.properties.loc[self.properties["color"] == prop["color"]]
-                
-        if prop["level"] == 0:
-            return True
+    def canUpgrade(self, player_color, position):
+        if position in self.field_positions_normal:
+            
+            prop = self.properties.loc[position]
+            prop_color = self.properties.loc[self.properties["color"] == prop["color"]]
+
+            if prop["level"] == 0:
+                return position == self.getPlayerPosition(player_color)
+            else:
+                #Checks if the property is owned at all or by the player
+                owned = prop[player_color]
+
+                #Checks that the level is below max level
+                below_max_level = prop["level"] < 6
+
+                #Checks all other properties are owned by the player
+                all_other_color_props_owned = prop_color[player_color].all()
+
+                #Checks that enough buildings are available
+                if prop["level"] < 5 and prop["level"] > 0:
+                    enough_buildings = self.available_houses > 0
+                elif prop["level"] == 5:
+                    enough_buildings = self.available_hotels > 0
+                else:
+                    enough_buildings = True
+
+                return owned and below_max_level and all_other_color_props_owned and enough_buildings
+            
+        elif position in self.field_positions_special:
+            return self.getOwnerColor(position) is None and position == self.getPlayerPosition(player_color)
         else:
+            raise KeyError
+        
+    def canDowngrade(self, player_color, position):
+        if position in self.field_positions_normal:
+            prop = self.properties.loc[position]
+            prop_color = self.properties.loc[self.properties["color"] == prop["color"]]
+
             #Checks if the property is owned at all or by the player
             owned = prop[player_color]
 
-            #Checks that the level is below max level
-            below_max_level = prop["level"] < 6
-
-            #Checks all other properties are owned by the player
-            all_other_color_props_owned = prop_color[player_color].all()
+            prop_color_without = prop_color.loc[prop_color["name"] != prop["name"]]
+            temp = prop_color_without["level"].map(lambda x: x <= 1)
+            other_props_no_buildings = temp.all()
 
             #Checks that enough buildings are available
-            if prop["level"] < 5 and prop["level"] > 0:
-                enough_buildings = self.available_houses > 0
-            elif prop["level"] == 5:
-                enough_buildings = self.available_hotels > 0
+            if prop["level"] == 6:
+                enough_buildings = self.available_houses >= 4
             else:
                 enough_buildings = True
-            
-            return owned and below_max_level and all_other_color_props_owned and enough_buildings
-        
-    def canDowngradeProperty(self, player_color, position):
-        prop = self.properties.loc[position]
-        prop_color = self.properties.loc[self.properties["color"] == prop["color"]]
-        
-        #Checks if the property is owned at all or by the player
-        owned = prop[player_color]
 
-        prop_color_without = prop_color.loc[prop_color["name"] != prop["name"]]
-        temp = prop_color_without["level"].map(lambda x: x <= 1)
-        other_props_no_buildings = temp.all()
-
-        #Checks that enough buildings are available
-        if prop["level"] == 6:
-            enough_buildings = self.available_houses >= 4
-        else:
-            enough_buildings = True
-            
-        if prop["level"] == 0:
-            return False
-        elif prop["level"] == 1:
-            return owned
-        else:
-            return owned and other_props_no_buildings and enough_buildings
+            if prop["level"] == 0:
+                return False
+            elif prop["level"] == 1:
+                return owned
+            else:
+                return owned and other_props_no_buildings and enough_buildings
         
-    def increaseProperty(self, player_color, position):
+        elif position in self.field_positions_special:
+            
+            return self.getOwnerColor(position) == player_color
+        
+        else:
+            raise KeyError
+        
+    def upgradeProperty(self, player_color, position):
         level = self.getPropertyLevel(position)
 
         upgrade_price = self.getUpgradeCost(position)
@@ -142,13 +177,13 @@ class Board():
             self.available_houses += 4
             self.available_hotels -= 1
             
-        self.changePlayerNetworthAmount(player_color, upgrade_price)
+        self.properties.at[position, "value"] += upgrade_price
         self.changePlayerCashAmount(player_color, -upgrade_price)
 
         self.properties.at[position, "level"] = level + 1
         self.properties.at[position, player_color] = 1
             
-    def decreaseProperty(self, player_color, position):
+    def downgradeProperty(self, player_color, position):
         level = self.getPropertyLevel(position)
 
         downgrade_amount = self.getDowngradeAmount(position)
@@ -161,60 +196,79 @@ class Board():
 
         self.changePlayerCashAmount(player_color, downgrade_amount)
         self.properties.at[position, "level"] = level - 1
-        
-        nw_amount = self.getUpgradeCost(position)
-        self.changePlayerNetworthAmount(player_color, -nw_amount)
+        self.properties.at[position, "value"] -= self.getUpgradeCost(position)
 
         if level == 1:
             self.properties.at[position, player_color] = 0
-            
-    def canUpgradePropertySpecial(self, player_color, position):
-        return self.getOwnerColor(position) is None
-    
-    def canDowngradePropertySpecial(self, player_color, position):
-        return self.getOwnerColor(position) == player_color
-            
+          
     def setOwnerSpecialProperty(self, player_color, position, buysell="buy"):
         d = {"buy":1, "sell":0, True:1, False:1}
         
         if position not in self.field_positions_special:
             raise KeyError
-        
+
         self.properties_special.at[position, player_color] = d[buysell]
-        if self.properties_special[position, "color"] == "white":
+
+        if self.properties_special.loc[position, "color"] == "white":
             if d[buysell]:
                 amount = -150
+                nw = 150
             else:
                 amount = 75
-        elif self.properties_special[position, "color"] == "black":
+                nw = 0
+        elif self.properties_special.loc[position, "color"] == "black":
             if d[buysell]:
                 amount = -200
+                nw = 200
             else:
                 amount = 100
+                nw = 0
                 
         self.changePlayerCashAmount(player_color, amount)
+        self.properties_special.at[position, "value"] = nw
+        
+    def transferProperties(self, from_player_color, to_player_color, properties="all"):
+        if type(properties) == list:
+            bool_arr_prop = [pos in properties and self.properties.loc[pos, from_player_color] for pos in self.properties.index]
+            bool_arr_prop_spec = [pos in properties and self.properties_special.loc[pos, from_player_color] for pos in self.properties_special.index]
+            
+        elif properties == "all":
+            bool_arr_prop = [self.properties[from_player_color] == 1]
+            bool_arr_prop_spec = [self.properties_special[from_player_color] == 1]
+        else:
+            raise Error
+            
+        self.properties[from_player_color][bool_arr_prop] = 0
+        self.properties_special[from_playe_color][bool_arr_prop_spec] = 0
+        if to_player_color is None:
+            self.properties["level"][bool_arr_prop] = 0
+            self.properties["value"][bool_arr_prop] = 0
+            self.properties_special["level"][bool_arr_prop_spec] = 0
+            self.properties_special["value"][bool_arr_prop_spec] = 0
+        else:
+            self.properties[to_player_color][bool_arr_prop] = 1
+            self.properties_special[to_player_color][bool_arr_prop_spec] = 1
         
         
     """
     LANDING ON THE FIELDS NO CHOICE
     """
-    def landOpponentProperty(self, player_color, position):
-        if position not in self.field_positions_normal:
-            raise KeyError
-
-        self.transferCashP2P(from_player=player_color, 
-                             to_player=self.getOwnerColor(position), 
-                             amount=self.getRentCost(position))
-        
-    def landOpponentPropertySpecial(self, player_color, position, dice_roll):
-        if position not in self.field_positions_special:
+    
+    def landOpponentField(self, player_color, position, dice_roll, verbose=1):
+        if position not in self.field_positions_normal and position not in self.field_positions_special:
             raise KeyError
         
+        owner_color = self.getOwnerColor(position)
+        cost = self.getRentCost(position, dice_roll)
+        
+        if verbose == 2:
+            print("landed on " + owner_color + "'s property and has to pay " + str(cost))
+        
         self.transferCashP2P(from_player=player_color, 
-                             to_player=self.getOwnerColor(position), 
-                             amount=self.getRentCostSpecial(position, dice_roll))
+                             to_player=owner_color, 
+                             amount=cost)
                     
-    def landActionField(self, player_color, position):
+    def landActionField(self, player_color, position, verbose=1):
         if position not in self.field_positions_action:
             raise KeyError
             
@@ -223,26 +277,36 @@ class Board():
             action = action[randrange(0,len(action))]
         
         if action is None:
+            if verbose == 2:
+                print("No action")
             pass
         
         elif type(action) == int:
             if action < 0:
                 self.addToFreeParking(-action)
             self.changePlayerCashAmount(player_color, action)
+            
+            if verbose == 2:
+                print(player_color + " gets/pays: " + str(action))
+                
         elif type(action == str):
             if ":" in action:
                 s = action.split(":")
                 if s[0] == "goto":
-                    self.movePlayer(player_color, s[1])
+                    self.movePlayer(player_color, position, int(s[1]))
+                    
+                    if verbose == 2:
+                        print(player_color + " moved to " + s[1])
             elif action == "free parking":
-                self.changePlayerCashAmount(player_color, self.getFreeParkingCash())
+                fpc = self.getFreeParkingCash()
+                self.changePlayerCashAmount(player_color, fpc)
+                
+                if verbose == 2:
+                    print(player_color + " landed on free parking and receives " + str(fpc))
 
         else:
             raise KeyError
         
-        
-                
-    
     def getOwnerColor(self, position):
         if position in self.field_positions_normal:
             ser = self.properties.loc[position, list(self.players.keys())]
@@ -254,7 +318,8 @@ class Board():
             return ser[ser == 1].index[0]
         except IndexError:
             return None
-        
+    
+    @cache(maxsize=None)
     def getPropertyName(self, position):
         if position in self.field_positions_normal:
             return self.properties.loc[position, "name"]
@@ -268,34 +333,27 @@ class Board():
     def changePlayerCashAmount(self, player_color, amount):
         self.getPlayerByColor(player_color).cash += amount
         
-    def changePlayerNetworthAmount(self, player_color, amount):
-        self.getPlayerByColor(player_color).networth += amount
-        
     def getPlayerCash(self, player_color):
         return self.getPlayerByColor(player_color).cash
         
     def getPlayerNetworth(self, player_color):
-        return self.getPlayerByColor(player_color).networth
+        pw = self.properties.loc[self.properties[player_color] == 1]
+        psw =self.properties_special.loc[self.properties_special[player_color] == 1]
+        
+        return pw["value"].sum() + psw["value"].sum()
     
+    @cache(maxsize=None)
     def getPlayerByColor(self, color):
         return self.players[color]
     
-    def getPlayerDecision(self, player_color, gamestate):
-        buy = ["buy:" + str(x) for x in self.field_positions_normal]
-        buy_spec = ["buy:" + str(x) for x in self.field_positions_special]
+    def getPlayerDecision(self, player_color, field_info, player_info):
         
-        sell = ["sell:" + str(x) for x in self.field_positions_normal]
-        sell_spec = ["sell:" + str(x) for x in self.field_positions_special]
-        index = buy + sell + buy_spec + sell_spec + ["pass"]
-		
-        print(len(index))
-        print(index)
-        data = self.getPlayerByColor(player_color).makeDecision(gamestate)
-		
-        print(len(data))
-        print(data)
-		
-        return pd.Series(data, index=index, name="Decision")
+        b = ["upgrade:" + str(x) for x in field_info.index]
+        s = ["downgrade:" + str(x) for x in field_info.index]
+        
+        data = self.getPlayerByColor(player_color).makeDecision(field_info, player_info)
+        
+        return pd.Series(data, index=b + s, name="Decision")
     
     def isPlayerAlive(self, player_color):
         return self.getPlayerByColor(player_color).alive
@@ -315,50 +373,63 @@ class Board():
             return self.properties.loc[position, "level"]
         else:
             raise KeyError
-            
-    
-            
+              
     """
     GETTING RENT COST NORMAL/SPECIAL PROPERTIES
     """
     
-    def getRentCost(self, position):
-        level = getPropertyLevel(position)
+    def getRentCost(self, position, dice_roll=7):
+        if position in self.field_positions_normal:
+            return self._getRentCostNormal(position, self.getPropertyLevel(position))
+        elif position in self.field_positions_special:
+            opponent_color = self.getOwnerColor(position)
         
+            if opponent_color is None:
+                return 0
+
+            if self.properties_special.loc[position, "color"] == "white":
+                df = self.properties_special.loc[self.properties_special["color"]=="white"]
+                owned = df[opponent_color].sum()
+                return self._getRentCostUtil(owned, dice_roll)
+
+            elif self.properties_special.loc[position, "color"] == "black":
+                df = self.properties_special.loc[self.properties_special["color"]=="black"]
+                owned = df[opponent_color].sum()
+                return self._getRentCostRailroad(owned)
+            else:
+                raise KeyError
+
+        else:
+            raise KeyError
+            
+    @cache(maxsize=None)
+    def _getRentCostNormal(self, position, level):
         if level == 0:
             return 0
         else:
             return self.properties_pricetable.loc[position, "rent_level_" + str(level)]
     
-    def getRentCostSpecial(self, position, dice_roll=7):
-        opponent_color = getOwnerColor(position)
-        
-        if opponent_color is None:
-            return 0
-        
-        if self.properties_special[position, "color"] == "white":
-            df = self.properties_special.loc[self.properties_special["color"]=="white"]
-            owned = df[opponent_color].sum()
-            if owned == 1:
-                cost = 4 * dice_roll
-            elif owned == 2:
-                cost = 10 * dice_roll
-            else:
-                raise KeyError
-
-        elif self.properties_special[position, "color"] == "black":
-            df = self.properties_special.loc[self.properties_special["color"]=="black"]
-            owned = df[opponent_color].sum()
-            if owned == 1:
-                cost = 25
-            elif owned == 2:
-                cost = 50
-            elif owned == 3:
-                cost = 100
-            elif owned == 4:
-                cost = 200
-            else:
-                raise KeyError
+    @cache(maxsize=None)
+    def _getRentCostUtil(self, owned, dice_roll):
+        if owned == 1:
+            cost = 4 * dice_roll
+        elif owned == 2:
+            cost = 10 * dice_roll
+        else:
+            raise KeyError
+            
+        return cost
+    
+    @cache(maxsize=None)
+    def _getRentCostRailroad(self, owned):
+        if owned == 1:
+            cost = 25
+        elif owned == 2:
+            cost = 50
+        elif owned == 3:
+            cost = 100
+        elif owned == 4:
+            cost = 200
         else:
             raise KeyError
         
@@ -368,42 +439,52 @@ class Board():
     """
     GETTING Upgrade/Downgrade cost
     """
+    
     def getUpgradeCost(self, position):
         if position in self.field_positions_normal:
-            if self.getPropertyLevel(position) == 0:
-                return self.properties_pricetable.loc[position, "purchase_price"]
-            else:
-                return self.properties_pricetable.loc[position, "upgrade_price"]
-        else:
-            raise KeyError
-        
-    def getUpgradeCostSpecial(self, position):
-        if position in self.field_positions_special:
-            if self.properties_special.loc[position, "color"] == "white":
-                return 150
-            elif self.properties_special.loc[position, "color"] == "black":
-                return 200
-        else:
-            raise KeyError
-        
-    def getDowngradeAmount(self, position):
-        if position in self.field_positions_normal:
-            if self.getPropertyLevel(position) == 0:
-                return self.properties_pricetable.loc[position, "purchase_price"] / 2
-            else:
-                return self.properties_pricetable.loc[position, "upgrade_price"] / 2
+            return self._getUpgradeCostNormal(position, self.getPropertyLevel(position))
+        elif position in self.field_positions_special:
+            return self._getUpgradeCostSpecial(position)
         else:
             raise KeyError
             
-    def getDowngradeAmountSpecial(self, position):
-        if position in self.field_positions_special:
-            if self.properties_special.loc[position, "color"] == "white":
-                return 75
-            elif self.properties_special.loc[position, "color"] == "black":
-                return 100
+    @cache(maxsize=None)
+    def _getUpgradeCostNormal(self, position, level):
+        if level == 0:
+            return self.properties_pricetable.loc[position, "purchase_price"]
+        else:
+            return self.properties_pricetable.loc[position, "upgrade_price"]
+    
+    @cache(maxsize=None)
+    def _getUpgradeCostSpecial(self, position):
+        if self.properties_special.loc[position, "color"] == "white":
+            return 150
+        elif self.properties_special.loc[position, "color"] == "black":
+            return 200
+            
+    
+    def getDowngradeAmount(self, position):
+        if position in self.field_positions_normal:
+            return self._getDowngradeAmountNormal(position, self.getPropertyLevel(position))
+        elif position in self.field_positions_special:
+            return self._getDowngradeAmountSpecial(position)
         else:
             raise KeyError
-    
+            
+    @cache(maxsize=None)
+    def _getDowngradeAmountNormal(self, position, level):
+        if level == 0:
+            return self.properties_pricetable.loc[position, "purchase_price"] / 2
+        else:
+            return self.properties_pricetable.loc[position, "upgrade_price"] / 2
+        
+    @cache(maxsize=None)
+    def _getDowngradeAmountSpecial(self, position):
+        if self.properties_special.loc[position, "color"] == "white":
+            return 75
+        elif self.properties_special.loc[position, "color"] == "black":
+            return 100
+
     
     """
     FREE PARKING
@@ -437,8 +518,6 @@ class Board():
     def getPlayerPosition(self, player_color):
         return self.players[player_color].position
     
-    
-    
     def getNewPosition(self, old_position, dice_roll):
         return (old_position + dice_roll) % 40
         
@@ -447,88 +526,117 @@ class Board():
             self.changePlayerCashAmount(player_color, 200)
         self.players[player_color].position = new_position
         
-        
-    def start(self, verbose):
+    
+    def start(self, verbose=0, max_turn=1000):
         game_alive = True
+        intervals = [max_turn * y for y in [0.25,0.5,0.75,1]]
         
-        if verbose:
+        if verbose == 2:
             print("The game has started")
         
         while game_alive:
             
+            if verbose == 2:
+                if self.turn_count in intervals:
+                    percentage = self.turn_count / max_turn * 100
+                    print("Game is " + str(percentage) + "% of max turn")
+
             go_again = self.executeTurn(self.current_player_turn, verbose)
             
             while go_again:
                 
                 go_again = self.executeTurn(self.current_player_turn, verbose)
             
+            if self.turn_count == max_turn:
+                game_alive = False
             
             self.nextTurn()
             
             if self.solePlayerAlive():
                 game_alive = False
-        
-    def executeDecision(self, player_color, decision):
-        max = decision.idxmax()
-        
-        if ":" in max:
-            s = max.split(":")
-            position = int(s[1])
                 
-            if s[0] == "buy":
-                if position in self.field_positions_normal:
-                    self.increaseProperty(player_color, position)
-                elif position in self.field_positions_special:
-                    self.setOwnerSpecialProperty(player_color, position, "buy")
+        if verbose == 1 or verbose == 2:
+            print("Game finished")
+            for player in self.players:
+                print(player + 
+                      " Cash: " + 
+                      str(self.getPlayerCash(player)) + 
+                      " Networth: " + 
+                      str(self.getPlayerNetworth(player)) + 
+                      " Alive: " + 
+                      str(self.isPlayerAlive(player)))
                 
-            else:
-                if position in self.field_positions_normal:
-                    self.downgradeProperty(player_color, position)
-                elif position in self.field_positions_special:
-                    self.setOwnerSpecialProperty(player_color, position, "sell")
-            
-            
-        elif "pass" == max:
-            pass
+        
+        
+    def executeDecision(self, player_color, decision, threshold=0.5, verbose=0):
+        dec = decision.idxmax()
+        if verbose == 2:
+            print(player_color + " chose " + dec + " with confidence: " + str(decision[dec]))
+        
+        if decision[dec] < threshold:
+            if verbose == 2:
+                print(dec + " not above threshold")
+            return False
+        
+        s = dec.split(":")
+        position = int(s[1])
+
+        if s[0] == "upgrade":
+            if verbose == 2:
+                print("upgrading: " + str(position))
+            if position in self.field_positions_normal:
+                self.upgradeProperty(player_color, position)
+            elif position in self.field_positions_special:
+                self.setOwnerSpecialProperty(player_color, position, "buy")
+
+        elif s[0] == "downgrade":
+            if verbose == 2:
+                print("downgrading: " + str(position))
+            if position in self.field_positions_normal:
+                self.downgradeProperty(player_color, position)
+            elif position in self.field_positions_special:
+                self.setOwnerSpecialProperty(player_color, position, "sell")
         else:
-            raise Error
+            raise KeyError
+        return True
         
-    def validateDecision(self, player_color, decision, gamestate):
-        #Get the index of the maximum
-        max = decision.idxmax()
+    def validateDecision(self, player_color, decision, field_info, threshold=0.5):
+        #print(decision.round(3))
+        var = decision.idxmax()
         
-        #Get the number of the index
-        index = decision.index.get_loc(decision.idxmax())
-        
-        #Get the validation table
-        res = gamestate.loc[["upgradeable" in x or "downgradeable" in x for x in gamestate.index]]
-        
-        try:
-            return res.iat[index]
-        except IndexError:
+        if decision[var] < threshold:
             return True
         
-    def executeTurn(self, player_color, verbose):
+        if len(decision.loc[decision == decision.max()]) > 1:
+            return False
         
-        if verbose:
+        s = var.split(":")
+        
+        col = player_color + ":" + s[0]
+                
+        return field_info.loc[int(s[1]), col] == 1
+        
+    def executeTurn(self, player_color, verbose=0):
+        
+        if verbose == 2:
             print("It is " + player_color + "'s turn")
         
         #Check if the player is alive else throw error
         if self.isPlayerAlive(player_color) == False:
-            if verbose:
+            if verbose == 2:
                 print(player_color + "is out of the game")
             return False
         
         #Get old position
         old_position = self.getPlayerPosition(player_color)
         
-        if verbose:
+        if verbose == 2:
             print("Old position: " + str(old_position) + ", " + self.getPropertyName(old_position))
         
         #roll the dice
         d1, d2 = self.rollDice()
         
-        if verbose:
+        if verbose == 2:
             print("Rolled: " + str(d1) + ", " + str(d2))
         
         #Check if the dice are the same and set the go_again variable
@@ -538,180 +646,142 @@ class Board():
         #get the new position from the old positino and dice roll
         new_position = self.getNewPosition(old_position, dice_roll)
         
-        if verbose:
+        if verbose == 2:
             print("Went to: " + str(new_position) + ", " + self.getPropertyName(new_position))
         
         #move the player to the new position
         self.movePlayer(player_color, old_position, new_position)
-		
+        
+        owner_color = None
+        
         if new_position in self.field_positions_normal or new_position in self.field_positions_special:
 			
             owner_color = self.getOwnerColor(new_position)
-		
+            
+            if verbose == 2:
+                print("Field owned by: " + str(owner_color))
+            
             if player_color == owner_color:
-                pass
+                if verbose == 2:
+                    print(player_color + " owns this property. Nothing happens")
             elif owner_color is None:
-                #MAKE DECISION HERE
-                gs = self.getGamestate(player_color, new_position)
-                decision = self.getPlayerDecision(player_color, gs)
-                if self.validateDecision(player_color, decision, gs):
-                    self.executeDecision(player_color, decision)
+                if verbose == 2:
+                    #print("This property is owned by nobody")
+                    print("Cash: " + str(self.getPlayerCash(player_color)))
+                
+                fi, pi = self.getGamestate(player_color)
+                decision = self.getPlayerDecision(player_color, fi, pi)
+                
+                #print(decision)
+                valid = bool(self.validateDecision(player_color, decision, fi))
+                if valid:
+                    self.getPlayerByColor(player_color).valid_decisions += 1
+                    if verbose == 2:
+                        print("Valid decision")
+                    self.executeDecision(player_color, decision, verbose=verbose)
                 else:
-                    pass
-            else:
-                if new_position in self.field_positions_normal: 
-                    self.landOpponentProperty(player_color, new_position)
-                else:	
-                    self.landOpponentPropertySpecial(player_color, new_position, dice_roll)
+                    self.getPlayerByColor(player_color).invalid_decisions += 1
+                    if verbose == 2:
+                        print("Invalid decision")
+            else:	
+                self.landOpponentField(player_color, new_position, dice_roll, verbose=verbose)
 				        
         #Check if the position is an action field
         elif new_position in self.field_positions_action:
-            self.landActionField(player_color, new_position)
+            self.landActionField(player_color, new_position, verbose)
         
         #If its not any of those then there is an issue and an error is raised
         else:
             raise Error
             
-        self.updatePlayerStatus(player_color)
+        #self.updatePlayerStatus(player_color)
         
-        self.upgradeDowngradeLoop(player_color)
-            
+        self.upgradeDowngradeLoop(player_color, verbose)
+        
+        if self.getPlayerCash(player_color) < 0:
+            self.setPlayerStatus(player_color, False)
+            if owner_color == player_color or owner_color is None:
+                self.transferProperties(player_color, None)
+            else:
+                self.transferProperties(player_color, owner_color)
         return go_again
         
-    def upgradeDowngradeLoop(self, player_color):
-        #MAKE DECISION HERE
+    def upgradeDowngradeLoop(self, player_color, verbose=0):
         loop = True
         while loop:
-            gs = self.getGamestate(player_color)
-            decision = self.getPlayerDecision(player_color, gs)
-            if self.validateDecision(player_color, decision, gs):
-                self.executeDecision(player_color, decision)
+            if verbose == 2:
+                print("Cash: " + str(self.getPlayerCash(player_color)))
+                
+            fi, pi = self.getGamestate(player_color)
+            
+            if self.getPlayerByColor(player_color).model is None:
+                print(fi.loc[fi[player_color + ":upgrade"] == 1, player_color + ":upgrade_cost",])
+                print(fi.loc[fi[player_color + ":downgrade"] == 1, player_color + ":downgrade_amount"])
+            decision = self.getPlayerDecision(player_color, fi, pi)
+            valid = self.validateDecision(player_color, decision, fi)
+            if valid:
+                self.getPlayerByColor(player_color).valid_decisions += 1
+                if verbose == 2:
+                    print("Valid decision")
+                loop = self.executeDecision(player_color, decision, verbose=verbose)
             else:
+                self.getPlayerByColor(player_color).invalid_decisions += 1
                 break
             
-            self.updatePlayerStatus(player_color)
-            if self.isPlayerAlive(player_color) == False:
-                break
+            #self.updatePlayerStatus(player_color)
+            #if self.isPlayerAlive(player_color) == False:
+            #    break
     
-    def getGamestate(self, player_color, landed=None):
+    def getGamestate(self, player_color):       
+        fields = self._getFieldState(self.properties, self.properties_special, player_color)     
         
-        props = [x for x in self.properties["name"].tolist()]
-        props_special = [x for x in self.properties_special["name"].tolist()]
-        
-        gs = []
-        
-        if landed is None:
-            up = self.properties.apply(
-                lambda x: 1 if x.name == landed else 0, 
-                axis=1).tolist()
-            
-            up_cost = self.properties.apply(
-                lambda x: self.getUpgradeCost(x.name) if x.name == landed else 0,
-                axis=1).tolist()
-            
-            up_spec = self.properties_special.apply(
-                lambda x: 1 if x.name == landed else 0,
-                axis=1).tolist()
-            
-            up_spec_cost = self.properties_special.apply(
-                lambda x: self.getUpgradeCostSpecial(x.name) if x.name == landed else 0,
-                axis=1).tolist()
-            
-            down = self.properties.apply(lambda x: 0, axis=1).tolist()
-            
-            down_cost = self.properties.apply(lambda x: 0, axis=1).tolist()
-            
-            down_spec = self.properties_special.apply(lambda x: 0, axis=1).tolist()
-            
-            down_spec_cost = self.properties_special.apply(lambda x: 0, axis=1).tolist()
-            
-        else:
-            up = self.properties.apply(
-                lambda x: int(self.canUpgradeProperty(player_color, x.name)), 
-                axis=1).tolist()
-            
-            up_cost = self.properties.apply(
-                lambda x: self.getUpgradeCost(x.name) if self.canUpgradeProperty(player_color, x.name) else 0,
-                axis=1).tolist()
-            
-            up_spec = self.properties_special.apply(
-                lambda x: int(self.canUpgradePropertySpecial(player_color, x.name)),
-                axis=1).tolist()
-            
-            up_spec_cost = self.properties_special.apply(
-                lambda x: self.getUpgradeCostSpecial(x.name) if self.canUpgradePropertySpecial(player_color, x.name) else 0,
-                axis=1).tolist()
-            
-            down = self.properties.apply(
-                lambda x: int(self.canDowngradeProperty(player_color, x.name)),
-                axis=1).tolist()
-            
-            down_cost = self.properties.apply(
-                lambda x: self.getDowngradeAmount(x.name) if self.canDowngradeProperty(player_color, x.name) else 0,
-                axis=1).tolist()
-            
-            down_spec = self.properties_special.apply(
-                lambda x: int(self.canDowngradePropertySpecial(player_color, x.name)),
-                axis=1).tolist()
-            
-            down_spec_cost = self.properties_special.apply(
-                lambda x: self.getDowngradeAmountSpecial(x.name) if self.canDowngradePropertySpecial(player_color, x.name) else 0,
-                axis=1).tolist()
-        
-        updown = up + up_cost + down + down_cost + up_spec + up_spec_cost + down_spec + down_spec_cost
-        index = [a + x for a in ["upgradeable_", "upgrade_cost_","downgradeable_","downgrade_cost_"] for x in props]
-        index2 = [a + x for a in ["upgradeable_spec_", "upgrade_cost_spec_","downgradeable_spec_","downgrade_cost_spec_"] for x in props_special]
-        index.extend(index2)
-        
-        updown_series = pd.Series(updown, index=index)
+        player_info = []
         
         for color in self.players:
-            updown_series = pd.concat([updown_series, self.getPlayerState(color)])
+            player_info.append([self.getPlayerCash(color), self.getPlayerNetworth(color), self.getPlayerPosition(color)])
             
-        return updown_series
-
+        player_state = pd.DataFrame(player_info, index=list(self.players.keys()), columns=["cash","networth","position"])
         
-    def getPlayerState(self, player_color):
-        l1 = [self.getPlayerCash(player_color), 
-              self.getPlayerNetworth(player_color), 
-              self.getPlayerPosition(player_color)]
+        rent_list = [player_color + ":rent_cost"]
+        updown_cost_list = [player_color + ":upgrade_cost", player_color + ":downgrade_amount"]
+        updown_list = list(self.players.keys()) + [player_color + ":upgrade", player_color + ":downgrade"]
         
-        owned = self.properties[player_color].tolist()
+        fields[["value"]] = self.scaler_value.transform(fields[["value"]])
+        fields[rent_list] = self.scaler_rent.transform(fields[rent_list])
+        fields[updown_cost_list] = self.scaler_updown_cost.transform(fields[updown_cost_list])
+        fields[updown_list] = self.scaler_updown.transform(fields[updown_list])
+        player_state[["position"]] = self.scaler_position.transform(player_state[["position"]])
+        player_state[["cash","networth"]] = self.scaler_cash.transform(player_state[["cash","networth"]])
         
-        owned_levels = self.properties.apply(
-            lambda x: x["level"] if x[player_color] else 0, 
-            axis=1).tolist()
-        
-        owned_spec = self.properties_special[player_color].tolist()
-        
-        owned_rent_potent = self.properties.apply(
-            lambda x: self.getRentCost(x.name) if x[player_color] else 0, 
-            axis=1).tolist()
-        
-        owned_rent_potent_spec = self.properties_special.apply(
-            lambda x: self.getRentCostSpecial(x.name) if x[player_color] else 0, 
-            axis=1).tolist()
-        
-        full_list = l1 + owned + owned_levels + owned_spec + owned_rent_potent + owned_rent_potent_spec
-        
-        full_index = [
-            player_color + ": player_cash",
-            player_color + ": player_networth",
-            player_color + ": player_position"
-        ]
-        
-        props = [player_color + ": " + x for x in self.properties["name"].tolist()]
-        props_special = [player_color + ": " + x for x in self.properties_special["name"].tolist()]
-        
-        
-        full_index.extend([x + " owned" for x in props])
-        full_index.extend([x + " levels" for x in props])
-        full_index.extend([x + " owned special" for x in props_special])
-        full_index.extend([x + " rent" for x in props])
-        full_index.extend([x + " rent special" for x in props_special])
-        
-        return pd.Series(full_list, index=full_index, name=player_color)
+        return fields, player_state
     
+    #@cache(maxsize=None)
+    def _getFieldState(self, properties, special, player_color):
+        pn = properties.copy()
+        ps = special.copy()
+
+        pn.drop(columns=["level", "name","color"], inplace=True)
+        ps.drop(columns=["name", "color"], inplace=True)
+        
+        fields = pd.concat([pn, ps])
+        fields.sort_index(inplace=True)
+        
+        fields[player_color + ":upgrade"] = fields.apply(
+            lambda x: int(self.canUpgrade(player_color, x.name)), axis=1)
+        
+        fields[player_color + ":upgrade_cost"] = fields.apply(
+            lambda x: self.getUpgradeCost(x.name) if x[player_color + ":upgrade"] else 0, axis=1)
+        
+        fields[player_color + ":downgrade"] = fields.apply(
+            lambda x: int(self.canDowngrade(player_color, x.name)), axis=1)
+        
+        fields[player_color + ":downgrade_amount"] = fields.apply(
+            lambda x: self.getDowngradeAmount(x.name) if x[player_color + ":downgrade"] else 0, axis=1)
+        
+        fields[player_color + ":rent_cost"] = fields.apply(
+            lambda x: self.getRentCost(x.name), axis=1)
+        
+        return fields
     
     def __repr__(self):
         properties = pprint.pformat(self.properties)
