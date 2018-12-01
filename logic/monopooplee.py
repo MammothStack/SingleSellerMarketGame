@@ -64,7 +64,7 @@ class Board():
             "free parking": "free parking",
             "jail": None
         }
-	    self.move_restrictions = move_restrictions
+        self.move_restrictions = move_restrictions
         
         self.scaler_value = StandardScaler().fit([[0],[1400]])
         self.scaler_rent = StandardScaler().fit([[0],[2000]])
@@ -742,13 +742,21 @@ class Board():
         player_info = []
         
         for color in self.players:
-            player_info.append([self.getPlayerCash(color), self.getPlayerNetworth(color), self.getPlayerPosition(color)])
+            player_info.append(
+                [self.getPlayerCash(color), 
+                 self.getPlayerNetworth(color), 
+                 self.getPlayerPosition(color)])
             
-        player_state = pd.DataFrame(player_info, index=list(self.players.keys()), columns=["cash","networth","position"])
+        player_state = pd.DataFrame(player_info, 
+                                    index=list(self.players.keys()), 
+                                    columns=["cash","networth","position"])
         
         rent_list = [player_color + ":rent_cost"]
-        updown_cost_list = [player_color + ":upgrade_cost", player_color + ":downgrade_amount"]
-        updown_list = list(self.players.keys()) + [player_color + ":upgrade", player_color + ":downgrade"]
+        updown_cost_list = [player_color + ":upgrade_cost", 
+                            player_color + ":downgrade_amount"]
+        
+        updown_list = list(self.players.keys()) + [player_color + ":upgrade", 
+                                                   player_color + ":downgrade"]
         
         fields[["value"]] = self.scaler_value.transform(fields[["value"]])
         fields[rent_list] = self.scaler_rent.transform(fields[rent_list])
