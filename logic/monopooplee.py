@@ -19,8 +19,8 @@ class Player():
     def makeDecision(self, field_info, player_info):
         if self.model:
             
-            field_arr = fi.values.flatten("F")
-            player_arr = pi.values.flatten()
+            field_arr = field_info.values.flatten("F")
+            player_arr = player_info.values.flatten()
             bias = np.array(([1]))
             state = np.concatenate((player_arr, field_arr, bias))
             pred = self.model.predict(np.array((state,)))
