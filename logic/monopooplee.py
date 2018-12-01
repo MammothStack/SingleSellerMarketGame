@@ -743,13 +743,12 @@ class Board():
     def getGamestate(self, player_color):       
         fields = self._getFieldState(self.properties, self.properties_special, player_color)     
         
-        player_info = [self.getPlayerCash(player_color), 
-                 self.getPlayerNetworth(player_color), 
-                 self.getPlayerPosition(player_color)]
+        player_info = [self.getPlayerCash(player_color), self.getPlayerNetworth(player_color), self.getPlayerPosition(player_color)]
             
         player_state = pd.Series(player_info, index=["cash","networth","position"])
         
         rent_list = [player_color + ":rent_cost"]
+        
         updown_cost_list = [player_color + ":upgrade_cost", 
                             player_color + ":downgrade_amount"]
         
@@ -759,8 +758,8 @@ class Board():
         fields[rent_list] = self.scaler_rent.transform(fields[rent_list])
         fields[updown_cost_list] = self.scaler_updown_cost.transform(fields[updown_cost_list])
         fields[updown_list] = self.scaler_updown.transform(fields[updown_list])
-        player_state[["position"]] = self.scaler_position.transform(player_state[["position"]])
-        player_state[["cash","networth"]] = self.scaler_cash.transform(player_state[["cash","networth"]])
+        player_state["position"] = self.scaler_position.transform(player_state["position"])
+        player_state["cash","networth"] = self.scaler_cash.transform(player_state["cash","networth"])
         
         return fields[updown_list + rent_list + updown_cost_list], player_state
     
