@@ -743,24 +743,19 @@ class Board():
     def getGamestate(self, player_color):       
         fields = self._getFieldState(self.properties, self.properties_special, player_color)     
         
-        player_info = []
-        
-        for color in self.players:
-            player_info.append(
-                [self.getPlayerCash(color), 
-                 self.getPlayerNetworth(color), 
-                 self.getPlayerPosition(color)])
+        player_info = [self.getPlayerCash(player_color), 
+                 self.getPlayerNetworth(player_color), 
+                 self.getPlayerPosition(player_color)]
             
         player_state = pd.DataFrame(player_info, 
-                                    index=list(self.players.keys()), 
+				    index=[player_color], 
                                     columns=["cash","networth","position"])
         
         rent_list = [player_color + ":rent_cost"]
         updown_cost_list = [player_color + ":upgrade_cost", 
                             player_color + ":downgrade_amount"]
         
-        updown_list = list(self.players.keys()) + [player_color + ":upgrade", 
-                                                   player_color + ":downgrade"]
+        updown_list = [player_color, player_color + ":upgrade", player_color + ":downgrade"]
         
         fields[["value"]] = self.scaler_value.transform(fields[["value"]])
         fields[rent_list] = self.scaler_rent.transform(fields[rent_list])
@@ -769,7 +764,7 @@ class Board():
         player_state[["position"]] = self.scaler_position.transform(player_state[["position"]])
         player_state[["cash","networth"]] = self.scaler_cash.transform(player_state[["cash","networth"]])
         
-        return fields, player_state
+        return fields[updown_list + rent_list + updown_cost_list], player_state
     
     #@cache(maxsize=None)
     def _getFieldState(self, properties, special, player_color):
