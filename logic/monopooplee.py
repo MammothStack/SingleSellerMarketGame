@@ -510,11 +510,7 @@ class Board():
         if self.move_restrictions is None:
             return randrange(1,7), randrange(1,7)
         else:
-            return randrange(
-		    self.move_restrictions[0], 
-		    self.move_restrictions[1]), randrange(
-		    self.move_restrictions[0], 
-		    self.move_restrictions[1]),
+            return randrange(self.move_restrictions[0],self.move_restrictions[1])
     
     def solePlayerAlive(self):
         i = 0
@@ -642,8 +638,12 @@ class Board():
             print("Old position: " + str(old_position) + ", " + self.getPropertyName(old_position))
         
         #roll the dice
-        d1, d2 = self.rollDice()
-        
+	    if self.move_restrictions is None:
+            d1, d2 = self.rollDice()
+	    else:
+            d1 = self.rollDice()
+            d2 = 0
+            
         if verbose == 2:
             print("Rolled: " + str(d1) + ", " + str(d2))
         
