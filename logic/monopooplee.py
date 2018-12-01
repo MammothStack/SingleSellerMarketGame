@@ -19,9 +19,10 @@ class Player():
     def makeDecision(self, field_info, player_info):
         if self.model:
             
-            field_arr = field_info.values.flatten("F")
-            player_arr = player_info.values.flatten()
-            state = np.concatenate((player_arr, field_arr))
+            field_arr = fi.values.flatten("F")
+            player_arr = pi.values.flatten()
+            bias = np.array(([1]))
+            state = np.concatenate((player_arr, field_arr, bias))
             pred = self.model.predict(np.array((state,)))
             return pred[0]
         else:
@@ -747,6 +748,7 @@ class Board():
             
         player_state = pd.Series(player_info, index=["cash","networth","position"])
         
+        #print(player_state)
         rent_list = [player_color + ":rent_cost"]
         
         updown_cost_list = [player_color + ":upgrade_cost", 
@@ -759,7 +761,8 @@ class Board():
         fields[updown_cost_list] = self.scaler_updown_cost.transform(fields[updown_cost_list])
         fields[updown_list] = self.scaler_updown.transform(fields[updown_list])
         player_state["position"] = self.scaler_position.transform(player_state["position"])
-        player_state["cash","networth"] = self.scaler_cash.transform(player_state["cash","networth"])
+        player_state["cash"] = self.scaler_cash.transform(player_state["cash"])
+        player_state["networth"] = self.scaler_cash.transform(player_state["networth"])
         
         return fields[updown_list + rent_list + updown_cost_list], player_state
     
