@@ -747,9 +747,7 @@ class Board():
                  self.getPlayerNetworth(player_color), 
                  self.getPlayerPosition(player_color)]
             
-        player_state = pd.DataFrame(player_info, 
-				    index=[player_color], 
-                                    columns=["cash","networth","position"])
+        player_state = pd.Series(player_info, index=["cash","networth","position"])
         
         rent_list = [player_color + ":rent_cost"]
         updown_cost_list = [player_color + ":upgrade_cost", 
