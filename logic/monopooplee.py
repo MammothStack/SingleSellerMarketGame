@@ -64,7 +64,7 @@ class Board():
             "free parking": "free parking",
             "jail": None
         }
-	self.move_restrictions = move_restrictions
+	    self.move_restrictions = move_restrictions
         
         self.scaler_value = StandardScaler().fit([[0],[1400]])
         self.scaler_rent = StandardScaler().fit([[0],[2000]])
@@ -507,10 +507,10 @@ class Board():
 
     
     def rollDice(self):
-		if self.move_restrictions is None:
-			return randrange(1,7), randrange(1,7)
-		else:
-			return randrange(self.move_restrictions[0], self.move_restrictions[1])
+        if self.move_restrictions is None:
+            return randrange(1,7), randrange(1,7)
+        else:
+            return randrange(self.move_restrictions[0], self.move_restrictions[1])
     
     def solePlayerAlive(self):
         i = 0
