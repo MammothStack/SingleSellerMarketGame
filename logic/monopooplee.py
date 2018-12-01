@@ -638,9 +638,9 @@ class Board():
             print("Old position: " + str(old_position) + ", " + self.getPropertyName(old_position))
         
         #roll the dice
-	    if self.move_restrictions is None:
+        if self.move_restrictions is None:
             d1, d2 = self.rollDice()
-	    else:
+        else:
             d1 = self.rollDice()
             d2 = 0
             
