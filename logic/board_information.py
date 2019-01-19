@@ -5,7 +5,108 @@ from random import randrange, randint
 
 
 class BoardInformation():
-    """
+    """Stores and handles all information of the board and game
+    
+    This class is responsible for initializing a pandas Dataframe that
+    holds all the information that pertains to the state of properties
+    and the ownership of these in relation to players. This table also
+    includes data on the price of property purchase amounts and upgrade
+    amounts.
+    
+    The Board is initialized with a list of player names, which is used
+    to set the table with the relevant player information. It also
+    initializes the available houses, hotels, free parking cash, the 
+    location of the normal, special, and action fields.
+    
+    The class gives several methods on manipulating the board through
+    player actions.
+    
+    Parameters
+    --------------------
+    player_names : list
+        A list of the players as str that are playing on the board
+    
+    Attributes
+    --------------------
+    available_houses : int
+        amount of the houses that are available to purchase
+
+    available_hotels : int
+        amount of the hotels that are available to purchase
+
+    free_parking_cash : int
+        amount of cash that is located on the free parking field
+        
+    Methods
+    --------------------
+    can_purchase(name, position)
+        Returns if the property at position can be purchaseable
+        
+    can_downgrade(name, position)
+        Returns if the property at position can be downgraded
+        
+    can_upgrade(name, position)
+        Returns if the property at position can be upgraded
+        
+    is_monopoly(name, position)
+        Returns if the property at position is part of a monopoly
+        
+    is_any_purchaseable()
+        Returns if any property is still available to purchase
+        
+    is_owned_by(position, name)
+        Returns if the property at position is owned by the player by name
+        
+    is_actionfield(position)
+        Returns if the given position is an actionfield
+    
+    is_property(position)
+        Returns if the given position is a property
+    
+    is_special(position)
+        Returns if the given position is a special property
+        
+    purchase(name, position)
+        Sets property at the position to "purchased" by the name
+        
+    mortgage(name, position)
+        Mortgages the property at the position by the player by name
+        
+    unmortgage(name, position)
+        Unmortgages the property at the position by the player by name
+        
+    upgrade(name, position)
+        Upgrades the property at the position by the player by name
+        
+    downgrade(name, position)
+        Downgrades the property at the position by the player by name
+        
+    get_rent(positon, dice_roll)
+        Returns the calculated rent of the property at the position
+    
+    get_owner_name(position)
+        Returns the player name of the owner of the property
+    
+    get_purchase_price(position)
+        Returns the purchase price of the property at the position
+    
+    get_level(position)
+        Returns the current level of the property at the position
+    
+    get_property_name(position):
+        Returns the name of the property at the position
+    
+    get_action(position):
+        Returns the action of the action field at the position
+
+    get_normalized_state(name):
+        Returns a DataFrame of normalized values of the current state
+
+    get_table():
+        Returns the full board table
+    
+    Examples
+    --------------------
     
     """
     def __init__(self, player_names):
@@ -45,11 +146,40 @@ class BoardInformation():
         #self.prop_colors = l
         
     def _set_table(self, players):
+        """Creates the board information table
         
-        def make(player_color, index):
+        Reads the csv file from the git repository. It sets the proper index
+        of the table as well as the proper data types used by the
+        individual columns
+        
+        Parameters
+        --------------------
+        players : list
+            A list of the players as str that are playing on the board
+
+        Examples
+        --------------------
+
+        """
+        
+        def make(name, index):
+            """Makes a DataFrame pertaining to player specific information
+            
+            Parameters
+            --------------------
+            name : str
+                The name of the player
+                
+            index : array, list
+                The index of the board
+                
+            Examples
+            --------------------
+
+            """
             owned = pd.Series(
                 data=pd.np.zeros(len(index)), 
-                name=player_color + ":owned",
+                name=name + ":owned",
                 index=index,
                 dtype="bool"
             )
@@ -57,33 +187,33 @@ class BoardInformation():
             owned_nm = pd.Series(
                 data=[-1 for i in range(len(index))],
                 index=index, 
-                name=player_color + ":owned:normal", 
+                name=name + ":owned:normal", 
                 dtype="int8")
             
             canupgrade = pd.Series(
                 data=pd.np.zeros(len(index)), 
-                name=player_color + ":can_upgrade",
+                name=name + ":can_upgrade",
                 index=index,
                 dtype="bool"
             )
             
             canupgrade_nm = pd.Series(
                 data=[-1 for i in range(len(index))],
-                name=player_color + ":can_upgrade:normal",
+                name=name + ":can_upgrade:normal",
                 index=index,
                 dtype="int8"
             )
             
             candowngrade = pd.Series(
                 data=pd.np.zeros(len(index)), 
-                name=player_color + ":can_downgrade",
+                name=name + ":can_downgrade",
                 index=index,
                 dtype="bool"
             )
             
             candowngrade_nm = pd.Series(
                 data=[-1 for i in range(len(index))],
-                name=player_color + ":can_downgrade:normal",
+                name=name + ":can_downgrade:normal",
                 index=index,
                 dtype="int8"
             )
@@ -134,24 +264,98 @@ class BoardInformation():
     
     
     def can_purchase(self, name, position):
+        """Returns if the property at position can be purchaseable
+        
+        Parameters
+        --------------------
+        name : str
+            The name of the player who wants to purchase the property
+        
+        position : int
+            The position of the property on the board
+
+        Examples
+        --------------------
+        >>>board.can_purchase("red", 1)
+        True
+        >>>board.purchase("red", 1)
+        >>>board.can_purchase("red", 1)
+        False
+
+        """
         return self._table.at[
             position, "can_purchase"
         ]
         
     def can_downgrade(self, name, position):
+        """Returns if the property at position can be downgraded
+        
+        Parameters
+        --------------------
+        name : str
+            The name of the player who wants to downgrade the property
+        
+        position : int
+            The position of the property on the board
+
+        Examples
+        --------------------
+        >>>board.can_downgrade("red", 1)
+        True
+        >>>board.downgrade("red", 1)
+        >>>board.can_downgrade("red", 1)
+        False
+
+        """
         return self._table.at[
             position, name + ":can_downgrade"
         ]
         
     def can_upgrade(self, name, position):
+        """Returns if the property at position can be upgraded
+        
+        Parameters
+        --------------------
+        name : str
+            The name of the player who wants to upgrade the property
+        
+        position : int
+            The position of the property on the board
+
+        Examples
+        --------------------
+        >>>board.can_upgrade("red", 1)
+        True
+        >>>board.downgrade("red", 1)
+        >>>board.can_upgrade("red", 1)
+        False
+
+        """
         return self._table.at[
             position, name + ":can_upgrade"
         ]
     
     def is_monopoly(self, position):
+        """Returns if the property at position is part of a monopoly
+        
+        Parameters
+        --------------------
+
+        Examples
+        --------------------
+
+        """
         return self._table.at[position, "monopoly_owned"]
         
     def _is_monopoly(self, name, color):
+        """
+        Parameters
+        --------------------
+
+        Examples
+        --------------------
+
+        """
         owned = self._table.loc[
             self._table["color"] == color,
             name + ":owned"
@@ -160,29 +364,97 @@ class BoardInformation():
         return owned
     
     def is_any_purchaseable(self):
+        """
+        Parameters
+        --------------------
+
+        Examples
+        --------------------
+
+        """
         return self._table["can_purchase"].any()
     
+    def is_owned_by(self, position, name):
+        """
+        Parameters
+        --------------------
+
+        Examples
+        --------------------
+
+        """
+        return self._table.at[position, name + ":owned"]
+    
     def is_actionfield(self, position):
+        """
+        Parameters
+        --------------------
+
+        Examples
+        --------------------
+
+        """
         return position in self._fp_action
     
     def is_property(self, position):
+        """
+        Parameters
+        --------------------
+
+        Examples
+        --------------------
+
+        """
         return position in self._fp_normal
     
     def is_special(self, position):
+        """
+        Parameters
+        --------------------
+
+        Examples
+        --------------------
+
+        """
         return position in self._fp_special
     
     def _update_normal_binary(self, position, check_col, normal_col):
+        """
+        Parameters
+        --------------------
+
+        Examples
+        --------------------
+
+        """
         if self._table.at[position, check_col]:
             self._table.at[position, normal_col] = 1
         else:
             self._table.at[position, normal_col] = -1
     
     def _update_normal_value_max(self, position, val_col, max_col, normal_col):
+        """
+        Parameters
+        --------------------
+
+        Examples
+        --------------------
+
+        """
         val = self._table.at[position, val_col]
         halfmax = self._table.at[position, max_col] / 2
         self._table.at[position, normal_col] = (val - halfmax) / halfmax
     
     def _update_normalisation(self, name, position):
+        """
+        Parameters
+        --------------------
+
+        Examples
+        --------------------
+
+        """
+        
         #owned
         self._update_normal_binary(
             position, name + ":owned", name + ":owned:normal")
@@ -209,11 +481,14 @@ class BoardInformation():
 
         #current rent
         self._update_normal_value_max(
-            position, "current_rent_amount", "rent_level:6", "current_rent_amount:normal"
+            position, 
+            "current_rent_amount", 
+            "rent_level:6", 
+            "current_rent_amount:normal"
         )
     
     def purchase(self, name, position):
-        """ Sets the properties to purchase
+        """Sets property at the position to "purchased" by the name
         
         Method for controlling the board properties that need to be set
         when a property is purchased. This method works for both normal
@@ -242,8 +517,16 @@ class BoardInformation():
         The ownership needs to be indicated to show which player owns the
         property. This goes in conjunction with setting the purchasability 
         for a given property. This is to ensure that only one person can
-        purchase a given property.
+        purchase a given property. At the end the normalized values are
+        also updated.
         
+        
+        Parameters
+        --------------------
+
+        Examples
+        --------------------
+
         """
         
         color = self._table.at[position, "color"]
@@ -292,6 +575,15 @@ class BoardInformation():
         self._update_normalisation(name, position)
         
     def mortgage(self, name, position):
+        """
+        Parameters
+        --------------------
+
+        Examples
+        --------------------
+
+        """
+        
         #value
         self._table.at[
             position, "value"
@@ -323,6 +615,15 @@ class BoardInformation():
         self._update_normalisation(name, position)
     
     def unmortgage(self, name, position):
+        """
+        Parameters
+        --------------------
+
+        Examples
+        --------------------
+
+        """
+        
         #value
         self._table.at[
             position, "value"
@@ -369,6 +670,15 @@ class BoardInformation():
             
     
     def upgrade(self, name, position):
+        """
+        Parameters
+        --------------------
+
+        Examples
+        --------------------
+
+        """
+        
         #value
         self._table.at[
             position, "value"
@@ -407,6 +717,15 @@ class BoardInformation():
         self._update_normalisation(name, position)
         
     def downgrade(self, name, position):
+        """
+        Parameters
+        --------------------
+
+        Examples
+        --------------------
+
+        """
+        
         #value
         self._table.at[
             position, "value"
@@ -444,7 +763,16 @@ class BoardInformation():
 
     
        
-    def _update_can_upgrade(self):        
+    def _update_can_upgrade(self):
+        """
+        Parameters
+        --------------------
+
+        Examples
+        --------------------
+
+        """
+        
         #if owned and monopoly exists
         for name in self._player_names:
             self._table.loc[
@@ -471,6 +799,15 @@ class BoardInformation():
             ] = False
             
     def _update_can_downgrade(self):
+        """
+        Parameters
+        --------------------
+
+        Examples
+        --------------------
+
+        """
+        
         #if owned and monopoly exists
         if ~self._table["can_purchase"].all():
             for name in self._player_names:
@@ -488,6 +825,15 @@ class BoardInformation():
             ] = False
             
     def _update_special_field(self, name, position, color):
+        """
+        Parameters
+        --------------------
+
+        Examples
+        --------------------
+
+        """
+        
         bool_arr = (self._table["color"] == color) & (self._table[name + ":owned"] == True)
         no = np.sum(bool_arr)
         if color == "black":
@@ -499,15 +845,28 @@ class BoardInformation():
                 self._table.loc[bool_arr, "current_rent_amount"] = 10 * 7
             
     def get_rent(self, position, dice_roll):
+        """
+        Parameters
+        --------------------
+
+        Examples
+        --------------------
+
+        """
         if position == 12 or position == 28:
             return (self._table.at[position, "current_rent_amount"] / 7) * dice_roll
         else:
             return self._table.at[position, "current_rent_amount"]
     
-    def is_owned_by(self, position, name):
-        return self._table.at[position, name + ":owned"]
-    
     def get_owner_name(self, position):
+        """
+        Parameters
+        --------------------
+
+        Examples
+        --------------------
+
+        """
         s = [a + ":owned" for a in self._player_names]
         own = self._table.loc[position, s]
         if own.any():
@@ -516,17 +875,49 @@ class BoardInformation():
             return None
             
     def get_purchase_price(self, position):
+        """
+        Parameters
+        --------------------
+
+        Examples
+        --------------------
+
+        """
         return self._table.at[position, "purchase_amount"]
     
     def get_level(self, position):
+        """
+        Parameters
+        --------------------
+
+        Examples
+        --------------------
+
+        """
         return self._table.at[position, "level"]
     
     def get_property_name(self, position):
+        """
+        Parameters
+        --------------------
+
+        Examples
+        --------------------
+
+        """
         if position in self._fp_action:
             return "Action field"
         return self._table.at[position, "name"]
     
     def get_action(self, position):
+        """
+        Parameters
+        --------------------
+
+        Examples
+        --------------------
+
+        """
         var = self._action_fields[position]
         if type(var) == list:
             return var[randint(0, len(var)-1)]
@@ -535,6 +926,14 @@ class BoardInformation():
 
     #Information getting
     def get_normalized_state(self, name):
+        """
+        Parameters
+        --------------------
+
+        Examples
+        --------------------
+
+        """
         l = [name + ":owned:normal",
              name + ":can_upgrade:normal",
              name + ":can_downgrade:normal",
@@ -550,4 +949,15 @@ class BoardInformation():
         return self._table[l].values.flatten("F")
     
     def get_table(self):
+        """
+        Parameters
+        --------------------
+
+        Examples
+        --------------------
+
+        """
         return self._table
+    
+    
+    
