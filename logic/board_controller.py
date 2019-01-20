@@ -235,10 +235,10 @@ class BoardController():
                 if self.board.can_downgrade(name, pos):
                     reward = 0
                     if self.board.get_level(pos) == 1:
-                        print("mortgaged")
+                        print("mortgaged: " + name + " " + str(pos))
                         self.board.mortgage(name, pos)
                     else:
-                        print("downgrade")
+                        print("downgrade: " + name + " " + str(pos))
                         self.board.downgrade(name, pos)
 
                     cont = True
@@ -256,11 +256,11 @@ class BoardController():
                     reward = 1
                     if self.board.get_level(pos) == 0:
                         if verbose:
-                            print("unmortgaged")
+                            print("unmortgaged: " + name + " " + str(pos))
                         self.board.unmortgage(name, pos)
                     else:
                         if verbose:
-                            print("upgrade")
+                            print("upgrade: " + name + " " + str(pos))
                         self.board.upgrade(name, pos)
 
                     cont = True
