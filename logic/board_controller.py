@@ -1,6 +1,8 @@
 from random import randrange
 import numpy as np
 import pandas as pd
+from player import Player
+from board_information import BoardInformation
 
 class BoardController():
     def __init__(
