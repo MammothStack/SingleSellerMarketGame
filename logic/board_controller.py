@@ -22,7 +22,7 @@ class BoardController():
         self.num_players = len(player_list)
         self.upgrade_limit = upgrade_limit
         self.display = display
-        pos = self.board.get_table().index
+        pos = self.board.index
         self.decision_index = pos + pos
 
         if starting_order is None:
