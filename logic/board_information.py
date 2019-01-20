@@ -100,10 +100,10 @@ class BoardInformation():
         Returns the action of the action field at the position
 
     get_normalized_state(name):
-        Returns a DataFrame of normalized values of the current state
-
-    get_table():
-        Returns the full board table
+        Returns the normalized state that is flattened for ML algorithms
+        
+    get_state():
+        Returns a DataFrame that shows all information of the board
     
     Examples
     --------------------
@@ -139,10 +139,9 @@ class BoardInformation():
                 
         self._table = self._set_table(player_names)
         
-        l = list(self._table["color"].unique())
-        l.remove("black")
-        l.remove("white")
-        
+        #l = list(self._table["color"].unique())
+        #l.remove("black")
+        #l.remove("white")
         #self.prop_colors = l
         
     def _set_table(self, players):
@@ -340,9 +339,16 @@ class BoardInformation():
         
         Parameters
         --------------------
+        position : int
+            The position of the property that should be checked for monopoly
 
         Examples
         --------------------
+        >>>board.is_monopoly(1)
+        False
+        >>>board.purchase("red", 3)
+        >>>board.is_monopoly(1)
+        True
 
         """
         return self._table.at[position, "monopoly_owned"]
@@ -364,12 +370,17 @@ class BoardInformation():
         return owned
     
     def is_any_purchaseable(self):
-        """
-        Parameters
-        --------------------
+        """Returns if any property is still available to purchase
+        
+        Checks to see if any property can still be purchased by a player.
 
         Examples
         --------------------
+        >>>board.is_any_purchaseable()
+        True
+        >>>board.purchase(1)
+        >>>board.is_any_purchaseable()
+        False
 
         """
         return self._table["can_purchase"].any()
@@ -926,7 +937,7 @@ class BoardInformation():
 
     #Information getting
     def get_normalized_state(self, name):
-        """
+        """Returns the normalized state that is flattened for ML algorithms
         Parameters
         --------------------
 
@@ -948,16 +959,29 @@ class BoardInformation():
         
         return self._table[l].values.flatten("F")
     
-    def get_table(self):
+    def get_state(self):
+        """Returns a DataFrame that shows all information of the board
+        
+        The information returned pertains to all the information that can be
+        seen by all players, which includes ownership and possible upgrade.
+        parameter. It also shows the general state of the board for example
+        if properties can be purchased, upgraded, how many houses are on it
+        etc.
+        
         """
-        Parameters
-        --------------------
-
-        Examples
-        --------------------
-
-        """
-        return self._table
-    
+        l = ["position",
+             "name",
+             "color",
+             "monopoly_owned",
+             "value",
+             "can_purchase",
+             "purchase_amount",
+             "mortgage_amount",
+             "upgrade_amount",
+             "downgrade_amount",
+             "current_rent_amount",
+             "level"]
+        
+        return self._table[l]  
     
     
