@@ -271,9 +271,6 @@ class BoardInformation():
 
         path = os.path.join(os.path.dirname(__file__), 'fields.csv')
 
-        print(path)
-        print(type(path))
-
         table = pd.read_csv(path)
         table.set_index("position", inplace=True)
         table = table.astype(
