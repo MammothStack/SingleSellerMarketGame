@@ -269,9 +269,12 @@ class BoardInformation():
                  canunmortgage_nm],
                 axis=1)
 
+        path = os.path.join(os.path.dirname(__file__), 'fields.csv'))
 
-        table = pd.read_csv(
-            os.path.join(os.path.dirname(__file__), 'fields.csv'))
+        print(path)
+        print(type(path))
+
+        table = pd.read_csv(path)
         table.set_index("position", inplace=True)
         table = table.astype(
             {'value':np.int16,
