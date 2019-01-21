@@ -147,8 +147,6 @@ class BoardInformation():
             38:-100
         }
 
-        fn = os.path.join(os.path.dirname(__file__), 'fields.csv')
-        print(fn)
         self._table = self._set_table(player_names)
         self.index = list(self._table.index)
 
@@ -272,7 +270,8 @@ class BoardInformation():
                 axis=1)
 
 
-        table = pd.read_csv("fields.csv")
+        table = pd.read_csv(
+            os.path.join(os.path.dirname(__file__), 'fields.csv'))
         table.set_index("position", inplace=True)
         table = table.astype(
             {'value':np.int16,
