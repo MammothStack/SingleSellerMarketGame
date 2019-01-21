@@ -613,14 +613,14 @@ class BoardInformation():
         if name is None:
             if position is None:
                 for nam in self._player_names:
-                    for pos in self._fp_normal + self._fp_special
+                    for pos in self._fp_normal + self._fp_special:
                         self._update_normalisation_cell(nam, pos)
             else:
                 for nam in self._player_names:
                     self._update_normalisation_cell(nam, position)
         else:
             if position is None:
-                for pos in self._fp_normal + self._fp_special
+                for pos in self._fp_normal + self._fp_special:
                     self._update_normalisation_cell(name, pos)
             else:
                 self._update_normalisation_cell(name, position)
@@ -1210,7 +1210,7 @@ class BoardInformation():
     #Information getting
     def get_normalized_state(self, name):
         """Returns the normalized state that is flattened for ML algorithms
-        
+
         Parameters
         --------------------
         name : str
