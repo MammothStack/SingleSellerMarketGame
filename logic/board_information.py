@@ -269,7 +269,7 @@ class BoardInformation():
                  canunmortgage_nm],
                 axis=1)
 
-        path = os.path.join(os.path.dirname(__file__), 'fields.csv'))
+        path = os.path.join(os.path.dirname(__file__), 'fields.csv')
 
         print(path)
         print(type(path))
