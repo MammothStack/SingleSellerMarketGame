@@ -268,7 +268,7 @@ class BoardInformation():
                  canunmortgage_nm],
                 axis=1)
 
-        table = pd.read_csv("Monopooplee/data/fields.csv")
+        table = pd.read_csv("SingleSellerMarketGame/data/fields.csv")
         table.set_index("position", inplace=True)
         table = table.astype(
             {'value':np.int16,
@@ -1054,7 +1054,7 @@ class BoardInformation():
         if n_hotel > 0 and self.available_hotels == 0:
             self._hotels_to_unavailable()
 
-        
+
 
         self._update_normalisation()
 
