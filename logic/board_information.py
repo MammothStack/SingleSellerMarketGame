@@ -1054,7 +1054,7 @@ class BoardInformation():
         if n_hotel > 0 and self.available_hotels == 0:
             self._hotels_to_unavailable()
 
-        if n_hotel
+        
 
         self._update_normalisation()
 
