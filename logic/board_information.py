@@ -268,7 +268,7 @@ class BoardInformation():
                  canunmortgage_nm],
                 axis=1)
 
-        table = pd.read_csv("../data/fields.csv")
+        table = pd.read_csv("./data/fields.csv")
         table.set_index("position", inplace=True)
         table = table.astype(
             {'value':np.int16,
