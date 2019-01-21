@@ -312,17 +312,17 @@ class BoardController():
     def _downgrade(self, name, pos):
         if self.board.can_downgrade(name, pos):
             if self.board.get_level(pos) == 1:
-                print("mortgaged")
+                #print("mortgaged")
                 self.board.mortgage(name, pos)
             else:
-                print("downgrade")
+                #print("downgrade")
                 self.board.downgrade(name, pos)
 
     def _upgrade(self, name, pos):
         if self.board.can_upgrade(name, pos):
             if self.board.get_level(pos) == 0:
-                print("unmortgaged")
+                #print("unmortgaged")
                 self.board.unmortgage(name, pos)
             else:
-                print("upgrade")
+                #print("upgrade")
                 self.board.upgrade(name, pos)
