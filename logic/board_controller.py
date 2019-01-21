@@ -228,20 +228,21 @@ class BoardController():
         #if decision is above threshold
         if decision[ind] > 0.5:
 
-            #if decision is downgrade
+            #if decision is downgrade/mortgage
             if ind + 1 > len(decision) / 2:
 
                 #if position can even be downgraded
                 if self.board.can_downgrade(name, pos):
                     reward = 0
-                    if self.board.get_level(pos) == 1:
-                        print("mortgaged: " + name + " " + str(pos))
-                        self.board.mortgage(name, pos)
-                    else:
-                        print("downgrade: " + name + " " + str(pos))
-                        self.board.downgrade(name, pos)
-
                     cont = True
+                    print("downgrade: " + name + " " + str(pos))
+                    self.board.downgrade(name, pos)
+
+                elif self.board.can_mortgage(name, pos):
+                    reward = 0
+                    cont = True
+                    print("mortgaged: " + name + " " + str(pos))
+                    self.board.mortgage(name, pos)
 
                 #if position cant be dowgraded
                 else:
@@ -254,28 +255,29 @@ class BoardController():
                 #if position can even be upgraded
                 if self.board.can_upgrade(name, pos):
                     reward = 1
-                    if self.board.get_level(pos) == 0:
-                        if verbose:
-                            print("unmortgaged: " + name + " " + str(pos))
-                        self.board.unmortgage(name, pos)
-                    else:
-                        if verbose:
-                            print("upgrade: " + name + " " + str(pos))
-                        self.board.upgrade(name, pos)
-
                     cont = True
+                    print("upgrade: " + name + " " + str(pos))
+                    self.board.upgrade(name, pos)
 
-                    #if upgrade causes bankruptcy
-                    if self.players[name].cash < 0:
-                        cont = False
-                        reward = -1
-                        self.alive = False
-                        if verbose:
-                            print("XXXXXXX made an oopsie")
-                #if position cant be upgraded
+                #if position can be unmortgaged
+                elif self.board.can_unmortgage(name, pos):
+                    reward = 1
+                    cont = True
+                    print("unmortgaged: " + name + " " + str(pos))
+                    self.board.unmortgage(name, pos)
+
                 else:
+                    reward = -1
+                    cont = False
+
+                #if upgrade causes bankruptcy
+                if self.players[name].cash < 0:
                     cont = False
                     reward = -1
+                    self.alive = False
+                    if verbose:
+                        print("XXXXXXX made an oopsie")
+
 
         #if decision is pass
         else:

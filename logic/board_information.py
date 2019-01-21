@@ -538,7 +538,7 @@ class BoardInformation():
         halfmax = self._table.at[position, max_col] / 2
         self._table.at[position, normal_col] = (val - halfmax) / halfmax
 
-    def _update_normalisation(self, name, position):
+    def _update_normalisation_cell(self, name, position):
         """
         Parameters
         --------------------
@@ -550,35 +550,52 @@ class BoardInformation():
 
         #owned
         self._update_normal_binary(
-            position, name + ":owned", name + ":owned:normal")
+            position,
+            name + ":owned",
+            name + ":owned:normal")
 
         #can ugrade
         self._update_normal_binary(
-            position, name + ":can_upgrade", name + ":can_upgrade:normal")
+            position,
+            name + ":can_upgrade",
+            name + ":can_upgrade:normal")
 
         #can downgrade
         self._update_normal_binary(
-            position, name + ":can_downgrade", name + ":can_downgrade:normal")
+            position,
+            name + ":can_downgrade",
+            name + ":can_downgrade:normal")
 
         #can mortgage
         self._update_normal_binary(
-            position, name + ":can_mortgage", name + ":can_mortgage:normal")
+            position,
+            name + ":can_mortgage",
+            name + ":can_mortgage:normal")
 
         #can unmortgaged
         self._update_normal_binary(
-            position, name + ":can_unmortgage", name + ":can_unmortgage:normal")
+            position,
+            name + ":can_unmortgage",
+            name + ":can_unmortgage:normal")
 
         #monopoly owned
         self._update_normal_binary(
-            position, "monopoly_owned", "monopoly_owned:normal")
+            position,
+            "monopoly_owned",
+            "monopoly_owned:normal")
 
         #can purchase
         self._update_normal_binary(
-            position, "can_purchase", "can_purchase:normal")
+            position,
+            "can_purchase",
+            "can_purchase:normal")
 
         #value
         self._update_normal_value_max(
-            position, "value", "value:max", "value:normal")
+            position,
+            "value",
+            "value:max",
+            "value:normal")
 
         #current rent
         self._update_normal_value_max(
@@ -587,6 +604,27 @@ class BoardInformation():
             "rent_level:6",
             "current_rent_amount:normal"
         )
+
+    def _update_normalisation(self, name=None, position=None):
+        """
+        slkjdf
+
+        """
+        if name is None:
+            if position is None:
+                for nam in self._player_names:
+                    for pos in self._fp_normal + self._fp_special
+                        self._update_normalisation_cell(nam, pos)
+            else:
+                for nam in self._player_names:
+                    self._update_normalisation_cell(nam, position)
+        else:
+            if position is None:
+                for pos in self._fp_normal + self._fp_special
+                    self._update_normalisation_cell(name, pos)
+            else:
+                self._update_normalisation_cell(name, position)
+
 
     def purchase(self, name, position):
         """Sets property at the position to "purchased" by the player
@@ -676,7 +714,6 @@ class BoardInformation():
             ] = 1
 
             #update monopoly status
-
             if self._is_color_monopoly(name, color):
                 #Set monopoly
                 self._table.loc[
@@ -690,7 +727,7 @@ class BoardInformation():
                     [name + ":can_upgrade"]
                 ] = ~self._is_any_in_color_mortgaged(color)
 
-        self._update_normalisation(name, position)
+        self._update_normalisation()
 
     def mortgage(self, name, position):
         """Sets property at position to mortgaged by the player
@@ -706,6 +743,7 @@ class BoardInformation():
             can mortgage           False
             can unmortgage         True
             current rent amount    0
+            level                  0 if applicable
 
         Parameters
         --------------------
@@ -761,7 +799,7 @@ class BoardInformation():
                 position, "level"
             ] = 0
 
-        self._update_normalisation(name, position)
+        self._update_normalisation()
 
     def unmortgage(self, name, position):
         """Sets property at position to unmortgaged by the player
@@ -770,6 +808,14 @@ class BoardInformation():
         board table need to change in order for all configurations to work
         and adhere to the rule of the game. The following properties in the
         table are changed:
+
+            value                  purchase amount
+            can downgrade          false
+            can mortgage           true
+            can unmortgage         false
+            level                  1 if applicable
+            can upgrade            if applicable
+            current rent amount    rent level 1
 
         Parameters
         --------------------
@@ -837,13 +883,31 @@ class BoardInformation():
                 position, "rent_level:1"
             ]
 
-        self._update_normalisation(name, position)
-
+        self._update_normalisation()
 
     def upgrade(self, name, position):
-        """
+        """Upgrades the property at the position by the player by name
+
+        The property is upgraded by the player and several values in the
+        board table need to change in order for all configurations to work
+        and adhere to the rule of the game. The following properties in the
+        table are changed:
+
+            value                  + upgrade cost
+            can downgrade          true
+            can mortgage           false (for all in monopoly)
+            can unmortgage         false
+            level                  + 1
+            can upgrade            if applicable
+            current rent amount    according rent level
+
         Parameters
         --------------------
+        name : str
+            the name of the player upgrade the property
+
+        position : int
+            the position of the property on the board
 
         Examples
         --------------------
@@ -878,7 +942,7 @@ class BoardInformation():
         ] = False
 
         #can unmortgage
-        self._table.at[positoin, name + ":can_unmortgage"] = False
+        self._table.at[position, name + ":can_unmortgage"] = False
 
         #current rent amount
         self._table.at[
@@ -897,75 +961,47 @@ class BoardInformation():
         else:
             self.available_houses -= 1
 
-        #if no houses WERE available but due to hotel purchase now are
-        if n_house == 0:
-            for name in self._player_names:
-                #if owned and monopoly exists
-                self._table.loc[
-                    (self._table["monopoly_owned"] == True) &
-                    (self._table[name + ":owned"] == True),
-                    name + ":can_upgrade"
-                ] = True
+        if n_house == 0 and self.available_houses > 0:
+            self._houses_to_available()
+        if n_house > 0 and self.available_houses == 0:
+            self._houses_to_unavailable()
+        if n_hotel == 0 and self.available_hotels > 0:
+            self._hotels_to_available()
+        if n_hotel > 0 and self.available_hotels == 0:
+            self._hotels_to_unavailable()
 
-                #set false if at max level
-                self._table.loc[
-                    (self._table[name + ":owned"] == True) &
-                    (self._table["level"] == 6),
-                    name + ":can_upgrade"
-                ] = False
-
-                #set false if any in the monopoly is mortgaged
-                for color in self.prop_colors:
-                    if self._is_color_monopoly(name, color):
-                        pass
-                        #~self._is_any_in_color_mortgaged(color)
-
-        #if no hotels available
-
-        #if no houses available
-
-        #if owned and monopoly exists
-        for name in self._player_names:
-            self._table.loc[
-                (self._table["monopoly_owned"] == True) &
-                (self._table[name + ":owned"] == True) &
-                (self._table["level"] < 6),
-                name + ":can_upgrade"
-            ] = True
-
-        #if no houses exist, props that would have houses
-        #for next upgrade are set to False
-        if self.available_houses == 0:
-            self._table.loc[
-                (self._table["level"] > 0) &
-                (self._table["level"] < 5),
-                [n + ":can_upgrade" for n in self._player_names]
-            ] = False
-
-        #if no hotels exist props with level 5 cant upgrade
-        if self.available_hotels == 0:
-            self._table.loc[
-                (self._table["level"] == 5),
-                [n + ":can_upgrade" for n in self._player_names]
-            ] = False
-
-        #update upgrade status
-        self._update_can_upgrade()
-
-        #update downgrade status
-        self._update_can_downgrade()
-
-        self._update_normalisation(name, position)
+        self._update_normalisation()
 
     def downgrade(self, name, position):
-        """
+        """Downgrades the property at the position by the player by name
+
+        The property is downgraded by the player and several values in the
+        board table need to change in order for all configurations to work
+        and adhere to the rule of the game. The following properties in the
+        table are changed:
+
+            value                  + upgrade cost
+            can downgrade          true
+            can mortgage           false (for all in monopoly)
+            can unmortgage         false
+            level                  + 1
+            can upgrade            if applicable
+            current rent amount    according rent level
+
         Parameters
         --------------------
+        name : str
+            the name of the player downgrade the property
+
+        position : int
+            the position of the property on the board
 
         Examples
         --------------------
 
         """
+
+        color = self._table.at[position, "color"]
 
         #value
         self._table.at[
@@ -979,6 +1015,21 @@ class BoardInformation():
         #level
         new_level = self._table.at[position, "level"] - 1
         self._table.at[position, "level"] = new_level
+
+        #can mortgage, all properties of the same color
+        lvl_sum = np.sum(self._table.loc[
+            self._table["color"] == color, ["level"]])
+
+        self._table.loc[
+            self._table["color"] == color,
+            [name + ":can_mortgage"]
+        ] = lvl_sum <= 3
+
+        #can unmortgage
+        self._table.at[position, name + ":can_unmortgage"] = False
+
+        n_house = self.available_houses
+        n_hotel = self.available_hotels
 
         #houses and hotels
         if new_level == 5:
@@ -994,78 +1045,67 @@ class BoardInformation():
             position, "rent_level:" + str(new_level)
         ]
 
-        #update upgrade status
-        self._update_can_upgrade()
+        if n_house == 0 and self.available_houses > 0:
+            self._houses_to_available()
+        if n_house > 0 and self.available_houses == 0:
+            self._houses_to_unavailable()
+        if n_hotel == 0 and self.available_hotels > 0:
+            self._hotels_to_available()
+        if n_hotel > 0 and self.available_hotels == 0:
+            self._hotels_to_unavailable()
 
-        #update downgrade status
-        self._update_can_downgrade()
+        if n_hotel
 
-        self._update_normalisation(name, position)
+        self._update_normalisation()
 
-
-
-    def _update_can_upgrade(self):
-        """
-        Parameters
-        --------------------
-
-        Examples
-        --------------------
-
-        """
-
-
-
-        #if owned and monopoly exists
+    def _houses_to_unavailable(self):
         for name in self._player_names:
             self._table.loc[
-                (self._table["monopoly_owned"] == True) &
                 (self._table[name + ":owned"] == True) &
-                (self._table["level"] < 6),
+                (self._table["level"] < 5),
+                [name + ":can_upgrade"]
+            ] = False
+
+    def _houses_to_available(self):
+        for name in self._player_names:
+            #if owned and monopoly exists
+            self._table.loc[
+                (self._table["monopoly_owned"] == True) &
+                (self._table[name + ":owned"] == True),
                 name + ":can_upgrade"
             ] = True
 
-        #if no houses exist, props that would have houses
-        #for next upgrade are set to False
-        if self.available_houses == 0:
+            #set false if at max level
             self._table.loc[
-                (self._table["level"] > 0) &
-                (self._table["level"] < 5),
-                [n + ":can_upgrade" for n in self._player_names]
-            ] = False
-
-        #if no hotels exist props with level 5 cant upgrade
-        if self.available_hotels == 0:
-            self._table.loc[
-                (self._table["level"] == 5),
-                [n + ":can_upgrade" for n in self._player_names]
-            ] = False
-
-    def _update_can_downgrade(self):
-        """
-        Parameters
-        --------------------
-
-        Examples
-        --------------------
-
-        """
-
-        #if owned and monopoly exists
-        if ~self._table["can_purchase"].all():
-            for name in self._player_names:
-                self._table.loc[
-                    (self._table[name + ":owned"] == True) &
-                    (self._table["level"] > 0),
-                    name + ":can_downgrade"
-                ] = True
-
-        #if less than 4 houses exist
-        if self.available_houses < 4:
-            self._table.loc[
+                (self._table[name + ":owned"] == True) &
                 (self._table["level"] == 6),
-                [n + ":can_downgrade" for n in self._player_names]
+                name + ":can_upgrade"
             ] = False
+
+            #set false if any in the monopoly is mortgaged
+            for color in self.prop_colors:
+                if self._is_color_monopoly(name, color):
+                    if self._is_any_in_color_mortgaged(color):
+                        self._table.loc[
+                            self._table["color"] == color,
+                            [name + ":can_upgrade"]
+                        ] = False
+
+    def _hotels_to_unavailable(self):
+        for name in self._player_names:
+            self._table.loc[
+                (self._table[name + ":owned"] == True) &
+                (self._table["level"] == 5),
+                [name + ":can_upgrade"]
+            ] = False
+
+    def _hotels_to_available(self):
+        for name in self._player_names:
+            self._table.loc[
+                (self._table[name + ":owned"] == True) &
+                (self._table["level"] == 5),
+                [name + ":can_upgrade"]
+            ] = True
 
     def _update_special_field(self, name, position, color):
         """
@@ -1170,8 +1210,12 @@ class BoardInformation():
     #Information getting
     def get_normalized_state(self, name):
         """Returns the normalized state that is flattened for ML algorithms
+        
         Parameters
         --------------------
+        name : str
+            The name of the player for whom the normalized state should be
+            fetched
 
         Examples
         --------------------
