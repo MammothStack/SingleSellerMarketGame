@@ -50,16 +50,17 @@ class Player():
 
     def learn(self):
         for o in self.models.keys():
-            self.models[o].fit(
-                x=np.array(self.x_train[o]),
-                y=np.array(self.y_train[o]),
-                sample_weight=np.array(self.rewards[o]),
-                verbose=0
-            )
-            if self.running_reward is None:
-                self.running_reward[o] = self.reward_sum[o]
-            else:
-                r = self.running_reward[o] * 0.99
-                s = self.rewards_sum[o] * 0.01
-                self.running_reward[o] = r + s
+            if self.x_train[o] != []:
+                self.models[o].fit(
+                    x=np.array(self.x_train[o]),
+                    y=np.array(self.y_train[o]),
+                    sample_weight=np.array(self.rewards[o]),
+                    verbose=0
+                )
+                if self.running_reward is None:
+                    self.running_reward[o] = self.reward_sum[o]
+                else:
+                    r = self.running_reward[o] * 0.99
+                    s = self.rewards_sum[o] * 0.01
+                    self.running_reward[o] = r + s
         self.episode_nb += 1
