@@ -1,6 +1,8 @@
 from random import randrange
 import numpy as np
 import pandas as pd
+import os
+import configparser
 from .player import Player
 from .board_information import BoardInformation
 
@@ -11,10 +13,17 @@ class BoardController():
         starting_order=None,
         max_turn=1000,
         upgrade_limit=30,
-        display=False
+        config=None
     ):
         self.players = {p.name: p for p in player_list}
         self.board = BoardInformation([p.name for p in player_list])
+
+        if config is None:
+            path = os.path.join(os.path.dirname(__file__), 'config.ini')
+            self.config = configparser.ConfigParser().read(path)
+        else:
+            self.config = config
+
         self.alive = True
         self.total_turn = 0
         self.max_turn = max_turn
@@ -180,12 +189,13 @@ class BoardController():
         if self.players[name].is_ai:
             decision = self.players[name].get_decision(
                 self.board.get_normalized_state(name),
-                "purchase"
+                "purchase",
+                self.config["purchase_threshold"]["Threshold"]
             )
         else:
             pass
 
-        if decision[0] > 0.5:
+        if decision[0] > self.config["purchase_threshold"]["Threshold"]:
             if verbose:
                 print("purchase")
                 print(self.players[name].cash)
@@ -197,17 +207,17 @@ class BoardController():
                 print(self.players[name].cash)
 
             if self.players[name].cash < 0:
-                reward = -1
+                reward = self.config["purchase_reward"]["Suicide"]
                 self.alive = False
                 if verbose:
                     print("XXXXXXX made an oopsie")
             else:
                 if self.board.is_monopoly(position):
-                    reward = 2
+                    reward = self.config["purchase_reward"]["PurchaseMonopoly"]
                 else:
-                    reward = 1
+                    reward = self.config["purchase_reward"]["PurchaseStandard"]
         else:
-            reward = 0
+            reward = self.config["purchase_reward"]["None"]
 
         if self.players[name].is_ai:
             self.players[name].give_reward("purchase", reward)
@@ -226,27 +236,27 @@ class BoardController():
         cont = False
 
         #if decision is above threshold
-        if decision[ind] > 0.5:
+        if decision[ind] > self.config["upgrade_threshold"]["Threshold"]:
 
             #if decision is downgrade/mortgage
             if ind + 1 > len(decision) / 2:
 
                 #if position can even be downgraded
                 if self.board.can_downgrade(name, pos):
-                    reward = 0
+                    reward = self.config["updown_reward"]["CanDowngrade"]
                     cont = True
                     print("downgrade: " + name + " " + str(pos))
                     self.board.downgrade(name, pos)
 
                 elif self.board.can_mortgage(name, pos):
-                    reward = 0
+                    reward = self.config["updown_reward"]["CanMortgage"]
                     cont = True
                     print("mortgaged: " + name + " " + str(pos))
                     self.board.mortgage(name, pos)
 
                 #if position cant be dowgraded
                 else:
-                    reward = -1
+                    reward = self.config["updown_reward"]["NonExecutableDecision"]
                     cont = False
 
             #if decision is upgrade
@@ -254,26 +264,26 @@ class BoardController():
 
                 #if position can even be upgraded
                 if self.board.can_upgrade(name, pos):
-                    reward = 1
+                    reward = self.config["updown_reward"]["CanUpgrade"]
                     cont = True
                     print("upgrade: " + name + " " + str(pos))
                     self.board.upgrade(name, pos)
 
                 #if position can be unmortgaged
                 elif self.board.can_unmortgage(name, pos):
-                    reward = 1
+                    reward = self.config["updown_reward"]["CanUnmortgage"]
                     cont = True
                     print("unmortgaged: " + name + " " + str(pos))
                     self.board.unmortgage(name, pos)
 
                 else:
-                    reward = -1
+                    reward = self.config["updown_reward"]["NonExecutableDecision"]
                     cont = False
 
                 #if upgrade causes bankruptcy
                 if self.players[name].cash < 0:
                     cont = False
-                    reward = -1
+                    reward = self.config["updown_reward"]["UpgradeSuicide"]
                     self.alive = False
                     if verbose:
                         print("XXXXXXX made an oopsie")
@@ -281,7 +291,7 @@ class BoardController():
 
         #if decision is pass
         else:
-            reward = 0
+            reward = self.config["updown_reward"]["None"]
             cont = False
 
         if self.players[name].is_ai:
