@@ -20,7 +20,8 @@ class BoardController():
 
         if config is None:
             path = os.path.join(os.path.dirname(__file__), 'config.ini')
-            self.config = configparser.ConfigParser().read(path)
+            self.config = configparser.ConfigParser()
+            self.config.read(path)
         else:
             self.config = config
 
