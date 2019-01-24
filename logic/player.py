@@ -46,6 +46,9 @@ class Player():
         self.rewards[operation].append(reward)
         self.rewards_sum[operation] += reward
 
+    def get_models(self):
+        return self.models.values()
+
     def learn(self):
         for o in self.models.keys():
             if self.x_train[o] != []:

@@ -42,13 +42,14 @@ class BoardController():
                 range(self.num_players), self.num_players)
             self.order = [player_list[i].name for i in num_order]
 
-    def start_game(self, verbose=0):
+    def start_game(self):
         while self.alive:
-            self._full_turn(self.order[self.current_turn], verbose)
+            self._full_turn(self.order[self.current_turn])
 
+            """
             if self.alive:
                 self.alive = self.board.is_any_purchaseable()
-
+            """
             if self.alive:
                 self.alive = self.total_turn < self.max_turn
 
@@ -71,37 +72,28 @@ class BoardController():
         self.total_turn = 0
 
 
-    def _full_turn(self, name, verbose=0):
+    def _full_turn(self, name):
         if self.players[name].allowed_to_move:
-
-            if verbose:
-                print(name)
             #move
-            pos = self._turn_move(name,verbose)
+            pos = self._turn_move(name)
 
             #upgrade/downgrade
             cont = True
             count = 0
             while cont and count < self.upgrade_limit:
-                cont = self._step_upgrade_downgrade(name,verbose)
+                cont = self._step_upgrade_downgrade(name)
                 count += 1
 
             #trade
         else:
             self.players[name].allowed_to_move = True
 
-    def _turn_move(self, name, verbose=0):
+    def _turn_move(self, name):
         #Roll the dice
         d1, d2 = self._roll_dice()
 
         #Move the player to the new position
         new_pos = self._move_player(name, dice_roll=d1 + d2)
-
-        if verbose:
-            print("moved to: " +
-                  str(new_pos) +
-                  ":" +
-                  self.board.get_property_name(new_pos))
 
         #If player landed on action field
         if self.board.is_actionfield(new_pos):
@@ -121,20 +113,7 @@ class BoardController():
             #If the action is money transfer
             elif type(act) == int:
                 #change player cash amount
-                if verbose:
-                    print(self.players[name].cash)
-
                 self.players[name].cash += act
-
-                if verbose:
-                    print(self.players[name].cash)
-
-                if verbose:
-                    print(name +
-                          " gets " +
-                          str(act) +
-                          " cash/" +
-                          str(self.players[name].cash))
 
                 #if negative, cash added to free parking
                 if act < 0:
@@ -166,7 +145,7 @@ class BoardController():
         elif self.board.is_property(new_pos) or self.board.is_special(new_pos):
             #If the property is purchaseable
             if self.board.can_purchase(name, new_pos):
-                self._step_purchase(name, new_pos, verbose)
+                self._step_purchase(name, new_pos)
 
             #is owned
             else:
@@ -180,13 +159,11 @@ class BoardController():
                     rent = self.board.get_rent(new_pos, d1 + d2)
                     self.players[opponent_name].cash += rent
                     self.players[name].cash -= rent
-                    if verbose:
-                        print(name + " --" + str(rent) + "-> " + opponent_name)
 
         else:
             raise ValueError("field not found")
 
-    def _step_purchase(self, name, position, verbose=0):
+    def _step_purchase(self, name, position):
         if self.players[name].is_ai:
             decision = self.players[name].get_decision(
                 self.board.get_normalized_state(name),
@@ -197,21 +174,12 @@ class BoardController():
             pass
 
         if decision[0] > self.config["purchase_threshold"]["Threshold"]:
-            if verbose:
-                print("purchase")
-                print(self.players[name].cash)
-
             self.board.purchase(name, position)
             self.players[name].cash -= self.board.get_purchase_price(position)
-
-            if verbose:
-                print(self.players[name].cash)
 
             if self.players[name].cash < 0:
                 reward = self.config["purchase_reward"]["Suicide"]
                 self.alive = False
-                if verbose:
-                    print("XXXXXXX made an oopsie")
             else:
                 if self.board.is_monopoly(position):
                     reward = self.config["purchase_reward"]["PurchaseMonopoly"]
@@ -223,7 +191,7 @@ class BoardController():
         if self.players[name].is_ai:
             self.players[name].give_reward("purchase", reward)
 
-    def _step_upgrade_downgrade(self, name, verbose=0):
+    def _step_upgrade_downgrade(self, name):
         if self.players[name].is_ai:
             decision = self.players[name].get_decision(
                 self.board.get_normalized_state(name),
@@ -286,9 +254,6 @@ class BoardController():
                     cont = False
                     reward = self.config["updown_reward"]["UpgradeSuicide"]
                     self.alive = False
-                    if verbose:
-                        print("XXXXXXX made an oopsie")
-
 
         #if decision is pass
         else:
