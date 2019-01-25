@@ -711,7 +711,7 @@ class BoardInformation():
 
         """
 
-        if board.can_purchase(name, position) == False:
+        if self.can_purchase(name, position) == False:
             raise BoardError(
                 name + " cannot purchase the property at " + str(position))
         #color of the property
@@ -797,7 +797,7 @@ class BoardInformation():
 
         """
 
-        if board.can_mortgage(name, position) == False:
+        if self.can_mortgage(name, position) == False:
             raise BoardError(
                 name + " cannot mortgage the property at " + str(position))
 
@@ -877,7 +877,7 @@ class BoardInformation():
 
         """
 
-        if board.can_unmortgage(name, position) == False:
+        if self.can_unmortgage(name, position) == False:
             raise BoardError(
                 name + " cannot unmortgage the property at " + str(position))
 
@@ -969,7 +969,7 @@ class BoardInformation():
 
         """
 
-        if board.can_upgrade(name, position) == False:
+        if self.can_upgrade(name, position) == False:
             raise BoardError(
                 name + " cannot upgrade the property at " + str(position))
 
@@ -1064,7 +1064,7 @@ class BoardInformation():
 
         """
 
-        if board.can_downgrade(name, position) == False:
+        if self.can_downgrade(name, position) == False:
             raise BoardError(
                 name + " cannot downgrade the property at " + str(position))
 
