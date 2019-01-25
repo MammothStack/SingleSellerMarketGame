@@ -225,13 +225,11 @@ class BoardController():
                 if self.board.can_downgrade(name, pos):
                     reward = self.config.getint("updown_reward", "CanDowngrade")
                     cont = True
-                    print("downgrade: " + name + " " + str(pos))
                     self.board.downgrade(name, pos)
 
                 elif self.board.can_mortgage(name, pos):
                     reward = self.config.getint("updown_reward", "CanMortgage")
                     cont = True
-                    print("mortgaged: " + name + " " + str(pos))
                     self.board.mortgage(name, pos)
 
                 #if position cant be dowgraded
@@ -246,14 +244,12 @@ class BoardController():
                 if self.board.can_upgrade(name, pos):
                     reward = self.config.getint("updown_reward", "CanUpgrade")
                     cont = True
-                    print("upgrade: " + name + " " + str(pos))
                     self.board.upgrade(name, pos)
 
                 #if position can be unmortgaged
                 elif self.board.can_unmortgage(name, pos):
                     reward = self.config.getint("updown_reward", "CanUnmortgage")
                     cont = True
-                    print("unmortgaged: " + name + " " + str(pos))
                     self.board.unmortgage(name, pos)
 
                 else:
@@ -299,17 +295,13 @@ class BoardController():
     def _downgrade(self, name, pos):
         if self.board.can_downgrade(name, pos):
             if self.board.get_level(pos) == 1:
-                #print("mortgaged")
                 self.board.mortgage(name, pos)
             else:
-                #print("downgrade")
                 self.board.downgrade(name, pos)
 
     def _upgrade(self, name, pos):
         if self.board.can_upgrade(name, pos):
             if self.board.get_level(pos) == 0:
-                #print("unmortgaged")
                 self.board.unmortgage(name, pos)
             else:
-                #print("upgrade")
                 self.board.upgrade(name, pos)
