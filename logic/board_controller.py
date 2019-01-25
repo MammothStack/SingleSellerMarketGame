@@ -4,7 +4,7 @@ import pandas as pd
 import os
 import configparser
 from .player import Player
-from .board_information import BoardInformation
+from .board_information import BoardInformation, BoardError
 
 class BoardController():
     def __init__(
@@ -13,17 +13,17 @@ class BoardController():
         starting_order=None,
         max_turn=1000,
         upgrade_limit=30,
-        config=None
+        reinforce_config=None
     ):
         self.players = {p.name: p for p in player_list}
         self.board = BoardInformation([p.name for p in player_list])
 
-        if config is None:
+        if reinforce_config is None:
             path = os.path.join(os.path.dirname(__file__), 'config.ini')
             self.config = configparser.ConfigParser()
             self.config.read(path)
         else:
-            self.config = config
+            self.config = reinforce_config
 
         self.alive = True
         self.total_turn = 0

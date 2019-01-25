@@ -121,6 +121,9 @@ class BoardInformation():
     """
     def __init__(self, player_names):
 
+        if type(player_names) != list:
+            raise AttributeError("Given value must be a list with names")
+
         self._player_names = player_names
         self.available_houses = 40
         self.available_hotels = 8
@@ -388,7 +391,18 @@ class BoardInformation():
             The name of the player who wants to mortgage the property
 
         position : int
-            The position of the property on the board
+            The position of the property on the
+
+        Examples
+        --------------------
+        >>>board.can_mortgage("red",1)
+        True
+        >>>board.mortgage("red",1)
+        >>>board.can_mortgage("red",1)
+        False
+        >>>board.can_mortgage("blue",1)
+        False
+
         """
         return self._table.at[
             position, name + ":can_mortgage"
@@ -609,8 +623,25 @@ class BoardInformation():
         )
 
     def _update_normalisation(self, name=None, position=None):
-        """
-        slkjdf
+        """Updates the normalized values of the table from the standard ones
+
+        This method updates the normalized versions of the columns that
+        are used by the AIs. The normalized values are derived from the
+        standard values already in the table.
+
+        The normalization can be targeted to a single player or a single
+        position of the board, or (by using both parameters) a single board
+        position on owned by a specific player. If none of these parameters
+        are used then the whole table is updated, which is the default
+        behaviour.
+
+        Parameters
+        --------------------
+        name : str (default=None)
+            The name of the player whose values should be updated
+
+        position : int (default=None)
+            The position of the property on the board which should be updated
 
         """
         if name is None:
@@ -662,41 +693,44 @@ class BoardInformation():
         position : int
             the position of the property on the board
 
+        Raises
+        --------------------
+        BoardError : if property cannot be purchased by player
+
         Examples
         --------------------
         >>>board.can_purchase("red", 1)
         True
+        >>>board.can_purchase("blue", 1)
+        True
         >>>board.purchase("red", 1)
         >>>board.can_purchase("red", 1)
         False
+        >>>board.can_purchase("blue", 1)
+        False
+
         """
+
+        if board.can_purchase(name, position) == False:
+            raise BoardError(
+                name + " cannot purchase the property at " + str(position))
         #color of the property
         color = self._table.at[position, "color"]
 
         #owned
-        self._table.at[
-            position, name + ":owned"
-        ] = True
+        self._table.at[position, name + ":owned"] = True
 
         #can_purchase
-        self._table.at[
-            position, "can_purchase"
-        ] = False
+        self._table.at[position, "can_purchase"] = False
 
         #can_mortgage
-        self._table.at[
-            position, name + ":can_mortgage"
-        ] = True
+        self._table.at[position, name + ":can_mortgage"] = True
 
         #can unmortgage
-        self._table.at[
-            position, name + ":can_unmortgage"
-        ] = False
+        self._table.at[position, name + ":can_unmortgage"] = False
 
         #can downgrade
-        self._table.at[
-            position, name +":can_downgrade"
-        ] = False
+        self._table.at[position, name +":can_downgrade"] = False
 
         #value
         self._table.at[
@@ -712,9 +746,7 @@ class BoardInformation():
             ] = self._table.at[position, "rent_level:1"]
 
             #level
-            self._table.at[
-                position, "level"
-            ] = 1
+            self._table.at[position, "level"] = 1
 
             #update monopoly status
             if self._is_color_monopoly(name, color):
@@ -756,10 +788,18 @@ class BoardInformation():
         position : int
             the position of the property on the board
 
+        Raises
+        --------------------
+        BoardError : if property cannot be morgaged by player
+
         Examples
         --------------------
 
         """
+
+        if board.can_mortgage(name, position) == False:
+            raise BoardError(
+                name + " cannot mortgage the property at " + str(position))
 
         color = self._table.at[position, "color"]
 
@@ -828,10 +868,18 @@ class BoardInformation():
         position : int
             the position of the property on the board
 
+        Raises
+        --------------------
+        BoardError : if property cannot be unmortgaged by player
+
         Examples
         --------------------
 
         """
+
+        if board.can_unmortgage(name, position) == False:
+            raise BoardError(
+                name + " cannot unmortgage the property at " + str(position))
 
         #color of the property
         color = self._table.at[position, "color"]
@@ -912,10 +960,18 @@ class BoardInformation():
         position : int
             the position of the property on the board
 
+        Raises
+        --------------------
+        BoardError : if property cannot be upgraded by player
+
         Examples
         --------------------
 
         """
+
+        if board.can_upgrade(name, position) == False:
+            raise BoardError(
+                name + " cannot upgrade the property at " + str(position))
 
         color = self._table.at[position, "color"]
 
@@ -999,10 +1055,18 @@ class BoardInformation():
         position : int
             the position of the property on the board
 
+        Raises
+        --------------------
+        BoardError : if property cannot be downgraded by player
+
         Examples
         --------------------
 
         """
+
+        if board.can_downgrade(name, position) == False:
+            raise BoardError(
+                name + " cannot downgrade the property at " + str(position))
 
         color = self._table.at[position, "color"]
 
@@ -1254,6 +1318,27 @@ class BoardInformation():
     def get_normalized_state(self, name):
         """Returns the normalized state that is flattened for ML algorithms
 
+        It uses the given name to get player specific values from the table.
+        This ensures no matter how many players are in the game. This method
+        will always spit out the same table, which helps when training an
+        AI that is supposed to be able to play against multiple players at
+        the same time.
+
+        The method will fetch the following columns from the table:
+            owned
+            can upgrade
+            can downgrade
+            monpoly owned
+            value
+            can purchase
+            mortgage amount
+            upgrade amounts
+            downgrade amount
+            current rent amount
+
+        since the table is 28 rows deep this results in a table of 28 x 11,
+        which is then flattened into a single column of 308 rows
+
         Parameters
         --------------------
         name : str
@@ -1302,3 +1387,7 @@ class BoardInformation():
              "level"]
 
         return self._table[l]
+
+class BoardError(Exception):
+    """Base class for board specific errors"""
+    pass
