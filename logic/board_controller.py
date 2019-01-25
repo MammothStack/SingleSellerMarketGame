@@ -178,7 +178,7 @@ class BoardController():
             decision = self.players[name].get_decision(
                 self.board.get_normalized_state(name),
                 "purchase",
-                self.config.getint("purchase_threshold", "Threshold")
+                self.config.getfloat("purchase_threshold", "Threshold")
             )
         else:
             pass
@@ -205,7 +205,8 @@ class BoardController():
         if self.players[name].is_ai:
             decision = self.players[name].get_decision(
                 self.board.get_normalized_state(name),
-                "up_down_grade"
+                "up_down_grade",
+                self.config.getfloat("upgrade_threshold", "Threshold")
             )
         else:
             pass
