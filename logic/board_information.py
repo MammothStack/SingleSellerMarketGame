@@ -1311,7 +1311,7 @@ class BoardInformation():
 
         """
         return self._table.loc[
-            self._table.loc[name + ":owned"] == True, "level"
+            self._table[name + ":owned"] == True, "level"
         ].sum()
 
     #Information getting
