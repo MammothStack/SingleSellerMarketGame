@@ -183,7 +183,7 @@ class BoardController():
         else:
             pass
 
-        if decision[0] > self.config.getint("purchase_threshold", "Threshold"):
+        if decision[0] > self.config.getfloat("purchase_threshold", "Threshold"):
             self.board.purchase(name, position)
             self.players[name].cash -= self.board.get_purchase_price(position)
 
@@ -216,7 +216,7 @@ class BoardController():
         cont = False
 
         #if decision is above threshold
-        if decision[ind] > self.config.getint("upgrade_threshold", "Threshold"):
+        if decision[ind] > self.config.getfloat("upgrade_threshold", "Threshold"):
 
             #if decision is downgrade/mortgage
             if ind + 1 > len(decision) / 2:
