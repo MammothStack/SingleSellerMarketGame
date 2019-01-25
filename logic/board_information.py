@@ -1291,7 +1291,7 @@ class BoardInformation():
         1
 
         """
-        return self._table.loc[name + ":owned"].sum()
+        return np.sum(self._table[name + ":owned"])
 
     def get_total_levels_owned(self, name):
         """Gets the total level of all owned properties by the given player
