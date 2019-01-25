@@ -31,7 +31,6 @@ class BoardController():
         self.current_turn = 0
         self.num_players = len(player_list)
         self.upgrade_limit = upgrade_limit
-        self.display = display
         pos = self.board.index
         self.decision_index = pos + pos
 
@@ -42,7 +41,7 @@ class BoardController():
                 range(self.num_players), self.num_players)
             self.order = [player_list[i].name for i in num_order]
 
-    def start_game(self):
+    def start_game(self, show_results=False):
         while self.alive:
             self._full_turn(self.order[self.current_turn])
 
@@ -61,6 +60,17 @@ class BoardController():
                         p.learn()
 
             self.total_turn += 1
+
+        if show_results:
+            for p in self.players:
+                print(p)
+                o = self.board.get_amount_properties_owned(p)
+                l = self.board.get_total_levels_owned(p)
+                print({
+                    "cash": self.players[p].cash,
+                    "prop owned": o,
+                    "prop average level": l / o
+                })
 
     def reset_game(self):
         for p in self.players.values():

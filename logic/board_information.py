@@ -1210,6 +1210,46 @@ class BoardInformation():
         else:
             return var
 
+    def get_amount_properties_owned(self, name):
+        """Gets the total amount of properties owned by the given player
+
+        Parameters
+        --------------------
+        name : str
+            The name of the player whose properties should be counted
+
+        Examples
+        --------------------
+        >>>board.get_amount_properties_owned("red")
+        0
+        >>>board.purchase(red, 1)
+        >>>board.get_amount_properties_owned("red")
+        1
+
+        """
+        return self._table.loc[name + ":owned"].sum()
+
+    def get_total_levels_owned(self, name):
+        """Gets the total level of all owned properties by the given player
+
+        Parameters
+        --------------------
+        name : str
+            The name of the of the player whose properties should be counted
+
+        Examples
+        --------------------
+        >>>board.get_total_levels_owned("red")
+        5
+        >>>board.upgrade("red", 1)
+        >>>board.get_total_levels_owned("red")
+        6
+
+        """
+        return self._table.loc[
+            self._table.loc[name + ":owned"] == True, "level"
+        ].sum()
+
     #Information getting
     def get_normalized_state(self, name):
         """Returns the normalized state that is flattened for ML algorithms
