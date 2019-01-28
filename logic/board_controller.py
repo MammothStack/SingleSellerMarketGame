@@ -226,19 +226,19 @@ class BoardController():
             self.players[name].cash -= self.board.get_purchase_amount(position)
 
             if self.players[name].cash < 0:
-                reward = self.config.getint("purchase_reward", "Suicide")
+                reward = self.config.getfloat("purchase_reward", "Suicide")
                 reward_dynamic = reward
                 self.alive = False
             else:
                 reward_dynamic = self.cash_reward_function["positive"](self.players[name].cash)
                 if self.board.is_monopoly(position):
                     reward_dynamic += 1
-                    reward = self.config.getint("purchase_reward", "PurchaseMonopoly")
+                    reward = self.config.getfloat("purchase_reward", "PurchaseMonopoly")
                 else:
-                    reward = self.config.getint("purchase_reward", "PurchaseStandard")
+                    reward = self.config.getfloat("purchase_reward", "PurchaseStandard")
         else:
             reward_dynamic = self.cash_reward_function["negative"](self.players[name].cash)
-            reward = self.config.getint("purchase_reward", "None")
+            reward = self.config.getfloat("purchase_reward", "None")
 
         if self.players[name].is_ai:
             if self.dynamic_cash_equation:
@@ -269,21 +269,21 @@ class BoardController():
                 #if position can even be downgraded
                 if self.board.can_downgrade(name, pos):
                     self.players[name].cash += self.board.get_downgrade_amount(pos)
-                    reward = self.config.getint("updown_reward", "CanDowngrade")
+                    reward = self.config.getfloat("updown_reward", "CanDowngrade")
                     reward_dynamic = self.cash_reward_function["negative"](self.players[name].cash)
                     cont = True
                     self.board.downgrade(name, pos)
 
                 elif self.board.can_mortgage(name, pos):
                     self.players[name].cash += self.board.get_mortgage_amount(pos)
-                    reward = self.config.getint("updown_reward", "CanMortgage")
+                    reward = self.config.getfloat("updown_reward", "CanMortgage")
                     reward_dynamic = self.cash_reward_function["negative"](self.players[name].cash)
                     cont = True
                     self.board.mortgage(name, pos)
 
                 #if position cant be dowgraded
                 else:
-                    reward = self.config.getint("updown_reward", "NonExecutableDecision")
+                    reward = self.config.getfloat("updown_reward", "NonExecutableDecision")
                     reward_dynamic = reward
                     cont = False
 
@@ -293,7 +293,7 @@ class BoardController():
                 #if position can even be upgraded
                 if self.board.can_upgrade(name, pos):
                     self.players[name].cash -= self.board.get_upgrade_amount(pos)
-                    reward = self.config.getint("updown_reward", "CanUpgrade")
+                    reward = self.config.getfloat("updown_reward", "CanUpgrade")
                     reward_dynamic = self.cash_reward_function["positive"](self.players[name].cash)
                     cont = True
                     self.board.upgrade(name, pos)
@@ -301,26 +301,26 @@ class BoardController():
                 #if position can be unmortgaged
                 elif self.board.can_unmortgage(name, pos):
                     self.players[name].cash -= self.board.get_mortgage_amount(pos)
-                    reward = self.config.getint("updown_reward", "CanUnmortgage")
+                    reward = self.config.getfloat("updown_reward", "CanUnmortgage")
                     reward_dynamic = self.cash_reward_function["positive"](self.players[name].cash)
                     cont = True
                     self.board.unmortgage(name, pos)
 
                 else:
-                    reward = self.config.getint("updown_reward", "NonExecutableDecision")
+                    reward = self.config.getfloat("updown_reward", "NonExecutableDecision")
                     reward_dynamic = reward
                     cont = False
 
                 #if upgrade causes bankruptcy
                 if self.players[name].cash < 0:
                     cont = False
-                    reward = self.config.getint("updown_reward", "UpgradeSuicide")
+                    reward = self.config.getfloat("updown_reward", "UpgradeSuicide")
                     reward_dynamic = reward
                     self.alive = False
 
         #if decision is pass
         else:
-            reward = self.config.getint("updown_reward", "None")
+            reward = self.config.getfloat("updown_reward", "None")
             reward_dynamic = reward
             cont = False
 
