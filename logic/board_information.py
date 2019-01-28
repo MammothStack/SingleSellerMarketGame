@@ -97,8 +97,17 @@ class BoardInformation():
     get_owner_name(position)
         Returns the player name of the owner of the property
 
-    get_purchase_price(position)
+    get_purchase_amount(position)
         Returns the purchase price of the property at the position
+
+    get_mortgage_amount(position)
+        Returns the amount it takes to mortgage an unmortgage the property
+
+    get_upgrade_amount(position)
+        Returns the amount it takes to upgrade the property
+
+    get_downgrade_amount(position)
+        Returns the amount it takes to downgrade the property
 
     get_level(position)
         Returns the current level of the property at the position
@@ -1224,7 +1233,7 @@ class BoardInformation():
         else:
             return None
 
-    def get_purchase_price(self, position):
+    def get_purchase_amount(self, position):
         """
         Parameters
         --------------------
@@ -1234,6 +1243,21 @@ class BoardInformation():
 
         """
         return self._table.at[position, "purchase_amount"]
+
+    def get_mortgage_amount(self, position):
+        """
+
+        """
+        return self._table.at[position, "mortgage_amount"]
+
+    def get_upgrade_amount(self, position):
+        """
+        """
+        return self._table.at[position, "upgrade_amount"]
+
+    def get_downgrade_amount(self, position):
+
+        return self._table.at[position, "downgrade_amount"]
 
     def get_level(self, position):
         """
