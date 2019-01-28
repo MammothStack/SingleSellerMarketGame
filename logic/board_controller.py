@@ -326,9 +326,9 @@ class BoardController():
 
         if self.players[name].is_ai:
             if self.dynamic_cash_equation:
-                self.players[name].give_reward("purchase", reward_dynamic)
+                self.players[name].give_reward("up_down_grade", reward_dynamic)
             else:
-                self.players[name].give_reward("purchase", reward)
+                self.players[name].give_reward("up_down_grade", reward)
 
         return cont
 
