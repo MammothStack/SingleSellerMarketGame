@@ -53,6 +53,10 @@ class Player():
 
     def learn(self):
         for o in self.models.keys():
+            if len(self.x_train[o]) != len(self.y_train[o]):
+                raise ValueError("x and y train arrays are not the same length for " + o)
+            if len(self.x_train[o]) != len(self.rewards[o]):
+                raise ValueError("x and rewards arrays are not the same length for " + o)
             if self.x_train[o] != []:
                 self.models[o].fit(
                     x=np.array(self.x_train[o]),
