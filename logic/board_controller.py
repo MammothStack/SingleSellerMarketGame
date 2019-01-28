@@ -7,6 +7,34 @@ from .player import Player
 from .board_information import BoardInformation, BoardError
 
 class BoardController():
+    """Controls the sequence of the game from start to finish
+
+    The BoardController sets the game up by inializing the BoardInformation
+    with the relevant information. This controller then controls the sequence
+    of actions that are performed by players such as purchasing, upgrading,
+    downgrading, mortgaging, unmortgaging, and trading.
+
+    The procedure of the game is determined here, which includes whose turn
+    it is, how many times they can upgrade and downgrade something, the rewards
+    that are calculated for the ais, where the players move, how  much cash
+    they have, etc.
+
+    These things are all setup with the initialization of this class. The only
+    available methods are to start the game and reset the game after it has
+    finished.
+
+    Parameters
+    --------------------
+
+
+    Attributes
+    --------------------
+
+
+    Methods
+    --------------------
+
+    """
     def __init__(
         self,
         player_list,
@@ -167,7 +195,7 @@ class BoardController():
             #is owned
             else:
                 #is owned by player already
-                if self.board.is_owned_by(new_pos, name):
+                if self.board.is_owned_by(name, new_pos):
                     pass
 
                 #is owned by opponent

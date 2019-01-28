@@ -124,9 +124,6 @@ class BoardInformation():
     get_state():
         Returns a DataFrame that shows all information of the board
 
-    Examples
-    --------------------
-
     """
     def __init__(self, player_names):
 
@@ -493,13 +490,31 @@ class BoardInformation():
         """
         return self._table["can_purchase"].any()
 
-    def is_owned_by(self, position, name):
-        """
+    def is_owned_by(self, name, position):
+        """Returns if the property at position is owned by the player by name
+
+        Returns true if the given player owns the property at the given
+        position. This will return false if the given property is owned by
+        another player or is not owned at all.
+
         Parameters
         --------------------
+        name : str
+            The name of the player that should be checked for ownership
+
+        position : int
+            The position of the property on the board
 
         Examples
         --------------------
+        >>>board = BoardInformation(["red", "blue"])
+        >>>board.is_owned_by("red", 1)
+        False
+        >>>board.purchase("red", 1)
+        >>>board.is_owned_by("red", 1)
+        True
+        >>>board.is_owned_by("blue", 1)
+        False
 
         """
         return self._table.at[position, name + ":owned"]
