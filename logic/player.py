@@ -43,6 +43,8 @@ class Player():
         return y
 
     def give_reward(self, operation, reward):
+        if reward is None:
+            raise ValueError("reward cannot be nothing for " + operation)
         self.rewards[operation].append(reward)
         self.rewards_sum[operation] += reward
 
