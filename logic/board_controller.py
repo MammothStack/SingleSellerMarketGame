@@ -54,7 +54,7 @@ class BoardController():
         else:
             self.config = None
 
-        self.cash_reward_function = {
+        self._cash_reward_function = {
             "positive" : lambda x: (-1 / ((0.004 * x) + 0.5) + 1),
             "negative" : lambda x: (1 / ((0.004 * x) + 0.5) - 1)
         }
@@ -132,6 +132,15 @@ class BoardController():
             #trade
         else:
             self.players[name].allowed_to_move = True
+
+    def _get_dynamic_cash_reward(self, cash, pos_neg):
+        if cash > 0:
+            return self._cash_reward_function[pos_neg](cash)
+        else:
+            if pos_neg == "positive":
+                return -1
+            elif pos_neg == "negative":
+                return 1
 
     def _turn_move(self, name):
         #Roll the dice
@@ -218,9 +227,6 @@ class BoardController():
         else:
             pass
 
-        #reward_dynamic = self.cash_reward_function["positive"](self.players[name].cash)
-        #reward_neg = self.cash_reward_function["negative"](self.players[name].cash)
-
         if decision[0] > self.config.getfloat("purchase_threshold", "Threshold"):
             self.board.purchase(name, position)
             self.players[name].cash -= self.board.get_purchase_amount(position)
@@ -230,14 +236,14 @@ class BoardController():
                 reward_dynamic = reward
                 self.alive = False
             else:
-                reward_dynamic = self.cash_reward_function["positive"](self.players[name].cash)
+                reward_dynamic = self._get_dynamic_cash_reward(self.players[name].cash, "positive")
                 if self.board.is_monopoly(position):
                     reward_dynamic += 1
                     reward = self.config.getfloat("purchase_reward", "PurchaseMonopoly")
                 else:
                     reward = self.config.getfloat("purchase_reward", "PurchaseStandard")
         else:
-            reward_dynamic = self.cash_reward_function["negative"](self.players[name].cash)
+            reward_dynamic = self._get_dynamic_cash_reward(self.players[name].cash, "negative")
             reward = self.config.getfloat("purchase_reward", "None")
 
         if self.players[name].is_ai:
@@ -270,14 +276,14 @@ class BoardController():
                 if self.board.can_downgrade(name, pos):
                     self.players[name].cash += self.board.get_downgrade_amount(pos)
                     reward = self.config.getfloat("updown_reward", "CanDowngrade")
-                    reward_dynamic = self.cash_reward_function["negative"](self.players[name].cash)
+                    reward_dynamic = self._get_dynamic_cash_reward(self.players[name].cash, "negative")
                     cont = True
                     self.board.downgrade(name, pos)
 
                 elif self.board.can_mortgage(name, pos):
                     self.players[name].cash += self.board.get_mortgage_amount(pos)
                     reward = self.config.getfloat("updown_reward", "CanMortgage")
-                    reward_dynamic = self.cash_reward_function["negative"](self.players[name].cash)
+                    reward_dynamic = self._get_dynamic_cash_reward(self.players[name].cash, "negative")
                     cont = True
                     self.board.mortgage(name, pos)
 
@@ -294,7 +300,7 @@ class BoardController():
                 if self.board.can_upgrade(name, pos):
                     self.players[name].cash -= self.board.get_upgrade_amount(pos)
                     reward = self.config.getfloat("updown_reward", "CanUpgrade")
-                    reward_dynamic = self.cash_reward_function["positive"](self.players[name].cash)
+                    reward_dynamic = self._get_dynamic_cash_reward(self.players[name].cash, "positive")
                     cont = True
                     self.board.upgrade(name, pos)
 
@@ -302,7 +308,7 @@ class BoardController():
                 elif self.board.can_unmortgage(name, pos):
                     self.players[name].cash -= self.board.get_mortgage_amount(pos)
                     reward = self.config.getfloat("updown_reward", "CanUnmortgage")
-                    reward_dynamic = self.cash_reward_function["positive"](self.players[name].cash)
+                    reward_dynamic = self._get_dynamic_cash_reward(self.players[name].cash, "positive")
                     cont = True
                     self.board.unmortgage(name, pos)
 
