@@ -107,7 +107,7 @@ class BoardController():
                 #print(p)
                 o = self.board.get_amount_properties_owned(p)
                 l = self.board.get_total_levels_owned(p)
-                result_dict["player"].append(p.name)
+                result_dict["player"].append(p)
                 result_dict["cash"].append(self.players[p].cash)
                 result_dict["prop owned"].append(o)
                 result_dict["prop average level"].append(l / o)
