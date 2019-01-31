@@ -97,15 +97,21 @@ class BoardController():
             self.total_turn += 1
 
         if show_results:
+            result_dicts = []
             for p in self.players:
                 #print(p)
                 o = self.board.get_amount_properties_owned(p)
                 l = self.board.get_total_levels_owned(p)
-                return {
+                result = {
+                    "player": p.name,
                     "cash": self.players[p].cash,
                     "prop owned": o,
                     "prop average level": l / o
                 }
+                result_dicts.append(result)
+
+            return result_dicts
+
 
     def reset_game(self):
         for p in self.players.values():
