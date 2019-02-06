@@ -76,14 +76,15 @@ class BoardController():
                 range(self.num_players), self.num_players)
             self.order = [player_list[i].name for i in num_order]
 
-    def start_game(self, show_results=False):
+    def start_game(self, updowngrade=True, trade=True, show_results=False):
         while self.alive:
-            self._full_turn(self.order[self.current_turn])
+            self._full_turn(self.order[self.current_turn], updowngrade, trade)
 
-            """
-            if self.alive:
-                self.alive = self.board.is_any_purchaseable()
-            """
+
+            if updowngrade == False and trade ==  False:
+                if self.alive:
+                    self.alive = self.board.is_any_purchaseable()
+
             if self.alive:
                 self.alive = self.total_turn < self.max_turn
 
@@ -125,7 +126,7 @@ class BoardController():
         self.total_turn = 0
 
 
-    def _full_turn(self, name):
+    def _full_turn(self, name, updowngrade=True, trade=True):
         if self.players[name].allowed_to_move:
             #move
             pos = self._turn_move(name)
@@ -133,9 +134,13 @@ class BoardController():
             #upgrade/downgrade
             cont = True
             count = 0
-            while cont and count < self.upgrade_limit:
-                cont = self._step_upgrade_downgrade(name)
-                count += 1
+            if updowngrade:
+                while cont and count < self.upgrade_limit:
+                    cont = self._step_upgrade_downgrade(name)
+                    count += 1
+
+            if trade:
+                pass
 
             #trade
         else:
