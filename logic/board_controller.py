@@ -102,7 +102,8 @@ class BoardController():
                 "player": [],
                 "cash": [],
                 "prop owned": [],
-                "prop average level": []
+                "prop average level": [],
+                "turn_count": []
             }
             for p in self.players:
                 #print(p)
@@ -112,6 +113,7 @@ class BoardController():
                 result_dict["cash"].append(self.players[p].cash)
                 result_dict["prop owned"].append(o)
                 result_dict["prop average level"].append(l / o)
+                result_dict["turn_count"].append(self.total_turn)
 
             return result_dict
 
