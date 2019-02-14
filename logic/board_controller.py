@@ -114,8 +114,14 @@ class BoardController():
                 result_dict["prop owned"].append(o)
                 result_dict["prop average level"].append(l / o)
                 result_dict["turn_count"].append(self.total_turn)
-                result_dict["x_train"].append(self.players[p].x_train)
-                result_dict["rewards"].append(self.players[p].rewards)
+                result_dict["train_data"].append(
+                    pd.DataFrame(
+                        [self.players[p].x_train,
+                         self.players[p].y_train,
+                         self.players[p].rewards],
+                        index=["x_train","y_train","rewards"]
+                    ).T
+                )
 
             return result_dict
 
