@@ -103,7 +103,8 @@ class BoardController():
                 "cash": [],
                 "prop owned": [],
                 "prop average level": [],
-                "turn_count": []
+                "turn_count": [],
+                "train_data": [],
             }
             for p in self.players:
                 #print(p)
