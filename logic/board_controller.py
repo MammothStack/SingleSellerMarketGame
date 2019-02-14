@@ -55,8 +55,8 @@ class BoardController():
             self.config = None
 
         self._cash_reward_function = {
-            "positive" : lambda x: (-1 / (((self.config.getfloat("dynamic_reward_risk_level", "Level") / 1500) * x) + 0.5) + 1),
-            "negative" : lambda x: (1 / (((self.config.getfloat("dynamic_reward_risk_level", "Level") / 1500) * x) + 0.5) - 1)
+            "positive" : lambda x: (-1 / (((self.config.getfloat("dynamic_reward_risk_level", "Level_pos") / 1500) * x) + 0.5) + 1),
+            "negative" : lambda x: (1 / (((self.config.getfloat("dynamic_reward_risk_level", "Level_neg") / 1500) * x) + 0.5) - 1)
         }
 
         self.dynamic_cash_equation = dynamic_cash_equation
@@ -114,6 +114,8 @@ class BoardController():
                 result_dict["prop owned"].append(o)
                 result_dict["prop average level"].append(l / o)
                 result_dict["turn_count"].append(self.total_turn)
+                result_dict["x_train"].append(self.players[p].x_train)
+                result_dict["rewards"].append(self.players[p].rewards)
 
             return result_dict
 
