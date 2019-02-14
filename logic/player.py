@@ -32,8 +32,10 @@ class Player():
 
     def get_decision(self, gamestate, operation, threshold):
         pos_nor = (self.position - 19.5) / 19.5
+        pos = self.position
         cash_nor = (self.cash - 2000) / 2000
-        x = np.append([cash_nor, pos_nor], gamestate)
+        cash = self.cash
+        x = np.append([cash, pos], gamestate)
         res = self.models[operation].predict(np.array((x,)))
 
         ind = np.argmax(res[0])
