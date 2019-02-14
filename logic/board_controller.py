@@ -55,8 +55,8 @@ class BoardController():
             self.config = None
 
         self._cash_reward_function = {
-            "positive" : lambda x: (-1 / ((0.004 * x) + 0.5) + 1),
-            "negative" : lambda x: (1 / ((0.004 * x) + 0.5) - 1)
+            "positive" : lambda x: (-1 / (((self.config.getfloat("dynamic_reward_risk_level", "Level") / 1500) * x) + 0.5) + 1),
+            "negative" : lambda x: (1 / (((self.config.getfloat("dynamic_reward_risk_level", "Level") / 1500) * x) + 0.5) - 1)
         }
 
         self.dynamic_cash_equation = dynamic_cash_equation
