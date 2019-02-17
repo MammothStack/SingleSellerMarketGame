@@ -166,7 +166,9 @@ class BoardController():
             if p in v.index:
                 p_arr[v.index.get_loc(p)] = 1
 
-            return np.concatenate((c_arr, p_arr, v.values), axis=1)
+            conc = np.concatenate((c_arr, p_arr, v.values), axis=1)
+
+            return conc.reshape(conc[0], conc[1], 1)
 
     def _get_processed_decision(self, decision_raw, threshold):
         ind = np.argmax(decision_raw)

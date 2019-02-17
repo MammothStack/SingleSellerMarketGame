@@ -33,7 +33,7 @@ class Player():
     def add_training_data(self, operation, x, y):
         self.x_train[operation].append(x)
         self.y_train[operation].append(y)
-        
+
     def add_reward(self, operation, reward):
         if reward is None:
             raise ValueError("reward cannot be nothing for " + operation)
@@ -43,9 +43,6 @@ class Player():
     def get_decision(self, gamestate, operation):
         res = self.models[operation].predict(np.array((gamestate,)))
         return res[0]
-
-
-
 
     def get_models(self):
         return self.models.values()
