@@ -121,27 +121,31 @@ class BoardController():
                 "train_data_trade":[]
             }
 
+            result_dict = {}
+
             for p in self.players:
                 #print(p)
                 o = self.board.get_amount_properties_owned(p)
                 l = self.board.get_total_levels_owned(p)
-                result_dict["player"].append(p)
-                result_dict["cash"].append(self.players[p].cash)
-                result_dict["prop owned"].append(o)
-                result_dict["prop average level"].append(l / o)
-                result_dict["turn_count"].append(self.total_turn)
-                result_dict["train_data_purchase"].append(
-                    self.players[p].get_training_data("purchase")
-                )
-                if updowngrade:
-                    result_dict["train_data_up_down_grade"].append(
-                        self.players[p].get_training_data("up_down_grade")
-                    )
 
-                if trade:
-                    result_dict["train_data_trade"].append(
-                        self.players[p].get_training_data("trade")
-                    )
+                result_dict = {p: pd.Series(
+                    data=[self.players[p].cash,
+                     o,
+                     l/o,
+                     self.total_turn,
+                     self.players[p].get_training_data("purchase")],
+                     self.players[p].get_training_data("up_down_grade")],
+                     self.players[p].get_training_data("trade")],
+                     index=["cash",
+                        "prop_owned",
+                        "prop_average_level",
+                        "turn_count",
+                        "train_purchase",
+                        "train_up_down_grade",
+                        "train_trade"],
+                    name=p)
+                )}
+
 
             return result_dict
 
