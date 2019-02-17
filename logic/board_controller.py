@@ -110,17 +110,6 @@ class BoardController():
             self.total_turn += 1
 
         if show_results:
-            result_dict = {
-                "player": [],
-                "cash": [],
-                "prop owned": [],
-                "prop average level": [],
-                "turn_count": [],
-                "train_data_purchase": [],
-                "train_data_up_down_grade":[],
-                "train_data_trade":[]
-            }
-
             result_dict = {}
 
             for p in self.players:
@@ -133,8 +122,8 @@ class BoardController():
                      o,
                      l/o,
                      self.total_turn,
-                     self.players[p].get_training_data("purchase")],
-                     self.players[p].get_training_data("up_down_grade")],
+                     self.players[p].get_training_data("purchase"),
+                     self.players[p].get_training_data("up_down_grade"),
                      self.players[p].get_training_data("trade")],
                      index=["cash",
                         "prop_owned",
