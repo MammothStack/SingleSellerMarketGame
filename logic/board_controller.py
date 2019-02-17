@@ -193,7 +193,7 @@ class BoardController():
         y = self._get_processed_decision(
             decision, self.config.getfloat("Threshold", operation))
 
-        self.players[name].add_training_data(x,y)
+        self.players[name].add_training_data(operation, x, y)
 
         return y
 
