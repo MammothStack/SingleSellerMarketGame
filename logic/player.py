@@ -36,6 +36,10 @@ class Player():
         self.y_train[operation].append(y)
 
     def get_training_data(self, operation):
+        if len(self.x_train[operation]) != len(self.y_train[operation]):
+            raise ValueError("x and y train arrays are not the same length for " + operation)
+        if len(self.x_train[operation]) != len(self.rewards[operation]):
+            raise ValueError("x and rewards arrays are not the same length for " + operation)
         return pd.DataFrame(
             [self.x_train[operation],
              self.y_train[operation],
