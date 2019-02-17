@@ -79,7 +79,16 @@ class BoardController():
                 range(self.num_players), self.num_players)
             self.order = [player_list[i].name for i in num_order]
 
+
+
     def start_game(self, updowngrade=True, trade=True, show_results=False):
+        """Starts the game
+
+        Starts the game with the current configuration. The parameters that can
+        be set relate to the actions that the AI can take. This way the flow
+        of the game can be somewhat restricted.
+
+        """
         while self.alive:
             self._full_turn(self.order[self.current_turn], updowngrade, trade)
 
