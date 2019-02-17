@@ -54,9 +54,12 @@ class BoardController():
         else:
             self.config = None
 
+        drrl_pos = self.config.getfloat("dynamic_reward_risk_level", "Level_pos")
+        drrl_neg = self.config.getfloat("dynamic_reward_risk_level", "Level_neg")
+
         self._cash_reward_function = {
-            "positive" : lambda x: (-1 / (((self.config.getfloat("dynamic_reward_risk_level", "Level_pos") / 1500) * x) + 0.5) + 1),
-            "negative" : lambda x: (1 / (((self.config.getfloat("dynamic_reward_risk_level", "Level_neg") / 1500) * x) + 0.5) - 1)
+            "positive" : lambda x: (-1 / (((drrl_pos / 1500) * x) + 0.5) + 1),
+            "negative" : lambda x: (1 / (((drrl_neg / 1500) * x) + 0.5) - 1)
         }
 
         self.dynamic_cash_equation = dynamic_cash_equation
@@ -137,10 +140,72 @@ class BoardController():
         self.total_turn = 0
 
 
+    def _get_processed_normal_state(self, name, flatten=False):
+        if flatten:
+            c = self.players[name].cash / 1500
+            p = (self.players[name].position - 19.5) / 19.5
+            v =  self.board.get_normalized_state(name).values.flatten("F")
+            return np.append([c, p], v)
+        else:
+            c = self.players[name].cash / 1500
+            p = self.players[name].position
+            v = self.board.get_normalized_state(name)
+
+            c_arr = np.full((len(v.index), 1), c)
+            p_arr = np.full((len(v.index), 1), -1)
+
+            if p in v.index:
+                p_arr[v.index.get_loc(p)] = 1
+
+            return np.concatenate((c_arr, p_arr, v.values), axis=1)
+
+    def _get_processed_decision(self, decision_raw, threshold):
+        ind = np.argmax(decision_raw)
+        y = np.zeros(len(decision_raw))
+        if decision_raw[ind] >= threshold:
+            y[ind] = 1
+
+        return y
+
+    def _get_dynamic_cash_reward(self, cash, pos_neg):
+        if cash > 0:
+            return self._cash_reward_function[pos_neg](cash)
+        else:
+            if pos_neg == "positive":
+                return -1
+            elif pos_neg == "negative":
+                return 1
+
+    def _get_decision(self, name, operation):
+        x = self._get_processed_normal_state(name)
+        decision = self.players[name].get_decision(x, operation)
+        y = self._get_processed_decision(
+            decision, self.config.getfloat("Threshold", operation))
+
+        self.players[name].add_training_data(x,y)
+
+        return y
+
     def _full_turn(self, name, updowngrade=True, trade=True):
         if self.players[name].allowed_to_move:
-            #move
-            pos = self._turn_move(name)
+            #Roll the dice
+            d1, d2 = self._roll_dice()
+
+            #Move the player to the new position
+            new_pos = self._move_player(name, dice_roll=d1 + d2)
+
+            #If player landed on action field
+            if self.board.is_actionfield(new_pos):
+
+                self._land_action_field(name, new_pos)
+
+            #If player lands on a property field
+            elif self.board.is_property(new_pos) or self.board.is_special(new_pos):
+
+                self._land_property(name, new_pos)
+
+            else:
+                raise ValueError("field not found")
 
             #upgrade/downgrade
             cont = True
@@ -157,101 +222,71 @@ class BoardController():
         else:
             self.players[name].allowed_to_move = True
 
-    def _get_dynamic_cash_reward(self, cash, pos_neg):
-        if cash > 0:
-            return self._cash_reward_function[pos_neg](cash)
-        else:
-            if pos_neg == "positive":
-                return -1
-            elif pos_neg == "negative":
-                return 1
+    def _land_action_field(self, name, position):
+        #get the action from the position
+        act = self.board.get_action(position)
 
-    def _turn_move(self, name):
-        #Roll the dice
-        d1, d2 = self._roll_dice()
-
-        #Move the player to the new position
-        new_pos = self._move_player(name, dice_roll=d1 + d2)
-
-        #If player landed on action field
-        if self.board.is_actionfield(new_pos):
-
-            #get the action from the position
-            act = self.board.get_action(new_pos)
-
-            #If the action requires nothing
-            if act is None:
-                pass
-
-            #If the action is free parking
-            elif type(act) == str:
-                self.players[name].cash += self.board.free_parking_cash
-                self.board.free_parking_cash = 0
-
-            #If the action is money transfer
-            elif type(act) == int:
-                #change player cash amount
-                self.players[name].cash += act
-
-                #if negative, cash added to free parking
-                if act < 0:
-                    self.board.free_parking_cash -= act
-
-            #if the action is a "goto"
-            elif type(act) == tuple:
-                #move the player
-                self._move_player(name, position=act[1])
-
-                #if player moves to go
-                if act[1] == 0:
-                    pass
-
-                #if player moves to jail
-                elif act[1] == 10:
-                    self.players[name].allowed_to_move = False
-
-                #if player moves to free parking
-                elif act[1] == 20:
-                    self.players[name].cash += self.board.free_parking_cash
-                    self.board.free_parking_cash = 0
-            else:
-                raise ValueError("Something went way wrong here")
-
-            return new_pos
-
-        #If player lands on a property field
-        elif self.board.is_property(new_pos) or self.board.is_special(new_pos):
-            #If the property is purchaseable
-            if self.board.can_purchase(name, new_pos):
-                self._step_purchase(name, new_pos)
-
-            #is owned
-            else:
-                #is owned by player already
-                if self.board.is_owned_by(name, new_pos):
-                    pass
-
-                #is owned by opponent
-                else:
-                    opponent_name = self.board.get_owner_name(new_pos)
-                    rent = self.board.get_rent(new_pos, d1 + d2)
-                    self.players[opponent_name].cash += rent
-                    self.players[name].cash -= rent
-
-        else:
-            raise ValueError("field not found")
-
-    def _step_purchase(self, name, position):
-        if self.players[name].is_ai:
-            decision = self.players[name].get_decision(
-                self.board.get_normalized_state(name),
-                "purchase",
-                self.config.getfloat("purchase_threshold", "Threshold")
-            )
-        else:
+        #If the action requires nothing
+        if act is None:
             pass
 
-        if decision[0] > self.config.getfloat("purchase_threshold", "Threshold"):
+        #If the action is free parking
+        elif type(act) == str:
+            self.players[name].cash += self.board.free_parking_cash
+            self.board.free_parking_cash = 0
+
+        #If the action is money transfer
+        elif type(act) == int:
+            #change player cash amount
+            self.players[name].cash += act
+
+            #if negative, cash added to free parking
+            if act < 0:
+                self.board.free_parking_cash -= act
+
+        #if the action is a "goto"
+        elif type(act) == tuple:
+            #move the player
+            self._move_player(name, position=act[1])
+
+            #if player moves to go
+            if act[1] == 0:
+                pass
+
+            #if player moves to jail
+            elif act[1] == 10:
+                self.players[name].allowed_to_move = False
+
+            #if player moves to free parking
+            elif act[1] == 20:
+                self.players[name].cash += self.board.free_parking_cash
+                self.board.free_parking_cash = 0
+        else:
+            raise ValueError("Something went way wrong here")
+
+
+    def _land_property(self, name, position):
+        #If the property is purchaseable
+        if self.board.can_purchase(name, new_pos):
+            self._step_purchase(name, new_pos)
+
+        #is owned
+        else:
+            #is owned by player already
+            if self.board.is_owned_by(name, new_pos):
+                pass
+
+            #is owned by opponent
+            else:
+                opponent_name = self.board.get_owner_name(new_pos)
+                rent = self.board.get_rent(new_pos, d1 + d2)
+                self.players[opponent_name].cash += rent
+                self.players[name].cash -= rent
+
+    def _step_purchase(self, name, position):
+        decision = self._get_decision(name, "purchase")
+
+        if decision[0] == 1:
             self.board.purchase(name, position)
             self.players[name].cash -= self.board.get_purchase_amount(position)
 
@@ -272,26 +307,18 @@ class BoardController():
 
         if self.players[name].is_ai:
             if self.dynamic_cash_equation:
-                self.players[name].give_reward("purchase", reward_dynamic)
+                self.players[name].add_reward("purchase", reward_dynamic)
             else:
-                self.players[name].give_reward("purchase", reward)
+                self.players[name].add_reward("purchase", reward)
 
     def _step_upgrade_downgrade(self, name):
-        if self.players[name].is_ai:
-            decision = self.players[name].get_decision(
-                self.board.get_normalized_state(name),
-                "up_down_grade",
-                self.config.getfloat("upgrade_threshold", "Threshold")
-            )
-        else:
-            pass
+        decision = self._get_decision(name, "up_down_grade")
 
-        ind = np.argmax(decision)
-        pos = self.decision_index[ind]
         cont = False
 
-        #if decision is above threshold
-        if decision[ind] > self.config.getfloat("upgrade_threshold", "Threshold"):
+        if decision.sum() == 1:
+            ind = np.argmax(decision)
+            pos = self.decision_index[ind]
 
             #if decision is downgrade/mortgage
             if ind + 1 > len(decision) / 2:
@@ -356,9 +383,9 @@ class BoardController():
 
         if self.players[name].is_ai:
             if self.dynamic_cash_equation:
-                self.players[name].give_reward("up_down_grade", reward_dynamic)
+                self.players[name].add_reward("up_down_grade", reward_dynamic)
             else:
-                self.players[name].give_reward("up_down_grade", reward)
+                self.players[name].add_reward("up_down_grade", reward)
 
         return cont
 
@@ -381,17 +408,3 @@ class BoardController():
         self.players[name].position = new_position
 
         return new_position
-
-    def _downgrade(self, name, pos):
-        if self.board.can_downgrade(name, pos):
-            if self.board.get_level(pos) == 1:
-                self.board.mortgage(name, pos)
-            else:
-                self.board.downgrade(name, pos)
-
-    def _upgrade(self, name, pos):
-        if self.board.can_upgrade(name, pos):
-            if self.board.get_level(pos) == 0:
-                self.board.unmortgage(name, pos)
-            else:
-                self.board.upgrade(name, pos)

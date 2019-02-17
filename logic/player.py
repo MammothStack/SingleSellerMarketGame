@@ -30,27 +30,22 @@ class Player():
             self.rewards = {o:[] for o in self.models.keys()}
             self.rewards_sum = {o:0 for o in self.models.keys()}
 
-    def get_decision(self, gamestate, operation, threshold):
-        pos_nor = (self.position - 19.5) / 19.5
-        pos = self.position
-        cash_nor = (self.cash - 2000) / 2000
-        cash = self.cash
-        x = np.append([cash, pos], gamestate)
-        res = self.models[operation].predict(np.array((x,)))
-
-        ind = np.argmax(res[0])
-        y = np.zeros(len(res[0]))
-        if res[0][ind] >= threshold:
-            y[ind] = 1
+    def add_training_data(self, operation, x, y):
         self.x_train[operation].append(x)
         self.y_train[operation].append(y)
-        return y
-
-    def give_reward(self, operation, reward):
+        
+    def add_reward(self, operation, reward):
         if reward is None:
             raise ValueError("reward cannot be nothing for " + operation)
         self.rewards[operation].append(reward)
         self.rewards_sum[operation] += reward
+
+    def get_decision(self, gamestate, operation):
+        res = self.models[operation].predict(np.array((gamestate,)))
+        return res[0]
+
+
+
 
     def get_models(self):
         return self.models.values()

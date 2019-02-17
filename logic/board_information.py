@@ -1400,7 +1400,7 @@ class BoardInformation():
              "downgrade_amount:normal",
              "current_rent_amount:normal"]
 
-        return self._table[l].values.flatten("F")
+        return self._table[l]
 
     def get_state(self):
         """Returns a DataFrame that shows all information of the board
