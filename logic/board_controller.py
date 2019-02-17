@@ -276,19 +276,19 @@ class BoardController():
 
     def _land_property(self, name, position):
         #If the property is purchaseable
-        if self.board.can_purchase(name, new_pos):
-            self._step_purchase(name, new_pos)
+        if self.board.can_purchase(name, position):
+            self._step_purchase(name, position)
 
         #is owned
         else:
             #is owned by player already
-            if self.board.is_owned_by(name, new_pos):
+            if self.board.is_owned_by(name, position):
                 pass
 
             #is owned by opponent
             else:
-                opponent_name = self.board.get_owner_name(new_pos)
-                rent = self.board.get_rent(new_pos, d1 + d2)
+                opponent_name = self.board.get_owner_name(position)
+                rent = self.board.get_rent(position, d1 + d2)
                 self.players[opponent_name].cash += rent
                 self.players[name].cash -= rent
 
