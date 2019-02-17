@@ -132,8 +132,7 @@ class BoardController():
                         "train_purchase",
                         "train_up_down_grade",
                         "train_trade"],
-                    name=p)
-                )}
+                    name=p)}
 
 
             return result_dict
