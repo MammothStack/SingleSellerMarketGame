@@ -34,6 +34,13 @@ class Player():
         self.x_train[operation].append(x)
         self.y_train[operation].append(y)
 
+    def get_training_data(self, operation):
+        return pd.DataFrame(
+            [self.x_train[operation],
+             self.y_train[operation], 
+             self.rewards[operation]],
+            index=["x_train","y_train","rewards"]).T
+
     def add_reward(self, operation, reward):
         if reward is None:
             raise ValueError("reward cannot be nothing for " + operation)

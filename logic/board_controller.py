@@ -116,8 +116,11 @@ class BoardController():
                 "prop owned": [],
                 "prop average level": [],
                 "turn_count": [],
-                "train_data": [],
+                "train_data_purchase": [],
+                "train_data_up_down_grade":[],
+                "train_data_trade":[]
             }
+
             for p in self.players:
                 #print(p)
                 o = self.board.get_amount_properties_owned(p)
@@ -127,14 +130,18 @@ class BoardController():
                 result_dict["prop owned"].append(o)
                 result_dict["prop average level"].append(l / o)
                 result_dict["turn_count"].append(self.total_turn)
-                result_dict["train_data"].append(
-                    pd.DataFrame(
-                        [self.players[p].x_train,
-                         self.players[p].y_train,
-                         self.players[p].rewards],
-                        index=["x_train","y_train","rewards"]
-                    ).T
+                result_dict["train_data_purchase"].append(
+                    self.players[p].get_training_data("purchase")
                 )
+                if updowngrade:
+                    result_dict["train_data_up_down_grade"].append(
+                        self.players[p].get_training_data("up_down_grade")
+                    )
+
+                if trade:
+                    result_dict["train_data_trade"].append(
+                        self.players[p].get_training_data("trade")
+                    )
 
             return result_dict
 
@@ -222,6 +229,7 @@ class BoardController():
             cont = True
             count = 0
             if updowngrade:
+
                 while cont and count < self.upgrade_limit:
                     cont = self._step_upgrade_downgrade(name)
                     count += 1
