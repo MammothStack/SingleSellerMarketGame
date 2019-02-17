@@ -1,4 +1,5 @@
 import numpy as np
+import pandas as pd
 from tensorflow import keras
 
 class Player():
@@ -37,7 +38,7 @@ class Player():
     def get_training_data(self, operation):
         return pd.DataFrame(
             [self.x_train[operation],
-             self.y_train[operation], 
+             self.y_train[operation],
              self.rewards[operation]],
             index=["x_train","y_train","rewards"]).T
 
