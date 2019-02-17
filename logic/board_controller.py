@@ -168,7 +168,7 @@ class BoardController():
 
             conc = np.concatenate((c_arr, p_arr, v.values), axis=1)
 
-            return conc.reshape(conc[0], conc[1], 1)
+            return conc.reshape(conc.shape[0], conc.shape[1], 1)
 
     def _get_processed_decision(self, decision_raw, threshold):
         ind = np.argmax(decision_raw)
