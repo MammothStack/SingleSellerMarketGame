@@ -121,9 +121,6 @@ class BoardInformation():
     get_normalized_state(name):
         Returns the normalized state that is flattened for ML algorithms
 
-    get_state():
-        Returns a DataFrame that shows all information of the board
-
     """
     def __init__(self, player_names):
 
@@ -1354,7 +1351,7 @@ class BoardInformation():
         ].sum()
 
     #Information getting
-    def get_normalized_state(self, name):
+    def get_normalized_state(self, name=None):
         """Returns the normalized state that is flattened for ML algorithms
 
         It uses the given name to get player specific values from the table.
@@ -1363,69 +1360,52 @@ class BoardInformation():
         AI that is supposed to be able to play against multiple players at
         the same time.
 
-        The method will fetch the following columns from the table:
+        The method will fetch the following columns from the table if the
+        parameter name has the name of a player:
             owned
             can upgrade
             can downgrade
+
+        The method will fetch the following columns from the table if the
+        paramter name is None:
             monpoly owned
             value
             can purchase
+            purchase amount
             mortgage amount
             upgrade amounts
             downgrade amount
             current rent amount
 
-        since the table is 28 rows deep this results in a table of 28 x 11,
-        which is then flattened into a single column of 308 rows
+        since the table is 28 rows deep this results in a table of 28 x 3 or
+        28 x 8
 
         Parameters
         --------------------
         name : str
-            The name of the player for whom the normalized state should be
-            fetched
+            The name(s) of the player(s) for whom the normalized state should
+            be fetched
 
         Examples
         --------------------
 
         """
-        l = [name + ":owned:normal",
-             name + ":can_upgrade:normal",
-             name + ":can_downgrade:normal",
-             "monopoly_owned:normal",
-             "value:normal",
-             "can_purchase:normal",
-             "purchase_amount:normal",
-             "mortgage_amount:normal",
-             "upgrade_amount:normal",
-             "downgrade_amount:normal",
-             "current_rent_amount:normal"]
 
-        return self._table[l]
+        if name is not None:
+            return self._table[[name + ":owned:normal",
+                 name + ":can_upgrade:normal",
+                 name + ":can_downgrade:normal"]]
+        else:
+            return self._table[[
+                "monopoly_owned:normal",
+                "value:normal",
+                "can_purchase:normal",
+                "purchase_amount:normal",
+                "mortgage_amount:normal",
+                "upgrade_amount:normal",
+                "downgrade_amount:normal",
+                "current_rent_amount:normal"]]
 
-    def get_state(self):
-        """Returns a DataFrame that shows all information of the board
-
-        The information returned pertains to all the information that can be
-        seen by all players, which includes ownership and possible upgrade.
-        parameter. It also shows the general state of the board for example
-        if properties can be purchased, upgraded, how many houses are on it
-        etc.
-
-        """
-        l = ["position",
-             "name",
-             "color",
-             "monopoly_owned",
-             "value",
-             "can_purchase",
-             "purchase_amount",
-             "mortgage_amount",
-             "upgrade_amount",
-             "downgrade_amount",
-             "current_rent_amount",
-             "level"]
-
-        return self._table[l]
 
 class BoardError(Exception):
     """Base class for board specific errors"""

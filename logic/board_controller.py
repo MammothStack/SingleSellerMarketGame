@@ -149,13 +149,52 @@ class BoardController():
         self.total_turn = 0
 
 
-    def _get_processed_normal_state(self, name, flatten=False):
-        if flatten:
-            c = self.players[name].cash / 1500
-            p = (self.players[name].position - 19.5) / 19.5
-            v =  self.board.get_normalized_state(name).values.flatten("F")
-            return np.append([c, p], v)
-        else:
+    def _get_processed_normal_state(self, name, opponent=None):
+        """Returns the processed state for the given name
+
+        Fetches the processed and normalized state of the game with the
+        given parameters. The specified name narrows the resulting table
+        to the including only the general information and the information
+        specific to that player.
+
+        If information on an opponent should be included, which is the case
+        for trading, an opponent can be added for which the information will
+        also be fetched.
+
+        If only the player fetches the information the
+        resulting table will be made up of the following columns:
+            player cash (28,1)
+            player position (28,1)
+            player property specific columns (28,3)
+            general columns (28,8)
+
+        resulting in a (28,13) table. This table is reshaped to (28,13,1) to
+        add a channel for better compatibility with keras layers.
+
+        If the player and opponent data is fetched then the resulting table
+        will be made up of the following columns:
+            player cash (28,1)
+            player position (28,1)
+            player property specific columns (28,3)
+            opponent cash (28,1)
+            opponent position (28,1)
+            opponent property specific columns (28,3)
+            general columns (28,8)
+
+        resulting in a (28,18) table, which again is further reshaped into a
+        (28,18,1) array. This array is then returned
+
+        Parameters
+        --------------------
+        name : str
+            The name of the player for which the information should be fetched
+
+        opponent : str (default=None)
+            The name of the opponent for which the information should be
+            fetched
+
+        """
+        def get_state_for_player(name):
             c = self.players[name].cash / 1500
             p = self.players[name].position
             v = self.board.get_normalized_state(name)
@@ -166,11 +205,69 @@ class BoardController():
             if p in v.index:
                 p_arr[v.index.get_loc(p)] = 1
 
-            conc = np.concatenate((c_arr, p_arr, v.values), axis=1)
+            return c_arr, p_arr, v.values
 
+        pla_cash, pla_position, pla_state = get_state_for_player(name)
+        gen_state = self.board.get_normalized_state()
+
+        if opponent is None:
+            conc = np.concatenate((
+                pla_cash,
+                pla_position,
+                pla_state,
+                gen_state), axis=1)
             return conc.reshape(conc.shape[0], conc.shape[1], 1)
 
-    def _get_processed_decision(self, decision_raw, threshold):
+        else:
+            opp_cash, opp_position, opp_state = get_state_for_player(opponent)
+            conc = np.concatenate((
+                pla_cash,
+                pla_position,
+                pla_state,
+                opp_cash,
+                opp_position,
+                opp_state,
+                gen_state))
+            return conc.reshape(conc.shape[0], conc.shape[1], 1)
+
+
+    def _get_processed_decision(self, decision_raw, threshold, single=True):
+        """Processes raw decisions into y values
+
+        Takes raw prediction / decision array from one of the models and
+        converts it into a y array that can be used to execute the decision
+        and add it into training data.
+
+        The parameters allow certain degree as to how the threshold for a
+        decision is determined. It also allows for the difference between
+        single and multi-label decisions to be made.
+
+        Parameters
+        --------------------
+        decision_raw : list, array-lik structure
+            The resulting prediction from a model.predict function
+
+        threshold : float
+            The float level that determines if the given values are over the
+            set threshold which constitutes a positive decision on that value
+
+        single : boolean (default=True)
+            If the information is single label based. If False then multi-label
+            is assumed and more than one value in the raw decision can be
+            processed to 1
+
+        Example
+        --------------------
+        >>>import numpy as np
+        >>>a = np.array([0.3, 0.6, 0.7])
+        >>>BoardController()._get_processed_decision(a, 0.5, True)
+        [0,0,1]
+        >>>BoardController()._get_processed_decision(a, 0.5, False)
+        [0,1,1]
+        >>>BoardController()._get_processed_decision(a, 0.2, False)
+        [1,1,1]
+
+        """
         ind = np.argmax(decision_raw)
         y = np.zeros(len(decision_raw))
         if decision_raw[ind] >= threshold:
@@ -187,8 +284,8 @@ class BoardController():
             elif pos_neg == "negative":
                 return 1
 
-    def _get_decision(self, name, operation):
-        x = self._get_processed_normal_state(name)
+    def _get_decision(self, name, operation, opponent=None):
+        x = self._get_processed_normal_state(name, opponent)
         decision = self.players[name].get_decision(x, operation)
         y = self._get_processed_decision(
             decision, self.config.getfloat("Threshold", operation))

@@ -142,6 +142,39 @@ class Player():
     Attributes
     --------------------
 
+    allowed_to_move : boolean
+        If this player is allowed to make a move on the Board
+
+    x_train : dict
+        Dictionary containing all the X array training data collected during
+        the game for each operation possible. The operations are the keys to
+        the data in the dictionary
+
+    y_train : dict
+        Dictionary containing all the y array training data collected during
+        the game for each operation possible. The operations are the keys to
+        the data in the dictionary
+
+    rewards : dict
+        Dictionary containing all the rewards array training data collected during
+        the game for each operation possible. The operations are the keys to
+        the data in the dictionary
+
+    rewards_sum : dict
+        Dictionary containing all the sum of the rewards in training data
+        collected during the game for each operation possible. The operations
+        are the keys to the data in the dictionary
+
+    running_reward : dict
+        Dictionary containing all the running reward in the training data
+        collected during the game for each operation possible. The operations
+        are the keys to the data in the dictionary
+
+    episode_nb : int
+        Count of how often the models were trained
+
+    gamma : float (default=0.99)
+        Used to calculate the running reward
 
     Methods
     --------------------
@@ -234,7 +267,7 @@ class Player():
     def save_models(self, destination=None):
         if destination is None: destination = ""
 
-        for m in player.models.values():
+        for m in self.models.values():
             m.save_weights(destination + m.name + '.h5')
             model_json = m.to_json()
 
