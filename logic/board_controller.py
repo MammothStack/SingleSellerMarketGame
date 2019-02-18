@@ -118,14 +118,16 @@ class BoardController():
                 l = self.board.get_total_levels_owned(p)
 
                 result_dict = {p: pd.Series(
-                    data=[self.players[p].cash,
+                    data=[p,
+                     self.players[p].cash,
                      o,
                      l/o,
                      self.total_turn,
                      self.players[p].get_training_data("purchase"),
                      self.players[p].get_training_data("up_down_grade"),
                      self.players[p].get_training_data("trade")],
-                     index=["cash",
+                     index=["name",
+                        "cash",
                         "prop_owned",
                         "prop_average_level",
                         "turn_count",
