@@ -104,8 +104,7 @@ class BoardController():
                 self.current_turn = (self.current_turn + 1) % self.num_players
             else:
                 for p in self.players.values():
-                    if p.is_ai:
-                        p.learn()
+                    p.learn()
 
             self.total_turn += 1
 
@@ -318,11 +317,10 @@ class BoardController():
             reward_dynamic = self._get_dynamic_cash_reward(self.players[name].cash, "negative")
             reward = self.config.getfloat("purchase_reward", "None")
 
-        if self.players[name].is_ai:
-            if self.dynamic_cash_equation:
-                self.players[name].add_reward("purchase", reward_dynamic)
-            else:
-                self.players[name].add_reward("purchase", reward)
+        if self.dynamic_cash_equation:
+            self.players[name].add_reward("purchase", reward_dynamic)
+        else:
+            self.players[name].add_reward("purchase", reward)
 
     def _step_upgrade_downgrade(self, name):
         decision = self._get_decision(name, "up_down_grade")
@@ -394,11 +392,10 @@ class BoardController():
             reward_dynamic = reward
             cont = False
 
-        if self.players[name].is_ai:
-            if self.dynamic_cash_equation:
-                self.players[name].add_reward("up_down_grade", reward_dynamic)
-            else:
-                self.players[name].add_reward("up_down_grade", reward)
+        if self.dynamic_cash_equation:
+            self.players[name].add_reward("up_down_grade", reward_dynamic)
+        else:
+            self.players[name].add_reward("up_down_grade", reward)
 
         return cont
 
