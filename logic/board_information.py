@@ -97,8 +97,17 @@ class BoardInformation():
     get_owner_name(position)
         Returns the player name of the owner of the property
 
-    get_purchase_price(position)
+    get_purchase_amount(position)
         Returns the purchase price of the property at the position
+
+    get_mortgage_amount(position)
+        Returns the amount it takes to mortgage an unmortgage the property
+
+    get_upgrade_amount(position)
+        Returns the amount it takes to upgrade the property
+
+    get_downgrade_amount(position)
+        Returns the amount it takes to downgrade the property
 
     get_level(position)
         Returns the current level of the property at the position
@@ -112,14 +121,11 @@ class BoardInformation():
     get_normalized_state(name):
         Returns the normalized state that is flattened for ML algorithms
 
-    get_state():
-        Returns a DataFrame that shows all information of the board
-
-    Examples
-    --------------------
-
     """
     def __init__(self, player_names):
+
+        if type(player_names) != list:
+            raise AttributeError("Given value must be a list with names")
 
         self._player_names = player_names
         self.available_houses = 40
@@ -388,7 +394,18 @@ class BoardInformation():
             The name of the player who wants to mortgage the property
 
         position : int
-            The position of the property on the board
+            The position of the property on the
+
+        Examples
+        --------------------
+        >>>board.can_mortgage("red",1)
+        True
+        >>>board.mortgage("red",1)
+        >>>board.can_mortgage("red",1)
+        False
+        >>>board.can_mortgage("blue",1)
+        False
+
         """
         return self._table.at[
             position, name + ":can_mortgage"
@@ -470,13 +487,31 @@ class BoardInformation():
         """
         return self._table["can_purchase"].any()
 
-    def is_owned_by(self, position, name):
-        """
+    def is_owned_by(self, name, position):
+        """Returns if the property at position is owned by the player by name
+
+        Returns true if the given player owns the property at the given
+        position. This will return false if the given property is owned by
+        another player or is not owned at all.
+
         Parameters
         --------------------
+        name : str
+            The name of the player that should be checked for ownership
+
+        position : int
+            The position of the property on the board
 
         Examples
         --------------------
+        >>>board = BoardInformation(["red", "blue"])
+        >>>board.is_owned_by("red", 1)
+        False
+        >>>board.purchase("red", 1)
+        >>>board.is_owned_by("red", 1)
+        True
+        >>>board.is_owned_by("blue", 1)
+        False
 
         """
         return self._table.at[position, name + ":owned"]
@@ -609,8 +644,25 @@ class BoardInformation():
         )
 
     def _update_normalisation(self, name=None, position=None):
-        """
-        slkjdf
+        """Updates the normalized values of the table from the standard ones
+
+        This method updates the normalized versions of the columns that
+        are used by the AIs. The normalized values are derived from the
+        standard values already in the table.
+
+        The normalization can be targeted to a single player or a single
+        position of the board, or (by using both parameters) a single board
+        position on owned by a specific player. If none of these parameters
+        are used then the whole table is updated, which is the default
+        behaviour.
+
+        Parameters
+        --------------------
+        name : str (default=None)
+            The name of the player whose values should be updated
+
+        position : int (default=None)
+            The position of the property on the board which should be updated
 
         """
         if name is None:
@@ -662,41 +714,44 @@ class BoardInformation():
         position : int
             the position of the property on the board
 
+        Raises
+        --------------------
+        BoardError : if property cannot be purchased by player
+
         Examples
         --------------------
         >>>board.can_purchase("red", 1)
         True
+        >>>board.can_purchase("blue", 1)
+        True
         >>>board.purchase("red", 1)
         >>>board.can_purchase("red", 1)
         False
+        >>>board.can_purchase("blue", 1)
+        False
+
         """
+
+        if self.can_purchase(name, position) == False:
+            raise BoardError(
+                name + " cannot purchase the property at " + str(position))
         #color of the property
         color = self._table.at[position, "color"]
 
         #owned
-        self._table.at[
-            position, name + ":owned"
-        ] = True
+        self._table.at[position, name + ":owned"] = True
 
         #can_purchase
-        self._table.at[
-            position, "can_purchase"
-        ] = False
+        self._table.at[position, "can_purchase"] = False
 
         #can_mortgage
-        self._table.at[
-            position, name + ":can_mortgage"
-        ] = True
+        self._table.at[position, name + ":can_mortgage"] = True
 
         #can unmortgage
-        self._table.at[
-            position, name + ":can_unmortgage"
-        ] = False
+        self._table.at[position, name + ":can_unmortgage"] = False
 
         #can downgrade
-        self._table.at[
-            position, name +":can_downgrade"
-        ] = False
+        self._table.at[position, name +":can_downgrade"] = False
 
         #value
         self._table.at[
@@ -712,9 +767,7 @@ class BoardInformation():
             ] = self._table.at[position, "rent_level:1"]
 
             #level
-            self._table.at[
-                position, "level"
-            ] = 1
+            self._table.at[position, "level"] = 1
 
             #update monopoly status
             if self._is_color_monopoly(name, color):
@@ -756,10 +809,18 @@ class BoardInformation():
         position : int
             the position of the property on the board
 
+        Raises
+        --------------------
+        BoardError : if property cannot be morgaged by player
+
         Examples
         --------------------
 
         """
+
+        if self.can_mortgage(name, position) == False:
+            raise BoardError(
+                name + " cannot mortgage the property at " + str(position))
 
         color = self._table.at[position, "color"]
 
@@ -828,10 +889,18 @@ class BoardInformation():
         position : int
             the position of the property on the board
 
+        Raises
+        --------------------
+        BoardError : if property cannot be unmortgaged by player
+
         Examples
         --------------------
 
         """
+
+        if self.can_unmortgage(name, position) == False:
+            raise BoardError(
+                name + " cannot unmortgage the property at " + str(position))
 
         #color of the property
         color = self._table.at[position, "color"]
@@ -912,10 +981,18 @@ class BoardInformation():
         position : int
             the position of the property on the board
 
+        Raises
+        --------------------
+        BoardError : if property cannot be upgraded by player
+
         Examples
         --------------------
 
         """
+
+        if self.can_upgrade(name, position) == False:
+            raise BoardError(
+                name + " cannot upgrade the property at " + str(position))
 
         color = self._table.at[position, "color"]
 
@@ -999,10 +1076,18 @@ class BoardInformation():
         position : int
             the position of the property on the board
 
+        Raises
+        --------------------
+        BoardError : if property cannot be downgraded by player
+
         Examples
         --------------------
 
         """
+
+        if self.can_downgrade(name, position) == False:
+            raise BoardError(
+                name + " cannot downgrade the property at " + str(position))
 
         color = self._table.at[position, "color"]
 
@@ -1160,7 +1245,7 @@ class BoardInformation():
         else:
             return None
 
-    def get_purchase_price(self, position):
+    def get_purchase_amount(self, position):
         """
         Parameters
         --------------------
@@ -1170,6 +1255,21 @@ class BoardInformation():
 
         """
         return self._table.at[position, "purchase_amount"]
+
+    def get_mortgage_amount(self, position):
+        """
+
+        """
+        return self._table.at[position, "mortgage_amount"]
+
+    def get_upgrade_amount(self, position):
+        """
+        """
+        return self._table.at[position, "upgrade_amount"]
+
+    def get_downgrade_amount(self, position):
+
+        return self._table.at[position, "downgrade_amount"]
 
     def get_level(self, position):
         """
@@ -1210,55 +1310,103 @@ class BoardInformation():
         else:
             return var
 
-    #Information getting
-    def get_normalized_state(self, name):
-        """Returns the normalized state that is flattened for ML algorithms
+    def get_amount_properties_owned(self, name):
+        """Gets the total amount of properties owned by the given player
 
         Parameters
         --------------------
         name : str
-            The name of the player for whom the normalized state should be
-            fetched
+            The name of the player whose properties should be counted
+
+        Examples
+        --------------------
+        >>>board.get_amount_properties_owned("red")
+        0
+        >>>board.purchase(red, 1)
+        >>>board.get_amount_properties_owned("red")
+        1
+
+        """
+        return np.sum(self._table[name + ":owned"])
+
+    def get_total_levels_owned(self, name):
+        """Gets the total level of all owned properties by the given player
+
+        Parameters
+        --------------------
+        name : str
+            The name of the of the player whose properties should be counted
+
+        Examples
+        --------------------
+        >>>board.get_total_levels_owned("red")
+        5
+        >>>board.upgrade("red", 1)
+        >>>board.get_total_levels_owned("red")
+        6
+
+        """
+        return self._table.loc[
+            self._table[name + ":owned"] == True, "level"
+        ].sum()
+
+    #Information getting
+    def get_normalized_state(self, name=None):
+        """Returns the normalized state that is flattened for ML algorithms
+
+        It uses the given name to get player specific values from the table.
+        This ensures no matter how many players are in the game. This method
+        will always spit out the same table, which helps when training an
+        AI that is supposed to be able to play against multiple players at
+        the same time.
+
+        The method will fetch the following columns from the table if the
+        parameter name has the name of a player:
+            owned
+            can upgrade
+            can downgrade
+
+        The method will fetch the following columns from the table if the
+        paramter name is None:
+            monpoly owned
+            value
+            can purchase
+            purchase amount
+            mortgage amount
+            upgrade amounts
+            downgrade amount
+            current rent amount
+
+        since the table is 28 rows deep this results in a table of 28 x 3 or
+        28 x 8
+
+        Parameters
+        --------------------
+        name : str
+            The name(s) of the player(s) for whom the normalized state should
+            be fetched
 
         Examples
         --------------------
 
         """
-        l = [name + ":owned:normal",
-             name + ":can_upgrade:normal",
-             name + ":can_downgrade:normal",
-             "monopoly_owned:normal",
-             "value:normal",
-             "can_purchase:normal",
-             "purchase_amount:normal",
-             "mortgage_amount:normal",
-             "upgrade_amount:normal",
-             "downgrade_amount:normal",
-             "current_rent_amount:normal"]
 
-        return self._table[l].values.flatten("F")
+        if name is not None:
+            return self._table[[name + ":owned:normal",
+                 name + ":can_upgrade:normal",
+                 name + ":can_downgrade:normal"]]
+        else:
+            return self._table[[
+                "monopoly_owned:normal",
+                "value:normal",
+                "can_purchase:normal",
+                "purchase_amount:normal",
+                "mortgage_amount:normal",
+                "upgrade_amount:normal",
+                "downgrade_amount:normal",
+                "current_rent_amount:normal"]]
 
-    def get_state(self):
-        """Returns a DataFrame that shows all information of the board
 
-        The information returned pertains to all the information that can be
-        seen by all players, which includes ownership and possible upgrade.
-        parameter. It also shows the general state of the board for example
-        if properties can be purchased, upgraded, how many houses are on it
-        etc.
-
-        """
-        l = ["position",
-             "name",
-             "color",
-             "monopoly_owned",
-             "value",
-             "can_purchase",
-             "purchase_amount",
-             "mortgage_amount",
-             "upgrade_amount",
-             "downgrade_amount",
-             "current_rent_amount",
-             "level"]
-
-        return self._table[l]
+class BoardError(Exception):
+    """Base class for board specific errors"""
+    pass
