@@ -367,9 +367,9 @@ class BoardController():
             else:
                 purchase = self._land_property(name, new_pos)
 
-            if self.operation_config["purchase"] and
+            if (self.operation_config["purchase"] and
                 purchase and
-                self.players[name].can_purchase:
+                self.players[name].can_purchase):
                 x = self._get_x(name)
                 y = self._get_y(name, "purchase", x, True)
                 reward = self._execute_purchase(name, new_pos, y)
