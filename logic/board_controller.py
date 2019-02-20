@@ -378,8 +378,8 @@ class BoardController():
             #upgrade/downgrade
             cont = True
             count = 0
-            if self.operation_config["up_down_grade"] and
-                self.players[name].can_up_down_grade:
+            if (self.operation_config["up_down_grade"] and
+                self.players[name].can_up_down_grade):
                 while cont and count < self.upgrade_limit:
                     x = self._get_x(name)
                     y = self._get_y(name, "up_down_grade", x, True)
