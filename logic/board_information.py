@@ -1527,7 +1527,6 @@ class BoardInformation():
                 "downgrade_amount:normal",
                 "current_rent_amount:normal"]]
 
-    def transfer_properties(self, from, to, property_position_list):
 
 
 

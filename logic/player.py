@@ -292,10 +292,10 @@ class Player():
             reward training data that corresponds to the y and x values given
 
         """
-        if operation not in self.x_train.keys() or
+        if(operation not in self.x_train.keys() or
             operation not in self.y_train.keys() or
             operation not in self.rewards.keys() or
-            operation not in self.rewards_sum.keys():
+            operation not in self.rewards_sum.keys()):
             raise ValueError("Given Operation is not in the data set")
         self.x_train[operation].append(x)
         self.y_train[operation].append(y)
