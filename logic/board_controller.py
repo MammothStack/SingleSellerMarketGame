@@ -364,6 +364,7 @@ class BoardController():
             #If player landed on action field
             if self.board.is_actionfield(new_pos):
                 self._land_action_field(name, new_pos)
+                purchase = False
             else:
                 purchase = self._land_property(name, new_pos)
 
