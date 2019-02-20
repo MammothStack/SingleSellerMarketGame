@@ -150,21 +150,23 @@ class BoardController():
 
                 result_dict = {p: pd.Series(
                     data=[p,
-                     self.players[p].cash,
-                     o,
-                     l/o,
-                     self.total_turn,
-                     self.players[p].get_training_data("purchase"),
-                     self.players[p].get_training_data("up_down_grade"),
-                     self.players[p].get_training_data("trade")],
-                     index=["name",
+                        self.players[p].cash,
+                        o,
+                        l/o,
+                        self.total_turn,
+                        self.players[p].get_training_data("purchase"),
+                        self.players[p].get_training_data("up_down_grade"),
+                        self.players[p].get_training_data("trade_offer")],
+                        self.players[p].get_training_data("trade_decision")
+                    index=["name",
                         "cash",
                         "prop_owned",
                         "prop_average_level",
                         "turn_count",
                         "train_purchase",
                         "train_up_down_grade",
-                        "train_trade"],
+                        "train_trade_offer",
+                        "train_trade_decision"],
                     name=p)}
             return result_dict
 
