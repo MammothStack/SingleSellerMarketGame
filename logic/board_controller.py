@@ -269,14 +269,14 @@ class BoardController():
         def get_state_for_player(name):
             p = self.players[name].position
             v = self.board.get_normalized_state(name)
-            p_arr = np.full((len(v.index), 1), 0)
+            p_arr = np.full(len(v.index), 0)
             c_arr = self._cash_to_binary(
-                self.players[name].cash, neg=True).reshape(-1,1)
+                self.players[name].cash, neg=True)
 
             if p in v.index:
                 p_arr[v.index.get_loc(p)] = 1
 
-            return c_arr, p_arr, v.values
+            return c_arr.reshape(-1,1), p_arr.reshape(-1,1), v.values
 
         gen_state = self.board.get_normalized_state()
         pla_cash, pla_position, pla_state = get_state_for_player(name)
