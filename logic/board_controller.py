@@ -296,7 +296,7 @@ class BoardController():
         if offer is not None:
             x = np.concatenate((offer, x), axis=1)
 
-        return x.reshape(conc.shape[0], conc.shape[1], 1)
+        return x.reshape(x.shape[0], x.shape[1], 1)
 
     def _get_y(self, name, operation, x, single=True):
         """Get a decision/prediction from the players for the given operation
