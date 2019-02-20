@@ -281,11 +281,18 @@ class BoardController():
         gen_state = self.board.get_normalized_state()
         pla_cash, pla_position, pla_state = get_state_for_player(name)
 
-        x = np.concatenate((
-            pla_cash,
-            pla_position,
-            pla_state,
-            gen_state), axis=1)
+        try:
+            x = np.concatenate((
+                pla_cash,
+                pla_position,
+                pla_state,
+                gen_state), axis=1)
+        except ValueError:
+            print("cash", pla_cash.shape)
+            print("positin", pla_position.shape)
+            print("state", pla_state.shape)
+            print("gen_state", gen_state.shape)
+            raise AttributeError("yo something wack")
 
         if opponent is not None:
             opp_cash, opp_position, opp_state = get_state_for_player(opponent)
