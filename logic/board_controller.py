@@ -166,10 +166,7 @@ class BoardController():
                         "train_up_down_grade",
                         "train_trade"],
                     name=p)}
-
-
             return result_dict
-
 
     def reset_game(self):
         """Resets all the game parameters so their default values
@@ -273,15 +270,16 @@ class BoardController():
             p = self.players[name].position
             v = self.board.get_normalized_state(name)
             p_arr = np.full((len(v.index), 1), 0)
-            c_arr = self._cash_to_binary(self.players[name].cash, neg=True)
+            c_arr = self._cash_to_binary(
+                self.players[name].cash, neg=True).reshape(-1,1)
 
             if p in v.index:
                 p_arr[v.index.get_loc(p)] = 1
 
             return c_arr, p_arr, v.values
 
-        pla_cash, pla_position, pla_state = get_state_for_player(name)
         gen_state = self.board.get_normalized_state()
+        pla_cash, pla_position, pla_state = get_state_for_player(name)
 
         x = np.concatenate((
             pla_cash,
@@ -291,7 +289,11 @@ class BoardController():
 
         if opponent is not None:
             opp_cash, opp_position, opp_state = get_state_for_player(opponent)
-            x = np.concatenate((pla_cash, pla_position, pla_state, x), axis=1)
+            x = np.concatenate((
+                opp_cash,
+                opp_position,
+                opp_state,
+                x), axis=1)
 
         if offer is not None:
             x = np.concatenate((offer, x), axis=1)
