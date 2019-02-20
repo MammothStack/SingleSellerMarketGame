@@ -31,7 +31,12 @@ def _load_model_from_file(h5_weights_file_path, json_file_path, name):
 
     return model
 
-def load_player_from_file(name, purchase, up_down_grade=None, trade=None):
+def load_player_from_file(
+    name,
+    purchase=None,
+    up_down_grade=None,
+    trade_offer=None,
+    trade_decision=None):
     """Loads the player from the given file paths and returns the Player
 
     The model file paths are first checked that they are in the correct
@@ -53,7 +58,11 @@ def load_player_from_file(name, purchase, up_down_grade=None, trade=None):
         The .h5 and .json file locations for the upgrade/downgrade model.
         Needs to be of length 2
 
-    trade : tuple or list
+    trade_offer : tuple or list
+        The .h5 and .json file locations for the trade model. Needs to be
+        of length 2
+
+    trade_decision : tuple or list
         The .h5 and .json file locations for the trade model. Needs to be
         of length 2
 
@@ -86,29 +95,35 @@ def load_player_from_file(name, purchase, up_down_grade=None, trade=None):
     models = {
         "purchase": get_model(purchase, name + "_purchase"),
         "up_down_grade": get_model(up_down_grade, name + "_up_down_grade"),
-        "trade": get_model(trade, name + "_trade")
+        "trade_offer": get_model(trade_offer, name + "_trade_offer"),
+        "trade_decision": get_model(trade_decision, name + "_trade_decision")
     }
 
     models["purchase"].compile(
-            loss='binary_crossentropy',
-            optimizer='adam',
-            metrics=['accuracy']
-        )
+        loss='binary_crossentropy',
+        optimizer='adam',
+        metrics=['accuracy']
+    )
 
     models["up_down_grade"].compile(
-            loss="categorical_crossentropy",
-            optimizer="adam",
-            metrics=["accuracy"]
-        )
+        loss="categorical_crossentropy",
+        optimizer="adam",
+        metrics=["accuracy"]
+    )
 
-    models["trade"].compile(
-            loss="categorical_crossentropy",
-            optimizer="adam",
-            metrics=["accuracy"]
-        )
+    models["trade_offer"].compile(
+        loss="binary_crossentropy",
+        optimizer="adam",
+        metrics=["accuracy"]
+    )
+
+    models["trade_decision"].compile(
+        loss="binary_crossentropy",
+        optimizer="adam",
+        metrics=["accuracy"]
+    )
 
     return Player(name, models)
-
 
 class Player():
     """The player to that plays on the Board
@@ -131,7 +146,12 @@ class Player():
     models : dict
         The model dictionary where the keys refer to the operation that the
         model decides and the values are the models themselves:
-        {"purchase": model, "up_down_grade":model, "trade":model}
+        {
+            "purchase": model,
+            "up_down_grade": model,
+            "trade_offer": model,
+            "trade_decision": model
+        }
 
     cash : int (default=1500)
         The cash that the player has during the game
@@ -189,13 +209,7 @@ class Player():
         position=0,
     ):
         self.name = name
-
-        if type(models) != dict:
-            raise ValueError("""The given models has to be a dictionary with
-                the format:
-                {"purchase": model, "up_down_grade": model, "trade":model}
-            """)
-        self.models = models
+        self.models = self.set_models(models)
         self._init_cash = cash
         self._init_position = position
         self.reset_player()
@@ -212,11 +226,106 @@ class Player():
         self.rewards = {o:[] for o in self.models.keys()}
         self.rewards_sum = {o:0 for o in self.models.keys()}
 
-    def add_training_data(self, operation, x, y):
+    def set_models(self, models):
+        """Sets the models of the player for the various operations
+
+        Sets the flag that this player can perform a certain operation
+        based on the presence of a model within the dictionary values. All
+        keys must be present in order for this function to work.
+
+        Parameters
+        --------------------
+        models : dict
+            The dictionary that should be set as the models. Must have all the
+            operations as keys.
+
+        Raises
+        --------------------
+        ValueError
+            If the dictionary does not contain all the operations as keys or
+            the given models is not in a dictionary
+
+        """
+        if type(models) != dict:
+            raise ValueError("The given model is not in dictionary form")
+
+        if "purchase" in models.keys():
+            self.can_purchase = models["purchase"] is not None
+        else
+            raise ValueError("Purchase key not found in dictionary")
+
+        if "up_down_grade" in models.keys():
+            self.can_up_down_grade = models["up_down_grade"] is not None
+        else
+            raise ValueError("up_down_grade key not found in dictionary")
+
+        if "trade_offer" in models.keys():
+            self.can_trade_offer = models["trade_offer"] is not None
+        else
+            raise ValueError("trade_offer key not found in dictionary")
+
+        if "trade_decision" in models.keys():
+            self.can_trade_decision = models["trade_decision"] is not None
+        else
+            raise ValueError("trade_decision key not found in dictionary")
+
+        self.models = models
+
+    def add_training_data(self, operation, x, y, reward):
+        """Adds an instance of training data
+
+        Adds an x, y, and reward values for later training. This is added for a
+        specific operation given by the operation parameter
+
+        Parameters
+        --------------------
+        operation : str
+            The operation for which the training data should be added to
+
+        x : ndarray
+            X training data that corresponds to the given x parameter
+
+        y : ndarray
+            y training data that corresponds to the given y parameter
+
+        reward : ndarray
+            reward training data that corresponds to the y and x values given
+
+        """
+        if operation not in self.x_train.keys() or
+            operation not in self.y_train.keys() or
+            operation not in self.rewards.keys() or
+            operation not in self.rewards_sum.keys():
+            raise ValueError("Given Operation is not in the data set")
         self.x_train[operation].append(x)
         self.y_train[operation].append(y)
+        self.rewards[operation].append(reward)
+        self.rewards_sum[operation] += reward
 
     def get_training_data(self, operation):
+        """Returns all the training data that was appended during the game
+
+        The returned data is in a pandas DataFrame, with the x_train, y_train,
+        and rewards are stored in their respective columns.
+
+        Parameters
+        --------------------
+        operation : str
+            The operation for which the data should be returned
+
+        Returns
+        --------------------
+        training_data: pd.DataFrame
+            The training data for the specified operation.DataFrame, with the
+            x_train, y_train, and rewards are stored
+
+        Raises
+        --------------------
+        ValueError
+            When the length of the X, y, rewards do not align, meaning gaps
+            in information,
+
+        """
         if len(self.x_train[operation]) != len(self.y_train[operation]):
             raise ValueError("x and y train arrays are not the same length for " + operation)
         if len(self.x_train[operation]) != len(self.rewards[operation]):
@@ -227,20 +336,45 @@ class Player():
              self.rewards[operation]],
             index=["x_train","y_train","rewards"]).T
 
-    def add_reward(self, operation, reward):
-        if reward is None:
-            raise ValueError("reward cannot be nothing for " + operation)
-        self.rewards[operation].append(reward)
-        self.rewards_sum[operation] += reward
-
     def get_decision(self, gamestate, operation):
+        """Returns the decision of the player for the given operation
+
+        Takes the gamestate and produces an output for the given operation and
+        returns it.
+
+        Parameters
+        --------------------
+        gamestate : numpy.ndarray
+            Shape of (rows, columns, channel) consisting of gamedata. The shape
+            of the parameter must match the input requirement of the model.
+
+        operation : str
+            The operation for which the decision should be made
+
+        Returns
+        --------------------
+        decision : numpy.ndarray
+            Array with decisions based on the gamedata, that need to be
+            interpreted
+
+        """
         res = self.models[operation].predict(np.array((gamestate,)))
         return res[0]
 
     def get_models(self):
+        """Returns the models of the player"""
         return self.models.values()
 
     def learn(self):
+        """Takes accumulated training data and fits it to the models
+
+        Raises
+        --------------------
+        ValueError
+            When the lengths of the training data are not aligned
+
+        """
+
         for o in self.models.keys():
             if len(self.x_train[o]) != len(self.y_train[o]):
                 raise ValueError("x and y train arrays are not the same length for " + o)
@@ -261,10 +395,37 @@ class Player():
                     self.running_reward[o] = r + s
         self.episode_nb += 1
 
-    def learn_training_data(self, x_train, y_train, sample_weights, operation):
+    def learn_training_data(self, operation, x_train, y_train, sample_weights):
+        """Uses the given data to fit the model of the given operation
+
+        Parameters
+        --------------------
+        operation : str
+            The operation for which the training data should be added to
+
+        x_train : ndarray
+            X training data that corresponds to the given x parameter
+
+        y_train : ndarray
+            y training data that corresponds to the given y parameter
+
+        sample_weights : ndarray
+            Reward training data that corresponds to the x and y data given
+            in the "add_training_data" method.
+
+        """
+
         self.models[operation].fit(x_train, y_train, sample_weight, verbose=0)
 
     def save_models(self, destination=None):
+        """Saves the models in the given destination
+
+        Parameters
+        --------------------
+        destination : str (default=None)
+            The destination where the files should be saved
+
+        """
         if destination is None: destination = ""
 
         for m in self.models.values():

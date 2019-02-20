@@ -40,7 +40,7 @@ class BoardController():
         player_list,
         starting_order=None,
         max_turn=1000,
-        upgrade_limit=30,
+        upgrade_limit=20,
         reinforce_config=None,
         dynamic_cash_equation=True
     ):
@@ -54,14 +54,6 @@ class BoardController():
         else:
             self.config = None
 
-        drrl_pos = self.config.getfloat("dynamic_reward_risk_level", "Level_pos")
-        drrl_neg = self.config.getfloat("dynamic_reward_risk_level", "Level_neg")
-
-        self._cash_reward_function = {
-            "positive" : lambda x: (-1 / (((drrl_pos / 1500) * x) + 0.5) + 1),
-            "negative" : lambda x: (1 / (((drrl_neg / 1500) * x) + 0.5) - 1)
-        }
-
         self.dynamic_cash_equation = dynamic_cash_equation
         self.alive = True
         self.total_turn = 0
@@ -69,8 +61,11 @@ class BoardController():
         self.current_turn = 0
         self.num_players = len(player_list)
         self.upgrade_limit = upgrade_limit
-        pos = self.board.index
-        self.decision_index = pos + pos
+        self.binary_pos = [8192, 4096, 2048, 1024, 512, 256,
+            128, 64, 32, 16, 8, 4, 2, 1]
+        self.binary_neg = [-1, -2, -4, -8, -16, -32, -64, -128,
+            -256, -512, -1024, -2048, -4096, -8192]
+        self.binary = pos + neg
 
         if starting_order is None:
             self.order = [p.name for p in player_list]
@@ -81,38 +76,75 @@ class BoardController():
 
 
 
-    def start_game(self, updowngrade=True, trade=True, show_results=False):
+    def start_game(self,
+        purchase=True
+        up_down_grade=True,
+        trade=True,
+        gather_results=False):
         """Starts the game
 
         Starts the game with the current configuration. The parameters that can
         be set relate to the actions that the AI can take. This way the flow
         of the game can be somewhat restricted.
 
+        Parameters
+        --------------------
+        purchase : boolean (default=True)
+            If he game should have the purchase actions
+
+        up_down_grade : boolean (default=True)
+            If the game should have the upgrade/downgrade actions
+
+        trade : boolean (default=True)
+            If the game should have the trade actions
+
+        gather_results : boolean (default=True)
+            If at the end of the game the results of the games should be
+            gathered and returned
+
+        Returns
+        --------------------
+        result_dict : dict
+            A dictionary of results where the keys are the players of the game
+            and the values are a Pandas.Series object containing game
+            information
+
         """
+
+        self.operation_config = {
+            "purchase" : purchase,
+            "up_down_grade" : up_down_grade,
+            "trade" : trade
+        }
+
         while self.alive:
-            self._full_turn(self.order[self.current_turn], updowngrade, trade)
+            #Runs through all three actions
+            self._full_turn(self.order[self.current_turn])
 
-
-            if updowngrade == False and trade ==  False:
+            #Checks if any properties can still be bought. quit if none
+            if up_down_grade == False and trade == False:
                 if self.alive:
                     self.alive = self.board.is_any_purchaseable()
 
+            #Checks that the game has not exceeded the turn limit
             if self.alive:
                 self.alive = self.total_turn < self.max_turn
 
+            #Sets the current turn
             if self.alive:
                 self.current_turn = (self.current_turn + 1) % self.num_players
             else:
+                #If the game is over then all AIs learn from the game
                 for p in self.players.values():
                     p.learn()
 
+            #Turn is incremented
             self.total_turn += 1
 
         if show_results:
             result_dict = {}
 
             for p in self.players:
-                #print(p)
                 o = self.board.get_amount_properties_owned(p)
                 l = self.board.get_total_levels_owned(p)
 
@@ -140,6 +172,12 @@ class BoardController():
 
 
     def reset_game(self):
+        """Resets all the game parameters so their default values
+
+        Calls all players of the game to reset to their initial values
+        as well as the turn counter and "alive" state of the board
+
+        """
         for p in self.players.values():
             p.reset_player()
 
@@ -148,8 +186,36 @@ class BoardController():
         self.current_turn = 0
         self.total_turn = 0
 
+    def _cash_to_binary(self, cash, neg=False):
+        if neg:
+            if cash > 0:
+                p = np.array([int(a) for a in list(np.binary_repr(cash, width=14))])
+                n = np.zeros(14, dtype=int)
+                return np.append(p,n).reshape(-1,1)
 
-    def _get_processed_normal_state(self, name, opponent=None):
+            elif cash < 0:
+                p = np.zeros(14, dtype=int)
+                n = np.array([int(a) for a in list(np.binary_repr(-1 * cash, width=14))])
+                return np.append(p,list(reversed(n))).reshape(-1,1)
+            else:
+                return np.zeros(28, dtype=int).reshape(-1,1)
+        else:
+            if cash < 0:
+                raise ValueError("Must select true for parameter neg")
+            else:
+                return np.array([int(a) for a in list(np.binary_repr(cash, width=14))])
+
+
+    def _binary_to_cash(self, arr, neg=False):
+        if len(arr.shape) == 2:
+            arr = arr.reshape(-1)
+        if neg:
+            return np.sum(arr * self.binary_pos)
+        else:
+            return np.sum(arr * self.binary)
+
+
+    def _get_x(self, name, opponent=None, offer=None):
         """Returns the processed state for the given name
 
         Fetches the processed and normalized state of the game with the
@@ -193,14 +259,21 @@ class BoardController():
             The name of the opponent for which the information should be
             fetched
 
+        offer : numpy.ndarray (default=None)
+            The offer during trade that should be added as to the x array
+
+        Returns
+        --------------------
+        Gamestate array : numpy.ndarray
+             Shape (28, 13, 1) or (28, 18, 1) based on parameters. In addition
+             to the offer dimensions
+
         """
         def get_state_for_player(name):
-            c = self.players[name].cash / 1500
             p = self.players[name].position
             v = self.board.get_normalized_state(name)
-
-            c_arr = np.full((len(v.index), 1), c)
-            p_arr = np.full((len(v.index), 1), -1)
+            p_arr = np.full((len(v.index), 1), 0)
+            c_arr = self._cash_to_binary(self.players[name].cash, neg=True)
 
             if p in v.index:
                 p_arr[v.index.get_loc(p)] = 1
@@ -210,91 +283,77 @@ class BoardController():
         pla_cash, pla_position, pla_state = get_state_for_player(name)
         gen_state = self.board.get_normalized_state()
 
-        if opponent is None:
-            conc = np.concatenate((
-                pla_cash,
-                pla_position,
-                pla_state,
-                gen_state), axis=1)
-            return conc.reshape(conc.shape[0], conc.shape[1], 1)
+        x = np.concatenate((
+            pla_cash,
+            pla_position,
+            pla_state,
+            gen_state), axis=1)
 
-        else:
+        if opponent is not None:
             opp_cash, opp_position, opp_state = get_state_for_player(opponent)
-            conc = np.concatenate((
-                pla_cash,
-                pla_position,
-                pla_state,
-                opp_cash,
-                opp_position,
-                opp_state,
-                gen_state))
-            return conc.reshape(conc.shape[0], conc.shape[1], 1)
+            x = np.concatenate((pla_cash, pla_position, pla_state, x), axis=1)
 
+        if offer is not None:
+            x = np.concatenate((offer, x), axis=1)
 
-    def _get_processed_decision(self, decision_raw, threshold, single=True):
-        """Processes raw decisions into y values
+        return x.reshape(conc.shape[0], conc.shape[1], 1)
 
-        Takes raw prediction / decision array from one of the models and
-        converts it into a y array that can be used to execute the decision
-        and add it into training data.
+    def _get_y(self, name, operation, x, single=True):
+        """Get a decision/prediction from the players for the given operation
 
-        The parameters allow certain degree as to how the threshold for a
-        decision is determined. It also allows for the difference between
-        single and multi-label decisions to be made.
+        Input a player name and an operation for which a decision should be
+        made. There is an option to include the opponent in the decision making
+        decision, which is the case for trading.
 
         Parameters
         --------------------
-        decision_raw : list, array-lik structure
-            The resulting prediction from a model.predict function
+        name : str
+            The name of the player making the decision
 
-        threshold : float
-            The float level that determines if the given values are over the
-            set threshold which constitutes a positive decision on that value
+        operation : str
+            The name of the operation for which the decision should be made
+
+        x : numpy.ndarray
+            The x input for which the decision should be calculated
 
         single : boolean (default=True)
-            If the information is single label based. If False then multi-label
-            is assumed and more than one value in the raw decision can be
-            processed to 1
+            Signifies if only one result can be true or if multiple choices
+            can also be true
 
-        Example
+        Returns
         --------------------
-        >>>import numpy as np
-        >>>a = np.array([0.3, 0.6, 0.7])
-        >>>BoardController()._get_processed_decision(a, 0.5, True)
-        [0,0,1]
-        >>>BoardController()._get_processed_decision(a, 0.5, False)
-        [0,1,1]
-        >>>BoardController()._get_processed_decision(a, 0.2, False)
-        [1,1,1]
+        y : np.array
+            Array of length n (where n is the length of the raw input),
+            containing only 0 or 1 integers.
 
         """
-        ind = np.argmax(decision_raw)
-        y = np.zeros(len(decision_raw))
-        if decision_raw[ind] >= threshold:
-            y[ind] = 1
+        y_raw = self.players[name].get_decision(x, operation)
+        y = np.zeros(len(y_raw))
+        threshold = self.config.getfloat("Threshold", operation)
 
-        return y
-
-    def _get_dynamic_cash_reward(self, cash, pos_neg):
-        if cash > 0:
-            return self._cash_reward_function[pos_neg](cash)
+        if single:
+            ind = np.argmax(y_raw)
+            if y_raw[ind] >= threshold:
+                y[ind] = 1
         else:
-            if pos_neg == "positive":
-                return -1
-            elif pos_neg == "negative":
-                return 1
-
-    def _get_decision(self, name, operation, opponent=None):
-        x = self._get_processed_normal_state(name, opponent)
-        decision = self.players[name].get_decision(x, operation)
-        y = self._get_processed_decision(
-            decision, self.config.getfloat("Threshold", operation))
-
-        self.players[name].add_training_data(operation, x, y)
+            ind = np.argwhere(y_raw >= threshold).flatten()
+            np.put(y, ind, 1)
 
         return y
 
-    def _full_turn(self, name, updowngrade=True, trade=True):
+    def _get_dynamic_cash_reward(self, cash, risk_level, negative=False):
+        """
+
+        """
+        cash = 0 if cash < 0 else cash
+
+        if negative:
+            return (1 / (((risk_level / 1500) * cash) + 0.5) - 1)
+        else:
+            return (-1 / (((risk_level / 1500) * cash) + 0.5) + 1)
+
+
+    def _full_turn(self, name):
         if self.players[name].allowed_to_move:
             #Roll the dice
             d1, d2 = self._roll_dice()
@@ -304,28 +363,50 @@ class BoardController():
 
             #If player landed on action field
             if self.board.is_actionfield(new_pos):
-
                 self._land_action_field(name, new_pos)
-
-            #If player lands on a property field
-            elif self.board.is_property(new_pos) or self.board.is_special(new_pos):
-
-                self._land_property(name, new_pos)
-
             else:
-                raise ValueError("field not found")
+                purchase = self._land_property(name, new_pos)
+
+            if self.operation_config["purchase"] and
+                purchase and
+                self.players[name].can_purchase:
+                x = self._get_x(name)
+                y = self._get_y(name, "purchase", x, True)
+                reward = self._execute_purchase(name, new_pos, y)
+                self.players[name].add_training_data("purchase", x, y, reward)
 
             #upgrade/downgrade
             cont = True
             count = 0
-            if updowngrade:
-
+            if self.operation_config["up_down_grade"] and
+                self.players[name].can_up_down_grade:
                 while cont and count < self.upgrade_limit:
-                    cont = self._step_upgrade_downgrade(name)
+                    x = self._get_x(name)
+                    y = self._get_y(name, "up_down_grade", x, True)
+                    reward, cont = self._execute_up_down_grade(name, y)
                     count += 1
+                    self.players[name].add_training_data("up_down_grade",
+                        x, y, reward)
 
-            if trade:
-                pass
+            if self.operation_config["trade"] and self.players[name].can_trade_offer:
+                for opponent in self.players.keys():
+                    if name != opponent and self.players[opponent].can_trade_decision:
+                        x = self._get_x(name, opponent)
+                        y = self._get_y(name, "trade_offer", x, single=False)
+                        reward = self._evaluate_trade_offer(y, name, opponent)
+
+                        x_opp = np.concatenate(y.reshape((-1,3), order="F"), x)
+                        y_opp = self._get_y(opponent, "trade_decision", x, single=True)
+                        reward_opp = -reward
+
+                        if y_opp[0] == 1:
+                            self.players[name].add_training_data("trade_offer",
+                                x, y, reward)
+                            self.players[name].add_training_data("trade_decision",
+                                x_opp, y_opp, reward_opp)
+
+
+
 
             #trade
         else:
@@ -377,127 +458,173 @@ class BoardController():
     def _land_property(self, name, position):
         #If the property is purchaseable
         if self.board.can_purchase(name, position):
-            self._step_purchase(name, position)
+            return True
 
         #is owned
         else:
             #is owned by player already
             if self.board.is_owned_by(name, position):
-                pass
-
+                return False
             #is owned by opponent
             else:
                 opponent_name = self.board.get_owner_name(position)
                 rent = self.board.get_rent(position, d1 + d2)
                 self.players[opponent_name].cash += rent
                 self.players[name].cash -= rent
+                return False
 
-    def _step_purchase(self, name, position):
-        decision = self._get_decision(name, "purchase")
-
-        if decision[0] == 1:
+    def _execute_purchase(self, name, position, y):
+        if y[0] == 1:
             self.board.purchase(name, position)
             self.players[name].cash -= self.board.get_purchase_amount(position)
 
-            if self.players[name].cash < 0:
-                reward = self.config.getfloat("purchase_reward", "Suicide")
-                reward_dynamic = reward
-                self.alive = False
+            self.alive = self.players[name].cash >= 0
+
+            if self.board.is_monopoly(position):
+                reward = self._get_dynamic_cash_reward(
+                    self.players[name].cash,
+                    self.config.getfloat("dynamic_reward_risk_level", "PurchaseMonopoly"),
+                    negative=False
+                )
             else:
-                reward_dynamic = self._get_dynamic_cash_reward(self.players[name].cash, "positive")
-                if self.board.is_monopoly(position):
-                    reward_dynamic += 1
-                    reward = self.config.getfloat("purchase_reward", "PurchaseMonopoly")
-                else:
-                    reward = self.config.getfloat("purchase_reward", "PurchaseStandard")
+                reward = self._get_dynamic_cash_reward(
+                    self.players[name].cash,
+                    self.config.getfloat("dynamic_reward_risk_level", "PurchaseStandard"),
+                    negative=False
+                )
         else:
-            reward_dynamic = self._get_dynamic_cash_reward(self.players[name].cash, "negative")
-            reward = self.config.getfloat("purchase_reward", "None")
+            reward = self._get_dynamic_cash_reward(
+                self.players[name].cash - self.board.get_purchase_amount(position),
+                self.config.getfloat("dynamic_reward_risk_level", "PurchaseNone"),
+                negative=True
+            )
 
-        if self.dynamic_cash_equation:
-            self.players[name].add_reward("purchase", reward_dynamic)
-        else:
-            self.players[name].add_reward("purchase", reward)
+        return reward
 
-    def _step_upgrade_downgrade(self, name):
-        decision = self._get_decision(name, "up_down_grade")
+    def _execute_up_down_grade(self, name, y):
+        """Executes the the given upgrade/downgrade move
 
-        cont = False
+        The decision (y) is executed by the player (name). First the decision
+        format is in two halves of the given y list. The first half is the
+        property that should be upgraded or unmortgaged. The second half is
+        the property that should be downgrade or mortgaged. The difference
+        between (un)mortgaging and (down/up)grading is determined automatically,
+        which ensures the outcome space to be smaller.
 
-        if decision.sum() == 1:
-            ind = np.argmax(decision)
-            pos = self.decision_index[ind]
+        The decision is split into their upgrade/downgrade halves.The index of
+        where the array is 1 is used in conjunction with the board index to find
+        the property that should be changed. The action is carried out on the
+        board and the reward is calculated based on the results. The result is
+        returned as well as if the upgrade/downgrade action can be carried out
+        again.
 
-            #if decision is downgrade/mortgage
-            if ind + 1 > len(decision) / 2:
+        Parameters
+        --------------------
+        name : str
+            The name of the player that carries out the action
 
-                #if position can even be downgraded
-                if self.board.can_downgrade(name, pos):
-                    self.players[name].cash += self.board.get_downgrade_amount(pos)
-                    reward = self.config.getfloat("updown_reward", "CanDowngrade")
-                    reward_dynamic = self._get_dynamic_cash_reward(self.players[name].cash, "negative")
-                    cont = True
-                    self.board.downgrade(name, pos)
+        y : numpy.ndarray
+            The decision array that should executed upon. The dimension should
+            be (56), where the first 28 entries should be upgrade and the latter
+            half should be downgrade
 
-                elif self.board.can_mortgage(name, pos):
-                    self.players[name].cash += self.board.get_mortgage_amount(pos)
-                    reward = self.config.getfloat("updown_reward", "CanMortgage")
-                    reward_dynamic = self._get_dynamic_cash_reward(self.players[name].cash, "negative")
-                    cont = True
-                    self.board.mortgage(name, pos)
+        Returns
+        --------------------
+        Reward : float
+            The reward the player gets based on the action that was input
 
-                #if position cant be dowgraded
-                else:
-                    reward = self.config.getfloat("updown_reward", "NonExecutableDecision")
-                    reward_dynamic = reward
-                    cont = False
+        Continue : boolean
+            If the player can carry out an upgrade/downgrade option again. This
+            is false if an action cannot be carried out or no property is
+            selected to be changed
 
-            #if decision is upgrade
+        """
+        split = int(len(y) / 2)
+        upgrade = y[:split]
+        downgrade = y[split:]
+
+        if upgrade.sum() == 1:
+            ind = np.argmax(upgrade)
+            pos = self.board.index[np.argmax(upgrade)]
+
+            #if position can even be upgraded
+            if self.board.can_upgrade(name, pos):
+                self.players[name].cash -= self.board.get_upgrade_amount(pos)
+                self.board.upgrade(name, pos)
+                reward = self._get_dynamic_cash_reward(
+                    self.players[name].cash,
+                    self.config.getfloat("dynamic_reward_risk_level", "Upgrade"),
+                    negative=False
+                )
+                return reward, True
+
+            #if position can be unmortgaged
+            elif self.board.can_unmortgage(name, pos):
+                self.players[name].cash -= self.board.get_mortgage_amount(pos)
+                self.board.unmortgage(name, pos)
+                reward = self._get_dynamic_cash_reward(
+                    self.players[name].cash,
+                    self.config.getfloat("dynamic_reward_risk_level", "Unmortgage"),
+                    negative=False
+                )
+                return reward, True
+
             else:
+                reward = self.config.getfloat("static_reward", "UpDownNonExec")
+                return reward, False
 
-                #if position can even be upgraded
-                if self.board.can_upgrade(name, pos):
-                    self.players[name].cash -= self.board.get_upgrade_amount(pos)
-                    reward = self.config.getfloat("updown_reward", "CanUpgrade")
-                    reward_dynamic = self._get_dynamic_cash_reward(self.players[name].cash, "positive")
-                    cont = True
-                    self.board.upgrade(name, pos)
+        elif downgrade.sum() == 1:
+            ind = np.argmax(downgrade)
+            pos = self.board.index[np.argmax(downgrade)]
 
-                #if position can be unmortgaged
-                elif self.board.can_unmortgage(name, pos):
-                    self.players[name].cash -= self.board.get_mortgage_amount(pos)
-                    reward = self.config.getfloat("updown_reward", "CanUnmortgage")
-                    reward_dynamic = self._get_dynamic_cash_reward(self.players[name].cash, "positive")
-                    cont = True
-                    self.board.unmortgage(name, pos)
+            if self.board.can_downgrade(name, pos):
+                self.players[name].cash += self.board.get_downgrade_amount(pos)
+                self.board.downgrade(name, pos)
+                reward = self._get_dynamic_cash_reward(
+                    self.players[name].cash,
+                    self.config.getfloat("dynamic_reward_risk_level", "Downgrade"),
+                    negative=True
+                )
+                return reward, True
 
-                else:
-                    reward = self.config.getfloat("updown_reward", "NonExecutableDecision")
-                    reward_dynamic = reward
-                    cont = False
+            elif self.board.can_mortgage(name, pos):
+                self.players[name].cash += self.board.get_mortgage_amount(pos)
+                self.board.mortgage(name, pos)
+                reward = self._get_dynamic_cash_reward(
+                    self.players[name].cash,
+                    self.config.getfloat("dynamic_reward_risk_level", "Mortgage"),
+                    negative=True
+                )
+                return reward, True
 
-                #if upgrade causes bankruptcy
-                if self.players[name].cash < 0:
-                    cont = False
-                    reward = self.config.getfloat("updown_reward", "UpgradeSuicide")
-                    reward_dynamic = reward
-                    self.alive = False
-
-        #if decision is pass
+            else:
+                reward = self.config.getfloat("static_reward", "UpDownNonExec")
+                return reward, False
         else:
-            reward = self.config.getfloat("updown_reward", "None")
-            reward_dynamic = reward
-            cont = False
+            reward = self.config.getfloat("static_reward", "UpDownNone")
+            return reward, False
 
-        if self.dynamic_cash_equation:
-            self.players[name].add_reward("up_down_grade", reward_dynamic)
-        else:
-            self.players[name].add_reward("up_down_grade", reward)
+    def _evaluate_trade_offer(self, offer, name, opponent):
+        offer_cash = self._binary_to_cash(trade_offer[0:14], neg=False)
+        take_cash = self._binary_to_cash(trade_offer[14:28], neg=False)
+        offer_prop = self.board.get_total_value_owned(name, trade_offer[28:56])
+        take_prop = self.board.get_total_value_owned(opponent, trade_offer[56:84])
 
-        return cont
+        limit = max(offer_cash + offer_prop, take_cash + take_prop)
+        reward = ((take_cash + take_prop) - (offer_cash + offer_prop)) / limit
+        return reward
 
-    def _turn_trade(self, name):
+    def _evaluate_trade_decision(self):
+
         pass
+
+    def _execute_trade(self, offer, name, opponent):
+        self._transfer_cash(
+            name, opponent, self._binary_to_cash(offer[0:14], neg=False))
+        self._transfer_cash(
+            opponent, name, self._binary_to_cash(offer[14:28], neg=False))
+        self._transfer_properties(name, opponent, offer[28:56])
+        self._transfer_properties(opponent, name, offer[56:84])
 
     def _roll_dice(self):
         return randrange(1,7), randrange(1,7)
@@ -515,3 +642,40 @@ class BoardController():
         self.players[name].position = new_position
 
         return new_position
+
+    def _transfer_cash(self, from, to, amount):
+        if amount < 0:
+            raise ValueError("Amount cannot be less than 0")
+
+        self.players[from].cash -= amount
+        self.players[to].cash += amounts
+
+    def _transfer_properties(self,
+        from,
+        to,
+        properties):
+        """Transfers properties between two players
+
+        """
+
+        if set(properties).issubset(
+            set(self.board.get_all_properties_owned(from))):
+            cash_gained = 0
+            #Get the colors for the properties list
+            colors = set([self.board.get_property_color(p) for p in properties])
+            properties_to_downgrade = [
+                self.board.get_properties_from_color(c) for c in colors
+            ]
+            #Downgrade all properties to level 1
+            for property in properties_to_downgrade:
+                while self.board.get_level(property) > 1:
+                    cash_gained += self.board.get_downgrade_amount(property)
+                    self.board.downgrade(from, property)
+
+            for property in properties:
+                self.board.remove_ownership(from, property)
+                self.board.purchase(to, property)
+
+            return cash_gained
+        else:
+            raise ValueError("Cannot transfer properties that are not owned")

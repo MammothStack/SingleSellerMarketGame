@@ -333,9 +333,7 @@ class BoardInformation():
         False
 
         """
-        return self._table.at[
-            position, "can_purchase"
-        ]
+        return self._table.at[position, "can_purchase"]
 
     def can_downgrade(self, name, position):
         """Returns if the property at position can be downgraded
@@ -549,6 +547,26 @@ class BoardInformation():
         """
         return position in self._fp_special
 
+    def _update_special_field(self, name, position, color):
+        """
+        Parameters
+        --------------------
+
+        Examples
+        --------------------
+
+        """
+
+        bool_arr = (self._table["color"] == color) & (self._table[name + ":owned"] == True)
+        no = np.sum(bool_arr)
+        if color == "black":
+            self._table.loc[bool_arr, "current_rent_amount"] = 12.5 * pow(2, no)
+        elif color == "white":
+            if no == 1:
+                self._table.loc[bool_arr, "current_rent_amount"] = 4 * 7
+            elif no == 2:
+                self._table.loc[bool_arr, "current_rent_amount"] = 10 * 7
+
     def _update_normal_binary(self, position, check_col, normal_col):
         """
         Parameters
@@ -680,6 +698,58 @@ class BoardInformation():
             else:
                 self._update_normalisation_cell(name, position)
 
+    def remove_ownership(self, name, position):
+        """Removes the ownership of the given player at the given position
+
+        """
+        if self.is_owned_by(name, position) == False:
+            raise BoardError(name + " does not own the property at " + str(position))
+
+        #color of the property
+        color = self._table.at[position, "color"]
+
+        #owned
+        self._table.at[position, name + ":owned"] = False
+
+        #can_purchase
+        self._table.at[position, "can_purchase"] = True
+
+        #can_mortgage
+        self._table.at[position, name + ":can_mortgage"] = False
+
+        #can unmortgage
+        self._table.at[position, name + ":can_unmortgage"] = False
+
+        #can downgrade
+        self._table.at[position, name +":can_downgrade"] = False
+
+        #value
+        self._table.at[position, "value"] = 0
+
+        if position in self._fp_special:
+            self._update_special_field(name, position, color)
+        else:
+            #current_rent_amount
+            self._table.at[position, "current_rent_amount"] = 0
+
+            #level
+            self._table.at[position, "level"] = 0
+
+            #update monopoly status
+            if self._is_color_monopoly(name, color):
+                #Set monopoly
+                self._table.loc[
+                    self._table["color"] == color,
+                    ["monopoly_owned"]
+                ] = False
+
+                #if any in the monopoly are mortgaged then none can upgrade
+                self._table.loc[
+                    self._table["color"] == color,
+                    [name + ":can_upgrade"]
+                ] = False
+
+        self._update_normalisation()
 
     def purchase(self, name, position):
         """Sets property at the position to "purchased" by the player
@@ -1195,25 +1265,7 @@ class BoardInformation():
                 [name + ":can_upgrade"]
             ] = True
 
-    def _update_special_field(self, name, position, color):
-        """
-        Parameters
-        --------------------
 
-        Examples
-        --------------------
-
-        """
-
-        bool_arr = (self._table["color"] == color) & (self._table[name + ":owned"] == True)
-        no = np.sum(bool_arr)
-        if color == "black":
-            self._table.loc[bool_arr, "current_rent_amount"] = 12.5 * pow(2, no)
-        elif color == "white":
-            if no == 1:
-                self._table.loc[bool_arr, "current_rent_amount"] = 4 * 7
-            elif no == 2:
-                self._table.loc[bool_arr, "current_rent_amount"] = 10 * 7
 
     def get_rent(self, position, dice_roll):
         """
@@ -1272,7 +1324,7 @@ class BoardInformation():
         return self._table.at[position, "downgrade_amount"]
 
     def get_level(self, position):
-        """
+        """Returns the level of the property
         Parameters
         --------------------
 
@@ -1295,6 +1347,12 @@ class BoardInformation():
             return "Action field"
         return self._table.at[position, "name"]
 
+    def get_property_color(self, position):
+        """Returns the color of the given property"""
+        if position in self._fp_action:
+            return "Action field"
+        return self._table.at[position, "color"]
+
     def get_action(self, position):
         """
         Parameters
@@ -1309,6 +1367,33 @@ class BoardInformation():
             return var[randint(0, len(var)-1)]
         else:
             return var
+
+    def get_all_properties_owned(self, player_name):
+        """Returns all the properties that the given player owns
+
+        Returns a list of property location that the given player owns.
+
+        Parameters
+        --------------------
+        player_name : str
+            The name of the player for which the properties should be returned
+
+        Returns
+        --------------------
+        properties : list
+            A list of the all the properties location that the given player owns
+
+        Examples
+        --------------------
+        >>>bi = BoardInformation(["red"])
+        >>>bi.get_all_properties_owned("red")
+        []
+        >>>bi.purchase("red",1)
+        >>>bi.get_all_properties_owned("red")
+        [1]
+        """
+
+        return list(self._table.loc[self._table["owned"] == True].index)
 
     def get_amount_properties_owned(self, name):
         """Gets the total amount of properties owned by the given player
@@ -1349,6 +1434,42 @@ class BoardInformation():
         return self._table.loc[
             self._table[name + ":owned"] == True, "level"
         ].sum()
+
+    def get_total_value_owned(self, name, properties=None):
+        """Returns the total value of the properties owned by the player
+
+        Returns the sum of all the properties owned by the given player. If
+        a the properties parameter contains a list of specific properties then
+        only those properties will be summed.
+
+        Parameters
+        --------------------
+        name : str
+            The name of the player for which the property values should be
+            summmed
+
+        properties : list (default=None)
+            A list of specific properties for which the value should be summed
+
+        Returns
+        --------------------
+        summed_value : int
+            A sum of all the owned values given by the parameters
+
+        """
+        if properties is None:
+            return np.sum(
+                self._table.loc[self._table[name + ":owned"] == True, value])
+        else:
+            temp = self._table.loc[properties]
+            return np.sum(temp.loc[temp[name + ":owned"] == True, value])
+
+
+    def get_properties_from_color(self, color):
+        """Returns the list of properties from the given color
+
+        """
+        return list(self._table.loc[self._table["color"] == color].index)
 
     #Information getting
     def get_normalized_state(self, name=None):
@@ -1405,6 +1526,9 @@ class BoardInformation():
                 "upgrade_amount:normal",
                 "downgrade_amount:normal",
                 "current_rent_amount:normal"]]
+
+    def transfer_properties(self, from, to, property_position_list):
+
 
 
 class BoardError(Exception):
