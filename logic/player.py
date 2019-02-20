@@ -251,22 +251,22 @@ class Player():
 
         if "purchase" in models.keys():
             self.can_purchase = models["purchase"] is not None
-        else
+        else:
             raise ValueError("Purchase key not found in dictionary")
 
         if "up_down_grade" in models.keys():
             self.can_up_down_grade = models["up_down_grade"] is not None
-        else
+        else:
             raise ValueError("up_down_grade key not found in dictionary")
 
         if "trade_offer" in models.keys():
             self.can_trade_offer = models["trade_offer"] is not None
-        else
+        else:
             raise ValueError("trade_offer key not found in dictionary")
 
         if "trade_decision" in models.keys():
             self.can_trade_decision = models["trade_decision"] is not None
-        else
+        else:
             raise ValueError("trade_decision key not found in dictionary")
 
         self.models = models
