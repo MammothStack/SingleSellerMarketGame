@@ -156,8 +156,8 @@ class BoardController():
                         self.total_turn,
                         self.players[p].get_training_data("purchase"),
                         self.players[p].get_training_data("up_down_grade"),
-                        self.players[p].get_training_data("trade_offer")],
-                        self.players[p].get_training_data("trade_decision")
+                        self.players[p].get_training_data("trade_offer"),
+                        self.players[p].get_training_data("trade_decision")]
                     index=["name",
                         "cash",
                         "prop_owned",
