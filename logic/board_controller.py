@@ -184,6 +184,11 @@ class BoardController():
         self.total_turn = 0
 
     def _cash_to_binary(self, cash, neg=False):
+        if cash > 16383:
+            cash = 16383
+        elif cash < -16383:
+            cash = -16383
+
         if neg:
             if cash > 0:
                 p = np.array([int(a) for a in list(np.binary_repr(cash, width=14))])
