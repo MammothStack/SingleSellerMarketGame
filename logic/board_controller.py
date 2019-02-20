@@ -77,7 +77,7 @@ class BoardController():
 
 
     def start_game(self,
-        purchase=True
+        purchase=True,
         up_down_grade=True,
         trade=True,
         gather_results=False):
