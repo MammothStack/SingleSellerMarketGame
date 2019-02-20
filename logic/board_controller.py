@@ -643,23 +643,23 @@ class BoardController():
 
         return new_position
 
-    def _transfer_cash(self, from, to, amount):
+    def _transfer_cash(self, from_player, to_player, amount):
         if amount < 0:
             raise ValueError("Amount cannot be less than 0")
 
-        self.players[from].cash -= amount
-        self.players[to].cash += amounts
+        self.players[from_player].cash -= amount
+        self.players[to_player].cash += amounts
 
     def _transfer_properties(self,
-        from,
-        to,
+        from_player,
+        to_player,
         properties):
         """Transfers properties between two players
 
         """
 
         if set(properties).issubset(
-            set(self.board.get_all_properties_owned(from))):
+            set(self.board.get_all_properties_owned(from_player))):
             cash_gained = 0
             #Get the colors for the properties list
             colors = set([self.board.get_property_color(p) for p in properties])
@@ -670,11 +670,11 @@ class BoardController():
             for property in properties_to_downgrade:
                 while self.board.get_level(property) > 1:
                     cash_gained += self.board.get_downgrade_amount(property)
-                    self.board.downgrade(from, property)
+                    self.board.downgrade(from_player, property)
 
             for property in properties:
-                self.board.remove_ownership(from, property)
-                self.board.purchase(to, property)
+                self.board.remove_ownership(from_player, property)
+                self.board.purchase(to_player, property)
 
             return cash_gained
         else:
