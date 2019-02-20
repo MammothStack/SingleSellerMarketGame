@@ -39,7 +39,7 @@ class BoardController():
         self,
         player_list,
         starting_order=None,
-        max_turn=1000,
+        max_turn=800,
         upgrade_limit=20,
         reinforce_config=None,
         dynamic_cash_equation=True
@@ -141,7 +141,7 @@ class BoardController():
             #Turn is incremented
             self.total_turn += 1
 
-        if show_results:
+        if gather_results:
             result_dict = {}
 
             for p in self.players:
