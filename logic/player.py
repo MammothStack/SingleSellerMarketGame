@@ -269,7 +269,7 @@ class Player():
         else:
             raise ValueError("trade_decision key not found in dictionary")
 
-        self.models = models
+        return models
 
     def add_training_data(self, operation, x, y, reward):
         """Adds an instance of training data
