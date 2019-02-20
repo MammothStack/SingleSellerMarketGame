@@ -65,7 +65,7 @@ class BoardController():
             128, 64, 32, 16, 8, 4, 2, 1]
         self.binary_neg = [-1, -2, -4, -8, -16, -32, -64, -128,
             -256, -512, -1024, -2048, -4096, -8192]
-        self.binary = pos + neg
+        self.binary = self.binary_pos + self.binary_neg
 
         if starting_order is None:
             self.order = [p.name for p in player_list]
