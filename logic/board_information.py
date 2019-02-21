@@ -725,15 +725,15 @@ class BoardInformation():
 
         #value
         self._table.at[position, "value"] = 0
+        
+        #level
+        self._table.at[position, "level"] = 0
 
         if position in self._fp_special:
             self._update_special_field(name, position, color)
         else:
             #current_rent_amount
             self._table.at[position, "current_rent_amount"] = 0
-
-            #level
-            self._table.at[position, "level"] = 0
 
             #update monopoly status
             if self._is_color_monopoly(name, color):
@@ -827,6 +827,9 @@ class BoardInformation():
         self._table.at[
             position, "value"
         ] = self._table.at[position, "purchase_amount"]
+        
+        #level
+        self._table.at[position, "level"] = 1
 
         if position in self._fp_special:
             self._update_special_field(name, position, color)
@@ -836,8 +839,7 @@ class BoardInformation():
                 position, "current_rent_amount"
             ] = self._table.at[position, "rent_level:1"]
 
-            #level
-            self._table.at[position, "level"] = 1
+            
 
             #update monopoly status
             if self._is_color_monopoly(name, color):
@@ -926,12 +928,9 @@ class BoardInformation():
         self._table.at[
             position, "current_rent_amount"
         ] = 0
-
-        if position in self._fp_normal:
-            #level
-            self._table.at[
-                position, "level"
-            ] = 0
+        
+        #level
+        self._table.at[position, "level"] = 0
 
         self._update_normalisation()
 
@@ -993,9 +992,10 @@ class BoardInformation():
         ] = True
 
         #can unmortgage
-        self._table.at[
-            position, name + ":can_unmortgage"
-        ] = False
+        self._table.at[position, name + ":can_unmortgage"] = False
+        
+        #level
+        self._table.at[position, "level"] = 1
 
         if position in self._fp_special:
             #can upgrade
@@ -1006,11 +1006,6 @@ class BoardInformation():
             #current_rent_amount
             self._update_special_field(name, position, color)
         else:
-            #level
-            self._table.at[
-                position, "level"
-            ] = 1
-
             #can upgrade
             if self._is_color_monopoly(name, color):
                 self._table.loc[
