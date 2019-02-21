@@ -216,6 +216,10 @@ class Player():
         self.running_reward = {o:0 for o in self.models.keys()}
         self.episode_nb = 0
         self.gamma = 0.99
+        
+    def __repr__(self):
+        return (f'{self.__class__.__name__}('
+            f'{self.name!r}, {self.models!r}, {self.episode_nb!r})')
 
     def reset_player(self):
         self.cash = self._init_cash
