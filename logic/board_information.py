@@ -757,6 +757,9 @@ class BoardInformation():
         self._table.at[
             position, "value"
         ] = self._table.at[position, "purchase_amount"]
+        
+        #level
+        self._table.at[position, "level"] = 1
 
         if position in self._fp_special:
             self._update_special_field(name, position, color)
@@ -765,9 +768,6 @@ class BoardInformation():
             self._table.at[
                 position, "current_rent_amount"
             ] = self._table.at[position, "rent_level:1"]
-
-            #level
-            self._table.at[position, "level"] = 1
 
             #update monopoly status
             if self._is_color_monopoly(name, color):
@@ -843,25 +843,16 @@ class BoardInformation():
         ] = False
 
         #can mortgage
-        self._table.at[
-            position, name + ":can_mortgage"
-        ] = False
+        self._table.at[position, name + ":can_mortgage"] = False
 
         #can unmortgage
-        self._table.at[
-            position, name + ":can_unmortgage"
-        ] = True
+        self._table.at[position, name + ":can_unmortgage"] = True
 
         #current_rent_amount
-        self._table.at[
-            position, "current_rent_amount"
-        ] = 0
-
-        if position in self._fp_normal:
-            #level
-            self._table.at[
-                position, "level"
-            ] = 0
+        self._table.at[position, "current_rent_amount"] = 0
+        
+        #level
+        self._table.at[position, "level"] = 0
 
         self._update_normalisation()
 
@@ -926,6 +917,9 @@ class BoardInformation():
         self._table.at[
             position, name + ":can_unmortgage"
         ] = False
+        
+        #level
+        self._table.at[position, "level"] = 1
 
         if position in self._fp_special:
             #can upgrade
@@ -936,10 +930,7 @@ class BoardInformation():
             #current_rent_amount
             self._update_special_field(name, position, color)
         else:
-            #level
-            self._table.at[
-                position, "level"
-            ] = 1
+            
 
             #can upgrade
             if self._is_color_monopoly(name, color):
