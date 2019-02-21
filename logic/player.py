@@ -219,7 +219,7 @@ class Player():
         
     def __repr__(self):
         return (f'{self.__class__.__name__}('
-            f'{self.name!r}, {self.models!r}, {self.episode_nb!r})')
+            f'{self.name!r}, {list(self.models.keys())!r}, {self.episode_nb!r})')
 
     def reset_player(self):
         self.cash = self._init_cash
