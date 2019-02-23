@@ -113,7 +113,7 @@ class TestCanDowngrade(unittest.TestCase):
         bi.available_houses = 4
         bi.purchase("blue",6)
         bi.purchase("blue",8)
-        bi.purchase("blue",9
+        bi.purchase("blue",9)
 
         bi.upgrade("red", 1)
         bi.upgrade("red", 1)
