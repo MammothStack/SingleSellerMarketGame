@@ -1,4 +1,5 @@
 from src import board_information
+import unittest
 
 class TestInit(unittest.TestCase):
     def test_list(self):
