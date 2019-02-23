@@ -681,7 +681,7 @@ class BoardInformation():
 
         """
 
-        if self.can_purchase(name, position) == False:
+        if self.can_purchase(position) == False:
             raise BoardError(
                 name + " cannot purchase the property at " + str(position))
         #color of the property

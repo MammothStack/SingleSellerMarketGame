@@ -22,23 +22,21 @@ class TestCanPurchase(unittest.TestCase):
     def test_can_purchase_unowned(self):
         bi = BoardInformation(["red","blue"], 10000)
 
-        self.assertTrue(bi.can_purchase("red", 1))
-        self.assertTrue(bi.can_purchase("blue", 1))
+        self.assertTrue(bi.can_purchase(1))
 
     def test_can_purchase_owned(self):
         bi = BoardInformation(["red","blue"], 10000)
         bi.purchase("red", 1)
 
-        self.assertFalse(bi.can_purchase("red", 1))
-        self.assertFalse(bi.can_purchase("blue", 1))
+        self.assertFalse(bi.can_purchase(1))
 
     def test_can_purchase_non_property(self):
         bi = BoardInformation(["red","blue"], 10000)
-        self.failUnlessRaises(BoardError, bi.can_purchase("red", 2))
+        self.failUnlessRaises(BoardError, bi.can_purchase(2))
 
     def test_can_purchase_wrong_name(self):
         bi = BoardInformation(["red","blue"], 10000)
-        self.failUnlessRaises(BoardError, bi.can_purchase("reed", 3))
+        self.failUnlessRaises(BoardError, bi.can_purchase(3))
 
 class TestCanDowngrade(unittest.TestCase):
     def test_can_downgrade_unowned(self):
