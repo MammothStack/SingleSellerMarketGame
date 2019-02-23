@@ -218,10 +218,10 @@ class BoardInformation():
 
         table = pd.read_csv(path)
         table.set_index("position", inplace=True)
-        table["purchase_amount:normal"] = table["purchase_amount"] / max_cash_limit
-        table["mortgage_amount:normal"] = table["mortgage_amount"] / max_cash_limit
-        table["upgrade_amount:normal"] = table["upgrade_amount"] / max_cash_limit
-        table["downgrade_amount:normal"] = table["downgrade_amount"] / max_cash_limit
+        table["purchase_amount:normal"] = table["purchase_amount"] / self._max_cash_limit
+        table["mortgage_amount:normal"] = table["mortgage_amount"] / self._max_cash_limit
+        table["upgrade_amount:normal"] = table["upgrade_amount"] / self._max_cash_limit
+        table["downgrade_amount:normal"] = table["downgrade_amount"] / self._max_cash_limit
 
         table = table.astype(
             {'value':np.int16,
