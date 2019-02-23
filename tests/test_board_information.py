@@ -1,4 +1,4 @@
-from src.board_information import BoardInformation
+from src import BoardInformation
 
 import unittest
 
