@@ -410,7 +410,9 @@ class BoardInformation():
         Counts the levels of all the properties in the given monopoly. If
         the sum of the levels is less than 3 than the
         """
-        return 3 > np.sum(
+
+        count = len(self._table.loc[self._table["color"] == color].index)
+        return count > np.sum(
             self._table.loc[self._table["color"] == color, "level"])
 
     def is_any_purchaseable(self):
