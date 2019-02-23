@@ -911,8 +911,8 @@ class BoardInformation():
         self._table.at[
             position, "value:normal"
         ] = self._table.at[
-            position, "value" / self._max_cash_limit
-        ]
+            position, "value" 
+        ] / self._max_cash_limit
 
         #level
         new_level = self._table.at[position, "level"] + 1
