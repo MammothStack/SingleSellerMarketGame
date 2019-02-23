@@ -127,6 +127,18 @@ class BoardInformation():
         if type(player_names) != list:
             raise ValueError("Given value must be a list with names")
 
+        if not player_names:
+            raise ValueError("List cannot be empty")
+
+        if len(player_names) > 8:
+            raise BoardError("Cannot be more than 8 players")
+
+        if len(player_names) != len(set(player_names)):
+            raise BoardError("Cannot have the same player twice")
+
+        if max_cash_limit < 2000:
+            raise BoardError("Cannot have a cash_limit below the maximum value of the board")
+
         self._max_cash_limit = max_cash_limit
         self._player_names = player_names
         self.available_houses = 40
