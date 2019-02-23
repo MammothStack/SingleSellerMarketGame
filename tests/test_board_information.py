@@ -4,19 +4,20 @@ import unittest
 
 class TestInit(unittest.TestCase):
     def test_list(self):
-        self.assertRaises(ValueError, BoardInformation("red", 10000))
+        #self.assertRaises(ValueError, BoardInformation("red", 10000))
+        self.failUnlessRaises(ValueError, BoardInformation, "red", 10000)
 
     def test_empty_list(self):
-        self.assertRaises(ValueError, BoardInformation([], 10000))
+        self.failUnlessRaises(ValueError, BoardInformation, [])
 
     def test_low_max_cash(self):
-        self.assertRaises(BoardError, BoardInformation(["red"], 0))
+        self.failUnlessRaises(BoardError, BoardInformation, (["red"], 0))
 
     def test_maximum_players(self):
-        self.assertRaises(BoardError, BoardInformation([str(i) for i in range(10)], 1500))
+        self.failUnlessRaises(BoardError, BoardInformation, ([str(i) for i in range(10)], 1500))
 
     def test_no_duplicate_player_names(self):
-        self.assertRaises(BoardError, BoardInformation(["red", "red"], 10000))
+        self.failUnlessRaises(BoardError, BoardInformation, (["red", "red"], 10000))
 
 class TestCanPurchase(unittest.TestCase):
     def test_can_purchase_unowned(self):

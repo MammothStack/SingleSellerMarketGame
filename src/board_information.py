@@ -122,7 +122,7 @@ class BoardInformation():
         Returns the normalized state that is flattened for ML algorithms
 
     """
-    def __init__(self, player_names, max_cash_limit):
+    def __init__(self, player_names, max_cash_limit=10000):
 
         if type(player_names) != list:
             raise ValueError("Given value must be a list with names")
