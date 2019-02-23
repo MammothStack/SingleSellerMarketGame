@@ -34,11 +34,11 @@ class TestCanPurchase(unittest.TestCase):
 
     def test_can_purchase_non_property(self):
         bi = BoardInformation(["red","blue"], 10000)
-        self.assertRaises(KeyError, bi.can_purchase("red", 2))
+        self.failUnlessRaises(KeyError, bi.can_purchase("red", 2))
 
     def test_can_purchase_wrong_name(self):
         bi = BoardInformation(["red","blue"], 10000)
-        self.assertRaises(KeyError, bi.can_purchase("reed", 2))
+        self.failUnlessRaises(KeyError, bi.can_purchase("reed", 3))
 
 class TestCanDowngrade(unittest.TestCase):
     def test_can_downgrade_unowned(self):
