@@ -34,11 +34,119 @@ class TestCanPurchase(unittest.TestCase):
 
     def test_can_purchase_non_property(self):
         bi = BoardInformation(["red","blue"], 10000)
-        self.assertRaises(BoardError, bi.can_purchase("red", 2))
+        self.assertRaises(KeyError, bi.can_purchase("red", 2))
 
     def test_can_purchase_wrong_name(self):
         bi = BoardInformation(["red","blue"], 10000)
-        self.assertRaises(ValueError, bi.can_purchase("reed", 2))
+        self.assertRaises(KeyError, bi.can_purchase("reed", 2))
+
+class TestCanDowngrade(unittest.TestCase):
+    def test_can_downgrade_unowned(self):
+        bi = BoardInformation(["red","blue"], 10000)
+
+        self.assertFalse(bi.can_downgrade("red", 1))
+        self.assertFalse(bi.can_downgrade("blue", 1))
+
+    def test_can_downgrade_non_monopoly(self):
+        bi = BoardInformation(["red","blue"], 10000)
+
+        bi.purchase("red", 1)
+
+        self.assertFalse(bi.can_downgrade("red", 1))
+        self.assertFalse(bi.can_downgrade("blue", 1))
+
+    def test_can_downgrade_level_1(self):
+        bi = BoardInformation(["red","blue"], 10000)
+
+        bi.purchase("red", 1)
+        bi.purchase("red", 3)
+
+        self.assertFalse(bi.can_downgrade("red", 1))
+        self.assertFalse(bi.can_downgrade("blue", 1))
+
+        self.assertFalse(bi.can_downgrade("red", 3))
+        self.assertFalse(bi.can_downgrade("blue", 3))
+
+
+    def test_can_downgrade_monopoly_level_4(self):
+        bi = BoardInformation(["red","blue"], 10000)
+
+        bi.purchase("red", 1)
+        bi.purchase("red", 3)
+        bi.upgrade("red", 1)
+        bi.upgrade("red", 1)
+        bi.upgrade("red", 1)
+
+        self.assertTrue(bi.can_downgrade("red", 1))
+        self.assertFalse(bi.can_downgrade("blue", 1))
+        self.assertFalse(bi.can_downgrade("red", 3))
+
+    def test_can_downgrade_monopoly_level_6(self):
+        bi = BoardInformation(["red","blue"], 10000)
+
+        bi.purchase("red", 1)
+        bi.purchase("red", 3)
+        bi.upgrade("red", 1)
+        bi.upgrade("red", 1)
+        bi.upgrade("red", 1)
+        bi.upgrade("red", 1)
+        bi.upgrade("red", 1)
+
+        self.assertTrue(bi.can_downgrade("red", 1))
+        self.assertFalse(bi.can_downgrade("blue", 1))
+
+    def test_can_downgrade_monopoly_mortgaged(self):
+        bi = BoardInformation(["red","blue"], 10000)
+
+        bi.purchase("red", 1)
+        bi.purchase("red", 3)
+        bi.mortgage("red", 1)
+
+        self.assertFalse(bi.can_downgrade("red", 1))
+        self.assertFalse(bi.can_downgrade("blue", 1))
+
+    def test_can_downgrade_max_no_houses(self):
+        bi = BoardInformation(["red","blue"], 10000)
+
+        bi.purchase("red", 1)
+        bi.purchase("red", 3)
+        bi.available_houses = 4
+        bi.purchase("blue",6)
+        bi.purchase("blue",8)
+        bi.purchase("blue",9
+
+        bi.upgrade("red", 1)
+        bi.upgrade("red", 1)
+        bi.upgrade("red", 1)
+        bi.upgrade("red", 1)
+        bi.upgrade("red", 1)
+
+        bi.upgrade("blue", 6)
+        bi.upgrade("blue", 6)
+        bi.upgrade("blue", 6)
+        bi.upgrade("blue", 6)
+
+
+        self.assertFalse(bi.can_downgrade("red", 1))
+        self.assertTrue(bi.can_downgrade("blue", 6))
+
+
+    def test_can_downgrade_4_houses(self):
+        bi = BoardInformation(["red","blue"], 10000)
+
+        bi.purchase("red", 1)
+        bi.purchase("red", 3)
+        bi.available_houses = 4
+
+        bi.upgrade("red", 1)
+        bi.upgrade("red", 1)
+        bi.upgrade("red", 1)
+        bi.upgrade("red", 1)
+        bi.upgrade("red", 1)
+
+
+        self.assertTrue(bi.can_downgrade("red", 1))
+        self.assertFalse(bi.can_downgrade("blue", 1))
 
 """
 
