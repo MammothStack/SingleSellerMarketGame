@@ -1,4 +1,4 @@
-from src import BoardInformation
+from src import BoardInformation, BoardError
 
 import unittest
 
