@@ -122,11 +122,12 @@ class BoardInformation():
         Returns the normalized state that is flattened for ML algorithms
 
     """
-    def __init__(self, player_names):
+    def __init__(self, player_names, max_cash_limit):
 
         if type(player_names) != list:
-            raise AttributeError("Given value must be a list with names")
+            raise ValueError("Given value must be a list with names")
 
+        self._max_cash_limit = max_cash_limit
         self._player_names = player_names
         self.available_houses = 40
         self.available_hotels = 8
@@ -153,7 +154,7 @@ class BoardInformation():
             38:-100
         }
 
-        self._table = self._set_table(player_names)
+        self._table = self._set_table(player_names, max_cash_limit)
         self.index = list(self._table.index)
 
         l = list(self._table["color"].unique())
@@ -172,6 +173,9 @@ class BoardInformation():
         --------------------
         players : list
             A list of the players as str that are playing on the board
+
+        max_cash_limit : int
+            A limit to which all values are capped and normalized
 
         Examples
         --------------------
@@ -193,100 +197,37 @@ class BoardInformation():
             --------------------
 
             """
-            owned = pd.Series(
-                data=np.zeros(len(index)),
-                name=name + ":owned",
-                index=index,
-                dtype="bool"
-            )
+            categories = [
+                ":owned",
+                ":can_upgrade",
+                ":can_downgrade",
+                ":can_mortgage",
+                ":can_unmortgage"]
 
-            owned_nm = pd.Series(
-                data=[-1 for i in range(len(index))],
-                index=index,
-                name=name + ":owned:normal",
-                dtype="int8")
+            l = [
+                pd.Series(
+                    data=np.zeros(len(index)),
+                    name=name + category,
+                    index=index,
+                    dtype="bool"
+            ) for category in categories]
 
-            canupgrade = pd.Series(
-                data=np.zeros(len(index)),
-                name=name + ":can_upgrade",
-                index=index,
-                dtype="bool"
-            )
-
-            canupgrade_nm = pd.Series(
-                data=[-1 for i in range(len(index))],
-                name=name + ":can_upgrade:normal",
-                index=index,
-                dtype="int8"
-            )
-
-            candowngrade = pd.Series(
-                data=np.zeros(len(index)),
-                name=name + ":can_downgrade",
-                index=index,
-                dtype="bool"
-            )
-
-            candowngrade_nm = pd.Series(
-                data=[-1 for i in range(len(index))],
-                name=name + ":can_downgrade:normal",
-                index=index,
-                dtype="int8"
-            )
-
-            canmortgage = pd.Series(
-                data=np.zeros(len(index)),
-                name=name + ":can_mortgage",
-                index=index,
-                dtype="bool"
-            )
-
-            canmortgage_nm = pd.Series(
-                data=[-1 for i in range(len(index))],
-                name=name + ":can_mortgage:normal",
-                index=index,
-                dtype="int8"
-            )
-
-            canunmortgage = pd.Series(
-                data=np.zeros(len(index)),
-                name=name + ":can_unmortgage",
-                index=index,
-                dtype="bool"
-            )
-
-            canunmortgage_nm = pd.Series(
-                data=[-1 for i in range(len(index))],
-                name=name + ":can_unmortgage:normal",
-                index=index,
-                dtype="int8"
-            )
-
-            return pd.concat(
-                [owned,
-                 canupgrade,
-                 candowngrade,
-                 canmortgage,
-                 canunmortgage,
-                 owned_nm,
-                 canupgrade_nm,
-                 candowngrade_nm,
-                 canmortgage_nm,
-                 canunmortgage_nm],
-                axis=1)
+            return pd.concat(l,axis=1)
 
         path = os.path.join(os.path.dirname(__file__), 'fields.csv')
 
         table = pd.read_csv(path)
         table.set_index("position", inplace=True)
+        table["purchase_amount:normal"] = table["purchase_amount"] / max_cash_limit
+        table["mortgage_amount:normal"] = table["mortgage_amount"] / max_cash_limit
+        table["upgrade_amount:normal"] = table["upgrade_amount"] / max_cash_limit
+        table["downgrade_amount:normal"] = table["downgrade_amount"] / max_cash_limit
+
         table = table.astype(
             {'value':np.int16,
              'value:normal':np.float,
-             'value:max':np.int16,
              'monopoly_owned':np.bool,
-             "monopoly_owned:normal":np.int8,
              'can_purchase':np.bool,
-             'can_purchase:normal':np.int8,
              'purchase_amount':np.int16,
              'purchase_amount:normal':np.float,
              'mortgage_amount':np.int16,
@@ -311,7 +252,6 @@ class BoardInformation():
             table = pd.concat([table, make(p, table.index)], axis=1)
 
         return table
-
 
     def can_purchase(self, name, position):
         """Returns if the property at position can be purchaseable
@@ -355,9 +295,7 @@ class BoardInformation():
         False
 
         """
-        return self._table.at[
-            position, name + ":can_downgrade"
-        ]
+        return self._table.at[position, name + ":can_downgrade"]
 
     def can_upgrade(self, name, position):
         """Returns if the property at position can be upgraded
@@ -379,9 +317,7 @@ class BoardInformation():
         False
 
         """
-        return self._table.at[
-            position, name + ":can_upgrade"
-        ]
+        return self._table.at[position, name + ":can_upgrade"]
 
     def can_mortgage(self, name, position):
         """Returns if the property at position can be mortgaged
@@ -405,9 +341,7 @@ class BoardInformation():
         False
 
         """
-        return self._table.at[
-            position, name + ":can_mortgage"
-        ]
+        return self._table.at[position, name + ":can_mortgage"]
 
     def can_unmortgage(self, name, position):
         """Returns if the property at position can be unmortgaged
@@ -421,9 +355,7 @@ class BoardInformation():
             The position of the property on the board
 
         """
-        return self._table.at[
-            position, name + ":can_unmortgage"
-        ]
+        return self._table.at[position, name + ":can_unmortgage"]
 
     def is_monopoly(self, position):
         """Returns if the property at position is part of a monopoly
@@ -515,191 +447,74 @@ class BoardInformation():
         return self._table.at[position, name + ":owned"]
 
     def is_actionfield(self, position):
-        """
-        Parameters
-        --------------------
-
-        Examples
-        --------------------
-
-        """
+        """Returns true if the given position is an action field"""
         return position in self._fp_action
 
     def is_property(self, position):
-        """
-        Parameters
-        --------------------
-
-        Examples
-        --------------------
-
-        """
+        """Returns true if the given position is an property field"""
         return position in self._fp_normal
 
     def is_special(self, position):
-        """
-        Parameters
-        --------------------
-
-        Examples
-        --------------------
-
-        """
+        """Returns true if the given position is an special property field"""
         return position in self._fp_special
 
-    def _update_special_field(self, name, position, color):
-        """
+    def _update_special_field(self, name, color):
+        """Updates the special field data
+
+        Updates the special field at the given position, which includes the
+        changing the rent amount of the related fields of the same color.
+
+        The white fields are updated with the average roll of two dice roll (7)
+
         Parameters
         --------------------
+        name : str
+            The name of the player
 
-        Examples
-        --------------------
+        color : str
+            The color of the property that should be changed
 
         """
 
         bool_arr = (self._table["color"] == color) & (self._table[name + ":owned"] == True)
-        no = np.sum(bool_arr)
+        amount_owned = np.sum(bool_arr)
         if color == "black":
-            self._table.loc[bool_arr, "current_rent_amount"] = 12.5 * pow(2, no)
+            rent = 12.5 * pow(2, amount_owned)
+            self._table.loc[bool_arr, "current_rent_amount"] = rent
+            self._table.loc[
+                bool_arr, "current_rent_amount:normal"
+            ] = rent / self._max_cash_limit
         elif color == "white":
-            if no == 1:
-                self._table.loc[bool_arr, "current_rent_amount"] = 4 * 7
-            elif no == 2:
-                self._table.loc[bool_arr, "current_rent_amount"] = 10 * 7
-
-    def _update_normal_binary(self, position, check_col, normal_col):
-        """
-        Parameters
-        --------------------
-
-        Examples
-        --------------------
-
-        """
-        if self._table.at[position, check_col]:
-            self._table.at[position, normal_col] = 1
-        else:
-            self._table.at[position, normal_col] = -1
-
-    def _update_normal_value_max(self, position, val_col, max_col, normal_col):
-        """
-        Parameters
-        --------------------
-
-        Examples
-        --------------------
-
-        """
-        val = self._table.at[position, val_col]
-        halfmax = self._table.at[position, max_col] / 2
-        self._table.at[position, normal_col] = (val - halfmax) / halfmax
-
-    def _update_normalisation_cell(self, name, position):
-        """
-        Parameters
-        --------------------
-
-        Examples
-        --------------------
-
-        """
-
-        #owned
-        self._update_normal_binary(
-            position,
-            name + ":owned",
-            name + ":owned:normal")
-
-        #can ugrade
-        self._update_normal_binary(
-            position,
-            name + ":can_upgrade",
-            name + ":can_upgrade:normal")
-
-        #can downgrade
-        self._update_normal_binary(
-            position,
-            name + ":can_downgrade",
-            name + ":can_downgrade:normal")
-
-        #can mortgage
-        self._update_normal_binary(
-            position,
-            name + ":can_mortgage",
-            name + ":can_mortgage:normal")
-
-        #can unmortgaged
-        self._update_normal_binary(
-            position,
-            name + ":can_unmortgage",
-            name + ":can_unmortgage:normal")
-
-        #monopoly owned
-        self._update_normal_binary(
-            position,
-            "monopoly_owned",
-            "monopoly_owned:normal")
-
-        #can purchase
-        self._update_normal_binary(
-            position,
-            "can_purchase",
-            "can_purchase:normal")
-
-        #value
-        self._update_normal_value_max(
-            position,
-            "value",
-            "value:max",
-            "value:normal")
-
-        #current rent
-        self._update_normal_value_max(
-            position,
-            "current_rent_amount",
-            "rent_level:6",
-            "current_rent_amount:normal"
-        )
-
-    def _update_normalisation(self, name=None, position=None):
-        """Updates the normalized values of the table from the standard ones
-
-        This method updates the normalized versions of the columns that
-        are used by the AIs. The normalized values are derived from the
-        standard values already in the table.
-
-        The normalization can be targeted to a single player or a single
-        position of the board, or (by using both parameters) a single board
-        position on owned by a specific player. If none of these parameters
-        are used then the whole table is updated, which is the default
-        behaviour.
-
-        Parameters
-        --------------------
-        name : str (default=None)
-            The name of the player whose values should be updated
-
-        position : int (default=None)
-            The position of the property on the board which should be updated
-
-        """
-        if name is None:
-            if position is None:
-                for nam in self._player_names:
-                    for pos in self._fp_normal + self._fp_special:
-                        self._update_normalisation_cell(nam, pos)
-            else:
-                for nam in self._player_names:
-                    self._update_normalisation_cell(nam, position)
-        else:
-            if position is None:
-                for pos in self._fp_normal + self._fp_special:
-                    self._update_normalisation_cell(name, pos)
-            else:
-                self._update_normalisation_cell(name, position)
+            if amount_owned == 1:
+                self._table.loc[
+                    bool_arr, "current_rent_amount"] = 4 * 7
+                self._table.loc[
+                    bool_arr, "current_rent_amount:normal"
+                ] = (4 * 7) / self._max_cash_limit
+            elif amount_owned == 2:
+                self._table.loc[
+                    bool_arr, "current_rent_amount"] = 10 * 7
+                self._table.loc[
+                    bool_arr, "current_rent_amount:normal"
+                ] = (10 * 7) / self._max_cash_limit
 
     def remove_ownership(self, name, position):
         """Removes the ownership of the given player at the given position
+
+        Parameters
+        --------------------
+        name : str
+            the name of the player purchasing the property
+
+        position : int
+            the position of the property on the board
+
+        Raises
+        --------------------
+        BoardError : if property cannot be sold by the player
+
+        Examples
+        --------------------
 
         """
         if self.is_owned_by(name, position) == False:
@@ -725,15 +540,20 @@ class BoardInformation():
 
         #value
         self._table.at[position, "value"] = 0
-        
+
+        #Value normalized
+        self._table.at[position, "value:normal"] = 0
+
         #level
         self._table.at[position, "level"] = 0
 
         if position in self._fp_special:
-            self._update_special_field(name, position, color)
+            self._update_special_field(name, color)
         else:
             #current_rent_amount
             self._table.at[position, "current_rent_amount"] = 0
+
+            self._table.at[position, "current_rent_amount:normal"] = 0
 
             #update monopoly status
             if self._is_color_monopoly(name, color):
@@ -748,8 +568,6 @@ class BoardInformation():
                     self._table["color"] == color,
                     [name + ":can_upgrade"]
                 ] = False
-
-        self._update_normalisation()
 
     def purchase(self, name, position):
         """Sets property at the position to "purchased" by the player
@@ -827,19 +645,25 @@ class BoardInformation():
         self._table.at[
             position, "value"
         ] = self._table.at[position, "purchase_amount"]
-        
+
+        self._table.at[
+            position, "value:normal"
+        ] = self._table.at[position, "value"] / self._max_cash_limit
+
         #level
         self._table.at[position, "level"] = 1
 
         if position in self._fp_special:
-            self._update_special_field(name, position, color)
+            self._update_special_field(name, color)
         else:
             #current_rent_amount
             self._table.at[
                 position, "current_rent_amount"
             ] = self._table.at[position, "rent_level:1"]
 
-            
+            self._table.at[
+                position, "current_rent_amount:normal"
+            ] = self._table.at[position, "current_rent_amount"] / self._max_cash_limit
 
             #update monopoly status
             if self._is_color_monopoly(name, color):
@@ -854,8 +678,6 @@ class BoardInformation():
                     self._table["color"] == color,
                     [name + ":can_upgrade"]
                 ] = ~self._is_any_in_color_mortgaged(color)
-
-        self._update_normalisation()
 
     def mortgage(self, name, position):
         """Sets property at position to mortgaged by the player
@@ -903,10 +725,14 @@ class BoardInformation():
             position, "mortgage_amount"
         ]
 
-        #can downgrade
         self._table.at[
-            position, name + ":can_downgrade"
-        ] = False
+            position, "value:normal"
+        ] = self._table.at[
+            position, "value"
+        ] / self._max_cash_limit
+
+        #can downgrade
+        self._table.at[position, name + ":can_downgrade"] = False
 
         #can upgrade with the same color (mortgaged props cant be developed)
         self._table.loc[
@@ -915,24 +741,18 @@ class BoardInformation():
         ] = False
 
         #can mortgage
-        self._table.at[
-            position, name + ":can_mortgage"
-        ] = False
+        self._table.at[position, name + ":can_mortgage"] = False
 
         #can unmortgage
-        self._table.at[
-            position, name + ":can_unmortgage"
-        ] = True
+        self._table.at[position, name + ":can_unmortgage"] = True
 
         #current_rent_amount
-        self._table.at[
-            position, "current_rent_amount"
-        ] = 0
-        
+        self._table.at[position, "current_rent_amount"] = 0
+
+        self._table.at[position, "current_rent_amount:normal"] = 0
+
         #level
         self._table.at[position, "level"] = 0
-
-        self._update_normalisation()
 
     def unmortgage(self, name, position):
         """Sets property at position to unmortgaged by the player
@@ -981,30 +801,30 @@ class BoardInformation():
             position, "purchase_amount"
         ]
 
-        #can downgrade
         self._table.at[
-            position, name + ":can_downgrade"
-        ] = False
+            position, "value:normal"
+        ] = self._table.at[
+            position, "value"
+        ] / self._max_cash_limit
+
+        #can downgrade
+        self._table.at[position, name + ":can_downgrade"] = False
 
         #can mortgage
-        self._table.at[
-            position, name + ":can_mortgage"
-        ] = True
+        self._table.at[position, name + ":can_mortgage"] = True
 
         #can unmortgage
         self._table.at[position, name + ":can_unmortgage"] = False
-        
+
         #level
         self._table.at[position, "level"] = 1
 
         if position in self._fp_special:
             #can upgrade
-            self._table.at[
-                position, name + ":can_upgrade"
-            ] = False
+            self._table.at[position, name + ":can_upgrade"] = False
 
             #current_rent_amount
-            self._update_special_field(name, position, color)
+            self._update_special_field(name, color)
         else:
             #can upgrade
             if self._is_color_monopoly(name, color):
@@ -1020,7 +840,11 @@ class BoardInformation():
                 position, "rent_level:1"
             ]
 
-        self._update_normalisation()
+            self._table.at[
+                position, "current_rent_amount:normal"
+            ] = self._table.at[
+                position, "current_rent_amount"
+            ]
 
     def upgrade(self, name, position):
         """Upgrades the property at the position by the player by name
@@ -1070,6 +894,12 @@ class BoardInformation():
             position, "upgrade_amount"
         ]
 
+        self._table.at[
+            position, "value:normal"
+        ] = self._table.at[
+            position, "value" / self._max_cash_limit
+        ]
+
         #level
         new_level = self._table.at[position, "level"] + 1
         self._table.at[position, "level"] = new_level
@@ -1096,6 +926,12 @@ class BoardInformation():
             position, "rent_level:" + str(new_level)
         ]
 
+        self._table.at[
+            position, "current_rent_amount:normal"
+        ] = self._table.at[
+            position, "current_rent_amount"
+        ] / self._max_cash_limit
+
         n_house = self.available_houses
         n_hotel = self.available_hotels
 
@@ -1114,8 +950,6 @@ class BoardInformation():
             self._hotels_to_available()
         if n_hotel > 0 and self.available_hotels == 0:
             self._hotels_to_unavailable()
-
-        self._update_normalisation()
 
     def downgrade(self, name, position):
         """Downgrades the property at the position by the player by name
@@ -1165,6 +999,12 @@ class BoardInformation():
             position, "upgrade_amount"
         ]
 
+        self._table.at[
+            position, "value:normal"
+        ] = self._table.at[
+            position, "value"
+        ] / self._max_cash_limit
+
         #level
         new_level = self._table.at[position, "level"] - 1
         self._table.at[position, "level"] = new_level
@@ -1198,6 +1038,12 @@ class BoardInformation():
             position, "rent_level:" + str(new_level)
         ]
 
+        self._table.at[
+            position, "current_rent_amount:normal"
+        ] = self._table.at[
+            position, "current_rent_amount"
+        ] / self._max_cash_limit
+
         if n_house == 0 and self.available_houses > 0:
             self._houses_to_available()
         if n_house > 0 and self.available_houses == 0:
@@ -1206,10 +1052,6 @@ class BoardInformation():
             self._hotels_to_available()
         if n_hotel > 0 and self.available_hotels == 0:
             self._hotels_to_unavailable()
-
-
-
-        self._update_normalisation()
 
     def _houses_to_unavailable(self):
         for name in self._player_names:
@@ -1260,15 +1102,16 @@ class BoardInformation():
                 [name + ":can_upgrade"]
             ] = True
 
-
-
     def get_rent(self, position, dice_roll):
-        """
+        """Returns the rent of the property
+
         Parameters
         --------------------
+        position : int
+            The position of the property
 
-        Examples
-        --------------------
+        dice_roll : int
+            The roll of the dice that got to the position
 
         """
         if position == 12 or position == 28:
@@ -1277,12 +1120,12 @@ class BoardInformation():
             return self._table.at[position, "current_rent_amount"]
 
     def get_owner_name(self, position):
-        """
+        """Returns the name of the owner at the given position
+
         Parameters
         --------------------
-
-        Examples
-        --------------------
+        position : int
+            The position of the property
 
         """
         s = [a + ":owned" for a in self._player_names]
@@ -1293,49 +1136,68 @@ class BoardInformation():
             return None
 
     def get_purchase_amount(self, position):
-        """
+        """Returns the amount needed to purchase the property
+
         Parameters
         --------------------
-
-        Examples
-        --------------------
+        position : int
+            The position of the property
 
         """
         return self._table.at[position, "purchase_amount"]
 
     def get_mortgage_amount(self, position):
-        """
+        """Returns the amount received when mortgaging the property
+
+        Parameters
+        --------------------
+        position : int
+            The position of the property
 
         """
         return self._table.at[position, "mortgage_amount"]
 
     def get_upgrade_amount(self, position):
-        """
+        """Returns the amount needed to upgrade the property
+
+        Parameters
+        --------------------
+        position : int
+            The position of the property
+
         """
         return self._table.at[position, "upgrade_amount"]
 
     def get_downgrade_amount(self, position):
+        """Returns the amount received when downgrading the property
+
+        Parameters
+        --------------------
+        position : int
+            The position of the property
+
+        """
 
         return self._table.at[position, "downgrade_amount"]
 
     def get_level(self, position):
         """Returns the level of the property
+
         Parameters
         --------------------
-
-        Examples
-        --------------------
+        position : int
+            The position of the property
 
         """
         return self._table.at[position, "level"]
 
     def get_property_name(self, position):
-        """
+        """Returns the name of the property
+
         Parameters
         --------------------
-
-        Examples
-        --------------------
+        position : int
+            The position of the property
 
         """
         if position in self._fp_action:
@@ -1343,18 +1205,25 @@ class BoardInformation():
         return self._table.at[position, "name"]
 
     def get_property_color(self, position):
-        """Returns the color of the given property"""
+        """Returns the color of the given property
+
+        Parameters
+        --------------------
+        position : int
+            The position of the property
+
+        """
         if position in self._fp_action:
             return "Action field"
         return self._table.at[position, "color"]
 
     def get_action(self, position):
-        """
+        """Get the action for current position
+
         Parameters
         --------------------
-
-        Examples
-        --------------------
+        position : int
+            The position of the property
 
         """
         var = self._action_fields[position]
@@ -1459,7 +1328,6 @@ class BoardInformation():
             temp = self._table.loc[properties]
             return np.sum(temp.loc[temp[name + ":owned"] == True, value])
 
-
     def get_properties_from_color(self, color):
         """Returns the list of properties from the given color
 
@@ -1468,7 +1336,7 @@ class BoardInformation():
 
     #Information getting
     def get_normalized_state(self, name=None):
-        """Returns the normalized state that is flattened for ML algorithms
+        """Returns the normalized state of the board
 
         It uses the given name to get player specific values from the table.
         This ensures no matter how many players are in the game. This method
@@ -1481,6 +1349,8 @@ class BoardInformation():
             owned
             can upgrade
             can downgrade
+            can mortgage
+            can unmortgage
 
         The method will fetch the following columns from the table if the
         paramter name is None:
@@ -1489,11 +1359,11 @@ class BoardInformation():
             can purchase
             purchase amount
             mortgage amount
-            upgrade amounts
+            upgrade amount
             downgrade amount
             current rent amount
 
-        since the table is 28 rows deep this results in a table of 28 x 3 or
+        since the table is 28 rows deep this results in a table of 28 x 5 or
         28 x 8
 
         Parameters
@@ -1508,21 +1378,22 @@ class BoardInformation():
         """
 
         if name is not None:
-            return self._table[[name + ":owned:normal",
-                 name + ":can_upgrade:normal",
-                 name + ":can_downgrade:normal"]]
+            return self._table[
+                [name + ":owned",
+                 name + ":can_upgrade",
+                 name + ":can_downgrade",
+                 name + ":can_mortgage",
+                 name + ":can_unmortgage"]]
         else:
             return self._table[[
-                "monopoly_owned:normal",
+                "monopoly_owned",
                 "value:normal",
-                "can_purchase:normal",
+                "can_purchase",
                 "purchase_amount:normal",
                 "mortgage_amount:normal",
                 "upgrade_amount:normal",
                 "downgrade_amount:normal",
                 "current_rent_amount:normal"]]
-
-
 
 
 class BoardError(Exception):
