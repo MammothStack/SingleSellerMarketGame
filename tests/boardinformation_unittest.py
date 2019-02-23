@@ -5,5 +5,5 @@ class TestInit(unittest.TestCase):
         self.assertRaises(ValueError, BoardInformation("red", 10000)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()
