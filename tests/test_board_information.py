@@ -1,4 +1,6 @@
 from src import board_information
+from board_information import BoardInformation
+from board_information import BoardError
 import unittest
 
 class TestInit(unittest.TestCase):
