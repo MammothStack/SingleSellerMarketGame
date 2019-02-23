@@ -154,7 +154,7 @@ class BoardInformation():
             38:-100
         }
 
-        self._table = self._set_table(player_names, max_cash_limit)
+        self._table = self._set_table(player_names)
         self.index = list(self._table.index)
 
         l = list(self._table["color"].unique())
