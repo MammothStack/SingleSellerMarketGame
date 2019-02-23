@@ -265,26 +265,30 @@ class BoardInformation():
 
         return table
 
-    def can_purchase(self, name, position):
+    def can_purchase(self, position):
         """Returns if the property at position can be purchaseable
 
         Parameters
         --------------------
-        name : str
-            The name of the player who wants to purchase the property
-
         position : int
             The position of the property on the board
 
+        Raises
+        --------------------
+        BoardError
+            When the position does not occur in the table
+
         Examples
         --------------------
-        >>>board.can_purchase("red", 1)
+        >>>board.can_purchase(1)
         True
         >>>board.purchase("red", 1)
-        >>>board.can_purchase("red", 1)
+        >>>board.can_purchase(1)
         False
 
         """
+        if position not in self._table.index:
+            raise BoardError("given position not in table index")
         return self._table.at[position, "can_purchase"]
 
     def can_downgrade(self, name, position):
@@ -298,6 +302,11 @@ class BoardInformation():
         position : int
             The position of the property on the board
 
+        Raises
+        --------------------
+        BoardError
+            When the position or name does not occur in the table
+
         Examples
         --------------------
         >>>board.can_downgrade("red", 1)
@@ -307,6 +316,11 @@ class BoardInformation():
         False
 
         """
+        if name not in self._player_names:
+            raise BoardError("Name does not exist in table")
+        if position not in self._table.index:
+            raise BoardError("position does not exist in table")
+
         return self._table.at[position, name + ":can_downgrade"]
 
     def can_upgrade(self, name, position):
@@ -320,6 +334,11 @@ class BoardInformation():
         position : int
             The position of the property on the board
 
+        Raises
+        --------------------
+        BoardError
+            When the position or name does not occur in the table
+
         Examples
         --------------------
         >>>board.can_upgrade("red", 1)
@@ -329,6 +348,10 @@ class BoardInformation():
         False
 
         """
+        if name not in self._player_names:
+            raise BoardError("Name does not exist in table")
+        if position not in self._table.index:
+            raise BoardError("position does not exist in table")
         return self._table.at[position, name + ":can_upgrade"]
 
     def can_mortgage(self, name, position):
@@ -340,7 +363,12 @@ class BoardInformation():
             The name of the player who wants to mortgage the property
 
         position : int
-            The position of the property on the
+            The position of the property on the board
+
+        Raises
+        --------------------
+        BoardError
+            When the position or name does not occur in the table
 
         Examples
         --------------------
@@ -353,6 +381,10 @@ class BoardInformation():
         False
 
         """
+        if name not in self._player_names:
+            raise BoardError("Name does not exist in table")
+        if position not in self._table.index:
+            raise BoardError("position does not exist in table")
         return self._table.at[position, name + ":can_mortgage"]
 
     def can_unmortgage(self, name, position):
@@ -366,7 +398,17 @@ class BoardInformation():
         position : int
             The position of the property on the board
 
+        Raises
+        --------------------
+        BoardError
+            When the position or name does not occur in the table
+
         """
+
+        if name not in self._player_names:
+            raise BoardError("Name does not exist in table")
+        if position not in self._table.index:
+            raise BoardError("position does not exist in table")
         return self._table.at[position, name + ":can_unmortgage"]
 
     def is_monopoly(self, position):
@@ -386,6 +428,8 @@ class BoardInformation():
         True
 
         """
+        if position not in self._table.index:
+            raise BoardError("position does not exist in table")
         return self._table.at[position, "monopoly_owned"]
 
     def _is_color_monopoly(self, name, color):
@@ -397,6 +441,9 @@ class BoardInformation():
         --------------------
 
         """
+        if name not in self._player_names:
+            raise BoardError("Name does not exist in table")
+
         owned = self._table.loc[
             self._table["color"] == color,
             name + ":owned"
@@ -911,7 +958,7 @@ class BoardInformation():
         self._table.at[
             position, "value:normal"
         ] = self._table.at[
-            position, "value" 
+            position, "value"
         ] / self._max_cash_limit
 
         #level
