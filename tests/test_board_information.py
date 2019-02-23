@@ -148,11 +148,95 @@ class TestCanDowngrade(unittest.TestCase):
         self.assertTrue(bi.can_downgrade("red", 1))
         self.assertFalse(bi.can_downgrade("blue", 1))
 
+class TestCanUpgrade(unittest.TestCase):
+
+    def test_can_upgrade_unowned(self):
+        bi = BoardInformation(["red","blue"], 10000)
+        self.assertFalse(bi.can_upgrade("red", 1))
+        self.assertFalse(bi.can_upgrade("blue", 1))
+
+    def test_can_upgrade_owned(self):
+        bi = BoardInformation(["red","blue"], 10000)
+
+        bi.purchase("red", 1)
+
+        self.assertFalse(bi.can_upgrade("red", 1))
+        self.assertFalse(bi.can_upgrade("blue", 1))
+
+    def test_can_upgrade_monopoly(self):
+        bi = BoardInformation(["red","blue"], 10000)
+
+        bi.purchase("red", 1)
+        bi.purchase("red", 3)
+
+        self.assertTrue(bi.can_upgrade("red", 1))
+        self.assertFalse(bi.can_upgrade("blue", 1))
+
+        self.assertTrue(bi.can_upgrade("red", 3))
+        self.assertFalse(bi.can_upgrade("blue", 3))
+
+    def test_can_upgrade_max_level(self):
+        bi = BoardInformation(["red","blue"], 10000)
+
+        bi.purchase("red", 1)
+        bi.purchase("red", 3)
+
+        bi.upgrade("red" , 1)
+        bi.upgrade("red" , 1)
+        bi.upgrade("red" , 1)
+        bi.upgrade("red" , 1)
+        bi.upgrade("red" , 1)
+
+        self.assertFalse(bi.can_upgrade("red", 1))
+        self.assertFalse(bi.can_upgrade("blue", 1))
+
+        self.assertTrue(bi.can_upgrade("red", 3))
+        self.assertFalse(bi.can_upgrade("blue", 3))
+
+    def test_can_upgrade_mortgaged(self):
+        bi = BoardInformation(["red","blue"], 10000)
+
+        bi.purchase("red", 1)
+        bi.purchase("red", 3)
+
+        bi.mortgage("red", 1)
+
+        self.assertFalse(bi.can_upgrade("red", 1))
+        self.assertFalse(bi.can_upgrade("red", 3))
+
+        self.assertFalse(bi.can_upgrade("blue", 1))
+        self.assertFalse(bi.can_upgrade("blue", 3))
+
+    def test_can_upgrade_no_houses(self):
+        bi = BoardInformation(["red","blue"], 10000)
+
+        bi.available_houses = 0
+
+        bi.purchase("red", 1)
+        bi.purchase("red", 3)
+
+        self.assertFalse(bi.can_upgrade("red", 1))
+        self.assertFalse(bi.can_upgrade("red", 3))
+
+    def test_can_upgrade_no_hotels(self):
+        bi = BoardInformation(["red","blue"], 10000)
+
+        bi.purchase("red", 1)
+        bi.purchase("red", 3)
+
+        bi.available_hotels = 0
+
+        bi.upgrade("red" , 1)
+        bi.upgrade("red" , 1)
+        bi.upgrade("red" , 1)
+        bi.upgrade("red" , 1)
+
+        self.assertFalse(bi.can_upgrade("red", 1))
+        self.assertFalse(bi.can_upgrade("red", 3))
+
+
 """
 
-
-can_downgrade(name, position)
-    Returns if the property at position can be downgraded
 
 can_upgrade(name, position)
     Returns if the property at position can be upgraded
