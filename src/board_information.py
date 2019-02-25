@@ -1083,14 +1083,19 @@ class BoardInformation():
         new_level = self._table.at[position, "level"] - 1
         self._table.at[position, "level"] = new_level
 
+        #can_downgrade
+        self._table.at[position, name + ":can_downgrade"] = new_level > 1
+
         #can mortgage, all properties of the same color
         lvl_sum = np.sum(self._table.loc[
             self._table["color"] == color, ["level"]])
 
+        prop_count = len(self._table.loc[self._table["color"] == color].index)
+
         self._table.loc[
             self._table["color"] == color,
             [name + ":can_mortgage"]
-        ] = lvl_sum <= 3
+        ] = lvl_sum <= prop_count
 
         #can unmortgage
         self._table.at[position, name + ":can_unmortgage"] = False

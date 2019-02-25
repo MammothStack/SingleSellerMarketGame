@@ -772,7 +772,7 @@ class TestMortgage(unittest.TestCase):
 
         bi.mortgage("red", 1)
 
-        self.assertEquals(0, bi.get_value(1))
+        self.assertEquals(0, bi.get_level(1))
 
     #rent
     def test_rent(self):
@@ -780,11 +780,11 @@ class TestMortgage(unittest.TestCase):
         bi.purchase("red", 1)
         bi.purchase("red", 3)
 
-        self.assertEquals(2, bi.get_rent(1))
+        self.assertEquals(2, bi.get_rent(1, dice_roll=7))
 
         bi.mortgage("red", 1)
 
-        self.assertEquals(0, bi.get_rent(1))
+        self.assertEquals(0, bi.get_rent(1, dice_roll=7))
 
     def test_mortgage_without_monopoly(self):
         bi = BoardInformation(["red","blue"])
@@ -865,11 +865,11 @@ class TestMortgage(unittest.TestCase):
         bi.purchase("red", 1)
         bi.purchase("red", 3)
 
-        self.assertFalse(bi.can_purchase("red", 1))
+        self.assertFalse(bi.can_purchase(1))
 
         bi.mortgage("red", 1)
 
-        self.assertFalse(bi.can_purchase("red", 1))
+        self.assertFalse(bi.can_purchase(1))
 
     #other props cant upgrade
     def test_other_props_cant_upgrade(self):
@@ -877,7 +877,7 @@ class TestMortgage(unittest.TestCase):
         bi.purchase("red", 1)
         bi.purchase("red", 3)
 
-        self.assertFalse(bi.can_upgrade("red", 1))
+        self.assertTrue(bi.can_upgrade("red", 1))
 
         bi.mortgage("red", 1)
 
