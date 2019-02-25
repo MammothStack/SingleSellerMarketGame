@@ -251,28 +251,32 @@ class TestUpgrade(unittest.TestCase):
         bi.purchase("red", 1)
         bi.purchase("red", 3)
 
-        self.failUnlessRaises(BoardError, bi.upgrade("red", 2))
+        with self.assertRaises(BoardError):
+            bi.upgrade("red", 2)
 
     def test_unowned_property(self):
         bi = BoardInformation(["red","blue"], 10000)
         bi.purchase("red", 1)
         bi.purchase("red", 3)
 
-        self.failUnlessRaises(BoardError, bi.upgrade("red", 6))
+        with self.assertRaises(BoardError):
+            bi.upgrade("red", 6)
 
     def test_wrong_player(self):
         bi = BoardInformation(["red","blue"], 10000)
         bi.purchase("red", 1)
         bi.purchase("red", 3)
 
-        self.failUnlessRaises(BoardError, bi.upgrade("blue", 3))
+        with self.assertRaises(BoardError):
+            bi.upgrade("blue", 2)
 
     def test_unknown_player(self):
         bi = BoardInformation(["red","blue"], 10000)
         bi.purchase("red", 1)
         bi.purchase("red", 3)
 
-        self.failUnlessRaises(BoardError, bi.upgrade("reed", 3))
+        with self.assertRaises(BoardError):
+            bi.upgrade("reed", 2)
 
     def test_value(self):
         bi = BoardInformation(["red","blue"], 10000)
@@ -344,27 +348,27 @@ class TestUpgrade(unittest.TestCase):
         bi.purchase("red", 1)
         bi.purchase("red", 3)
 
-        self.assertEquals(1, bi.get_level("red", 1))
+        self.assertEquals(bi.get_level("red", 1), 1)
 
         bi.upgrade("red", 1)
 
-        self.assertEquals(2, bi.get_level("red", 1))
+        self.assertEquals(bi.get_level("red", 1), 2)
 
         bi.upgrade("red", 1)
 
-        self.assertEquals(3, bi.get_level("red", 1))
+        self.assertEquals(bi.get_level("red", 1), 3)
 
         bi.upgrade("red", 1)
 
-        self.assertEquals(4, bi.get_level("red", 1))
+        self.assertEquals(bi.get_level("red", 1), 4)
 
         bi.upgrade("red", 1)
 
-        self.assertEquals(5, bi.get_level("red", 1))
+        self.assertEquals(bi.get_level("red", 1), 5)
 
         bi.upgrade("red", 1)
 
-        self.assertEquals(6, bi.get_level("red", 1))
+        self.assertEquals(bi.get_level("red", 1), 6)
 
     def test_can_upgrade_non_max(self):
         bi = BoardInformation(["red","blue"], 10000)
@@ -396,22 +400,22 @@ class TestUpgrade(unittest.TestCase):
         bi.purchase("red", 1)
         bi.purchase("red", 3)
 
-        self.assertEquals(4, bi.get_rent("red", 1, 7))
+        self.assertEquals(bi.get_rent("red", 1, 7), 4)
         bi.upgrade("red", 1)
 
-        self.assertEquals(20, bi.get_rent("red", 1, 7))
+        self.assertEquals(bi.get_rent("red", 1, 7), 20)
         bi.upgrade("red", 1)
 
-        self.assertEquals(60, bi.get_rent("red", 1, 7))
+        self.assertEquals(bi.get_rent("red", 1, 7), 60)
         bi.upgrade("red", 1)
 
-        self.assertEquals(180, bi.get_rent("red", 1, 7))
+        self.assertEquals( bi.get_rent("red", 1, 7), 180)
         bi.upgrade("red", 1)
 
-        self.assertEquals(320, bi.get_rent("red", 1, 7))
+        self.assertEquals(bi.get_rent("red", 1, 7), 320)
         bi.upgrade("red", 1)
 
-        self.assertEquals(450, bi.get_rent("red", 1, 7))
+        self.assertEquals(bi.get_rent("red", 1, 7), 450)
 
     def test_houses_decline(self):
         bi = BoardInformation(["red","blue"], 10000, 20, 4)
