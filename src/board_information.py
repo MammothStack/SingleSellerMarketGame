@@ -1135,6 +1135,12 @@ class BoardInformation():
                 [name + ":can_upgrade"]
             ] = False
 
+            self._table.loc[
+                (self._table[name + ":owned"] == True) &
+                (self._table["level"] == 6),
+                [name + ":can_downgrade"]
+            ] = False
+
     def _houses_to_available(self):
         for name in self._player_names:
             #if owned and monopoly exists
@@ -1174,6 +1180,12 @@ class BoardInformation():
                 (self._table[name + ":owned"] == True) &
                 (self._table["level"] == 5),
                 [name + ":can_upgrade"]
+            ] = True
+
+            self._table.loc[
+                (self._table[name + ":owned"] == True) &
+                (self._table["level"] == 6),
+                [name + ":can_downgrade"]
             ] = True
 
     def get_rent(self, position, dice_roll):

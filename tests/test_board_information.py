@@ -102,11 +102,11 @@ class TestCanDowngrade(unittest.TestCase):
         self.assertFalse(bi.can_downgrade("blue", 1))
 
     def test_can_downgrade_max_no_houses(self):
-        bi = BoardInformation(["red","blue"], 10000)
+        bi = BoardInformation(["red","blue"], 10000, 4, 4)
 
         bi.purchase("red", 1)
         bi.purchase("red", 3)
-        bi.available_houses = 4
+
         bi.purchase("blue",6)
         bi.purchase("blue",8)
         bi.purchase("blue",9)
@@ -348,27 +348,27 @@ class TestUpgrade(unittest.TestCase):
         bi.purchase("red", 1)
         bi.purchase("red", 3)
 
-        self.assertEquals(bi.get_level("red", 1), 1)
+        self.assertEquals(bi.get_level(1), 1)
 
         bi.upgrade("red", 1)
 
-        self.assertEquals(bi.get_level("red", 1), 2)
+        self.assertEquals(bi.get_level(1), 2)
 
         bi.upgrade("red", 1)
 
-        self.assertEquals(bi.get_level("red", 1), 3)
+        self.assertEquals(bi.get_level(1), 3)
 
         bi.upgrade("red", 1)
 
-        self.assertEquals(bi.get_level("red", 1), 4)
+        self.assertEquals(bi.get_level(1), 4)
 
         bi.upgrade("red", 1)
 
-        self.assertEquals(bi.get_level("red", 1), 5)
+        self.assertEquals(bi.get_level(1), 5)
 
         bi.upgrade("red", 1)
 
-        self.assertEquals(bi.get_level("red", 1), 6)
+        self.assertEquals(bi.get_level(1), 6)
 
     def test_can_upgrade_non_max(self):
         bi = BoardInformation(["red","blue"], 10000)
@@ -400,22 +400,22 @@ class TestUpgrade(unittest.TestCase):
         bi.purchase("red", 1)
         bi.purchase("red", 3)
 
-        self.assertEquals(bi.get_rent("red", 1, 7), 4)
+        self.assertEquals(bi.get_rent(1, 7), 4)
         bi.upgrade("red", 1)
 
-        self.assertEquals(bi.get_rent("red", 1, 7), 20)
+        self.assertEquals(bi.get_rent(1, 7), 20)
         bi.upgrade("red", 1)
 
-        self.assertEquals(bi.get_rent("red", 1, 7), 60)
+        self.assertEquals(bi.get_rent(1, 7), 60)
         bi.upgrade("red", 1)
 
-        self.assertEquals( bi.get_rent("red", 1, 7), 180)
+        self.assertEquals( bi.get_rent(1, 7), 180)
         bi.upgrade("red", 1)
 
-        self.assertEquals(bi.get_rent("red", 1, 7), 320)
+        self.assertEquals(bi.get_rent(1, 7), 320)
         bi.upgrade("red", 1)
 
-        self.assertEquals(bi.get_rent("red", 1, 7), 450)
+        self.assertEquals(bi.get_rent(1, 7), 450)
 
     def test_houses_decline(self):
         bi = BoardInformation(["red","blue"], 10000, 20, 4)
