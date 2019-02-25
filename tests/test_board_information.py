@@ -519,7 +519,7 @@ class TestDowngrade(unittest.TestCase):
 
         self.assertFalse(bi.can_downgrade("red", 1))
 
-        self.unmortgage("red",1)
+        bi.unmortgage("red",1)
 
         self.assertFalse(bi.can_downgrade("red", 1))
 
