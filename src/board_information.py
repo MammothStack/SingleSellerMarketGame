@@ -1018,11 +1018,11 @@ class BoardInformation():
 
         if n_house == 0 and self.available_houses > 0:
             self._houses_to_available()
-        if n_house > 0 and self.available_houses == 0:
+        if self.available_houses == 0:
             self._houses_to_unavailable()
         if n_hotel == 0 and self.available_hotels > 0:
             self._hotels_to_available()
-        if n_hotel > 0 and self.available_hotels == 0:
+        if self.available_hotels == 0:
             self._hotels_to_unavailable()
 
     def downgrade(self, name, position):
