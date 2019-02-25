@@ -1095,7 +1095,7 @@ class BoardInformation():
         self._table.loc[
             self._table["color"] == color,
             [name + ":can_mortgage"]
-        ] = lvl_sum <= prop_count
+        ] = prop_count == lvl_sum
 
         #can unmortgage
         self._table.at[position, name + ":can_unmortgage"] = False
