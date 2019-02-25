@@ -527,10 +527,6 @@ class TestDowngrade(unittest.TestCase):
 
         self.assertTrue(bi.can_downgrade("red", 1))
 
-
-
-
-
     def test_can_mortgage(self):
         bi = BoardInformation(["red","blue"], 10000)
 

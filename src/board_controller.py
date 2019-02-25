@@ -39,13 +39,14 @@ class BoardController():
         self,
         player_list,
         starting_order=None,
+        max_cash_limit=10000,
         max_turn=800,
         upgrade_limit=20,
         reinforce_config=None,
         dynamic_cash_equation=True
     ):
         self.players = {p.name: p for p in player_list}
-        self.board = BoardInformation([p.name for p in player_list])
+        self.board = BoardInformation([p.name for p in player_list], max_cash_limit)
 
         if reinforce_config is None:
             path = os.path.join(os.path.dirname(__file__), 'config.ini')
@@ -54,6 +55,7 @@ class BoardController():
         else:
             self.config = None
 
+        self.max_cash_limit = max_cash_limit
         self.dynamic_cash_equation = dynamic_cash_equation
         self.alive = True
         self.total_turn = 0
@@ -219,10 +221,10 @@ class BoardController():
             return np.sum(arr * self.binary)
 
 
-    def _get_x(self, name, opponent=None, offer=None):
+    def _get_x(self, name, opponent=None, offer=None, flatten=True):
         """Returns the processed state for the given name
 
-        Fetches the processed and normalized state of the game with the
+        Fetches the general and normalized state of the game with the
         given parameters. The specified name narrows the resulting table
         to the including only the general information and the information
         specific to that player.
@@ -231,28 +233,32 @@ class BoardController():
         for trading, an opponent can be added for which the information will
         also be fetched.
 
-        If only the player fetches the information the
-        resulting table will be made up of the following columns:
-            player cash (28,1)
-            player position (28,1)
-            player property specific columns (28,3)
-            general columns (28,8)
+        If only the player fetches the information the resulting array will
+        include:
+            player cash
+            player position
+            player property specific columns
+            general columns
 
-        resulting in a (28,13) table. This table is reshaped to (28,13,1) to
-        add a channel for better compatibility with keras layers.
+        resulting in a one-dimensional array if the parameter flatten is set
+        to true. Otherwise a table with the player cash appended as a (28, 1)
+        array is returned. If flatten is true this results in a (393,) array,
+        otherwise it will return a (28, 15) array
 
         If the player and opponent data is fetched then the resulting table
-        will be made up of the following columns:
-            player cash (28,1)
-            player position (28,1)
-            player property specific columns (28,3)
-            opponent cash (28,1)
-            opponent position (28,1)
-            opponent property specific columns (28,3)
-            general columns (28,8)
+        will be made up of the following data:
+            player cash
+            player position
+            player property specific columns
+            opponent cash
+            opponent position
+            opponent property
+            general columns
 
-        resulting in a (28,18) table, which again is further reshaped into a
-        (28,18,1) array. This array is then returned
+        resulting in a one-dimensional array if the parameter flatten is set
+        to true. Otherwise a table with the player  and opponent cash is
+        appended as a (28, 1) array is returned. If flatten is true this
+        results in a (562,) array, otherwise it will return a (28, 22) array
 
         Parameters
         --------------------
@@ -275,44 +281,34 @@ class BoardController():
         """
         def get_state_for_player(name):
             p = self.players[name].position
-            v = self.board.get_normalized_state(name)
+            v = self.board.get_normalized_player_state(name)
             p_arr = np.full(len(v.index), 0)
-            c_arr = self._cash_to_binary(
-                self.players[name].cash, neg=True)
 
             if p in v.index:
                 p_arr[v.index.get_loc(p)] = 1
 
-            return c_arr.reshape(-1,1), p_arr.reshape(-1,1), v.values
+            return np.concatenate(
+                (
+                    [self.players[name].cash / self.max_cash_limit],
+                    p_arr,
+                    v.values.flatten("F")
+                )
+            )
 
-        gen_state = self.board.get_normalized_state()
-        pla_cash, pla_position, pla_state = get_state_for_player(name)
+        gen_state = self.board.get_normalized_general_state().values.flatten("F")
 
-        try:
-            x = np.concatenate((
-                pla_cash,
-                pla_position,
-                pla_state,
-                gen_state), axis=1)
-        except ValueError:
-            print("cash", pla_cash.shape)
-            print("positin", pla_position.shape)
-            print("state", pla_state.shape)
-            print("gen_state", gen_state.shape)
-            raise AttributeError("yo something wack")
+        pla_state = get_state_for_player(name)
+
+        opp_state = []
+        offer_state = []
 
         if opponent is not None:
-            opp_cash, opp_position, opp_state = get_state_for_player(opponent)
-            x = np.concatenate((
-                opp_cash,
-                opp_position,
-                opp_state,
-                x), axis=1)
+            opp_state = get_state_for_player(opponent)
 
         if offer is not None:
-            x = np.concatenate((offer, x), axis=1)
+            offer_state = offer
 
-        return x.reshape(x.shape[0], x.shape[1], 1)
+        return np.concatenate((offer, opp_state, pla_state, gen_state))
 
     def _get_y(self, name, operation, x, single=True):
         """Get a decision/prediction from the players for the given operation

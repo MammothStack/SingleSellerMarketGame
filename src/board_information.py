@@ -1437,25 +1437,12 @@ class BoardInformation():
         return list(self._table.loc[self._table["color"] == color].index)
 
     #Information getting
-    def get_normalized_state(self, name=None):
+    def get_normalized_general_state(self):
         """Returns the normalized state of the board
 
-        It uses the given name to get player specific values from the table.
-        This ensures no matter how many players are in the game. This method
-        will always spit out the same table, which helps when training an
-        AI that is supposed to be able to play against multiple players at
-        the same time.
+        Returns general values of the board that do not pertain to specific
+        players. This information includes:
 
-        The method will fetch the following columns from the table if the
-        parameter name has the name of a player:
-            owned
-            can upgrade
-            can downgrade
-            can mortgage
-            can unmortgage
-
-        The method will fetch the following columns from the table if the
-        paramter name is None:
             monpoly owned
             value
             can purchase
@@ -1465,8 +1452,32 @@ class BoardInformation():
             downgrade amount
             current rent amount
 
-        since the table is 28 rows deep this results in a table of 28 x 5 or
-        28 x 8
+        since the table is 28 rows deep this results in a table of 28 x 8
+
+        """
+        return self._table[[
+            "monopoly_owned",
+            "value:normal",
+            "can_purchase",
+            "purchase_amount:normal",
+            "mortgage_amount:normal",
+            "upgrade_amount:normal",
+            "downgrade_amount:normal",
+            "current_rent_amount:normal"]].astype("float")
+
+    def get_normalized_player_state(self, name):
+        """Returns the normalized state of the board
+
+        It uses the given name to get player specific values from the table.
+        This ensures no matter how many players are in the game.The method will
+        fetch the following columns from the table:
+            owned
+            can upgrade
+            can downgrade
+            can mortgage
+            can unmortgage
+
+        since the table is 28 rows deep this results in a table of 28 x 5
 
         Parameters
         --------------------
@@ -1474,28 +1485,16 @@ class BoardInformation():
             The name(s) of the player(s) for whom the normalized state should
             be fetched
 
-        Examples
-        --------------------
-
         """
+        if name not in self._player_names:
+            raise BoardError("That name is not in the player list")
 
-        if name is not None:
-            return self._table[
-                [name + ":owned",
-                 name + ":can_upgrade",
-                 name + ":can_downgrade",
-                 name + ":can_mortgage",
-                 name + ":can_unmortgage"]]
-        else:
-            return self._table[[
-                "monopoly_owned",
-                "value:normal",
-                "can_purchase",
-                "purchase_amount:normal",
-                "mortgage_amount:normal",
-                "upgrade_amount:normal",
-                "downgrade_amount:normal",
-                "current_rent_amount:normal"]]
+        return self._table[
+            [name + ":owned",
+             name + ":can_upgrade",
+             name + ":can_downgrade",
+             name + ":can_mortgage",
+             name + ":can_unmortgage"]].astype("float")
 
 
 class BoardError(Exception):
