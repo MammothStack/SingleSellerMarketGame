@@ -1088,7 +1088,7 @@ class BoardInformation():
 
         #can mortgage, all properties of the same color
         lvl_sum = np.sum(self._table.loc[
-            self._table["color"] == color, ["level"]])
+            self._table["color"] == color, ["level"]].values)
 
         prop_count = len(self._table.loc[self._table["color"] == color].index)
 
