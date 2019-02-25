@@ -816,7 +816,7 @@ class TestMortgage(unittest.TestCase):
         self.assertFalse(bi.can_mortgage("red", 3))
 
     #canunmortgage
-    def test_can_unmortgage(self)
+    def test_can_unmortgage(self):
         bi = BoardInformation(["red","blue"])
         bi.purchase("red", 1)
         self.assertFalse(bi.can_unmortgage("red", 1))
