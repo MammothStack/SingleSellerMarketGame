@@ -221,7 +221,7 @@ class BoardController():
             return np.sum(arr * self.binary)
 
 
-    def _get_x(self, name, opponent=None, offer=None, flatten=True):
+    def _get_x(self, name, opponent=None, offer=None):
         """Returns the processed state for the given name
 
         Fetches the general and normalized state of the game with the
@@ -240,10 +240,7 @@ class BoardController():
             player property specific columns
             general columns
 
-        resulting in a one-dimensional array if the parameter flatten is set
-        to true. Otherwise a table with the player cash appended as a (28, 1)
-        array is returned. If flatten is true this results in a (393,) array,
-        otherwise it will return a (28, 15) array
+        resulting in a one-dimensional array (393,)
 
         If the player and opponent data is fetched then the resulting table
         will be made up of the following data:
@@ -255,10 +252,7 @@ class BoardController():
             opponent property
             general columns
 
-        resulting in a one-dimensional array if the parameter flatten is set
-        to true. Otherwise a table with the player  and opponent cash is
-        appended as a (28, 1) array is returned. If flatten is true this
-        results in a (562,) array, otherwise it will return a (28, 22) array
+        resulting in a one-dimensional array (562,)
 
         Parameters
         --------------------
@@ -275,8 +269,7 @@ class BoardController():
         Returns
         --------------------
         Gamestate array : numpy.ndarray
-             Shape (28, 13, 1) or (28, 18, 1) based on parameters. In addition
-             to the offer dimensions
+             A one-dimensional array (393,)/(562,)
 
         """
         def get_state_for_player(name):
@@ -401,6 +394,7 @@ class BoardController():
                     self.players[name].add_training_data("up_down_grade",
                         x, y, reward)
 
+            #trade
             if self.operation_config["trade"] and self.players[name].can_trade_offer:
                 for opponent in self.players.keys():
                     if name != opponent and self.players[opponent].can_trade_decision:
@@ -418,10 +412,6 @@ class BoardController():
                             self.players[name].add_training_data("trade_decision",
                                 x_opp, y_opp, reward_opp)
 
-
-
-
-            #trade
         else:
             self.players[name].allowed_to_move = True
 
