@@ -217,7 +217,7 @@ class TestCanUpgrade(unittest.TestCase):
         self.assertFalse(bi.can_upgrade("red", 3))
 
     def test_can_upgrade_no_hotels(self):
-        bi = BoardInformation(["red","blue"], 10000, 20, 1)
+        bi = BoardInformation(["red","blue"], 10000, 20, 0)
 
         bi.purchase("red", 1)
         bi.purchase("red", 3)
