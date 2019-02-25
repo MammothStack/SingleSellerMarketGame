@@ -27,6 +27,15 @@ class BoardInformation():
     player_names : list
         A list of the players as str that are playing on the board
 
+    max_cash_limit : int
+        The maximum cash value for unto which other amounts will be normalized
+
+    available_houses : int
+        The starting amount of houses for the game
+
+    available_hotels : int
+        The starting amount of hotels for the game
+
     Attributes
     --------------------
     available_houses : int
@@ -122,7 +131,11 @@ class BoardInformation():
         Returns the normalized state that is flattened for ML algorithms
 
     """
-    def __init__(self, player_names, max_cash_limit=10000):
+    def __init__(self,
+        player_names,
+        max_cash_limit=10000,
+        available_houses=40,
+        available_hotels=8):
 
         if type(player_names) != list:
             raise ValueError("Given value must be a list with names")
@@ -141,8 +154,8 @@ class BoardInformation():
 
         self._max_cash_limit = max_cash_limit
         self._player_names = player_names
-        self.available_houses = 40
-        self.available_hotels = 8
+        self.available_houses = available_houses
+        self.available_hotels = available_hotels
         self.free_parking_cash = 0
         self._fp_normal = [1,3,6,8,9,11,13,14,16,18,19,21,23,
                            24,26,27,29,31,32,34,37,39]
@@ -1206,6 +1219,17 @@ class BoardInformation():
 
         """
         return self._table.at[position, "purchase_amount"]
+
+    def get_value(self, position):
+        """Returns the value of the property
+
+        Parameters
+        --------------------
+        position : int
+            The position of the property
+
+        """
+        return self._table.at[position, "value"]
 
     def get_mortgage_amount(self, position):
         """Returns the amount received when mortgaging the property

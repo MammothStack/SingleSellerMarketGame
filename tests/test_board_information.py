@@ -30,9 +30,6 @@ class TestCanPurchase(unittest.TestCase):
 
         self.assertFalse(bi.can_purchase(1))
 
-    def test_can_purchase_non_property(self):
-        bi = BoardInformation(["red","blue"], 10000)
-        self.failUnlessRaises(BoardError, bi.can_purchase(2))
 
     def test_can_purchase_non_property_alt(self):
         bi = BoardInformation(["red","blue"], 10000)
@@ -209,10 +206,12 @@ class TestCanUpgrade(unittest.TestCase):
     def test_can_upgrade_no_houses(self):
         bi = BoardInformation(["red","blue"], 10000)
 
-        bi.available_houses = 0
+        bi.available_houses = 1
 
         bi.purchase("red", 1)
         bi.purchase("red", 3)
+
+        bi.upgrade("red", 1)
 
         self.assertFalse(bi.can_upgrade("red", 1))
         self.assertFalse(bi.can_upgrade("red", 3))
@@ -231,7 +230,229 @@ class TestCanUpgrade(unittest.TestCase):
         bi.upgrade("red" , 1)
 
         self.assertFalse(bi.can_upgrade("red", 1))
-        self.assertFalse(bi.can_upgrade("red", 3))
+        self.assertTrue(bi.can_upgrade("red", 3))
+
+
+class TestUpgrade(unittest.TestCase):
+
+    """
+    value                  + upgrade cost
+    can downgrade          true
+    can mortgage           false (for all in monopoly)
+    can unmortgage         false
+    level                  + 1
+    can upgrade            if applicable
+    current rent amount
+
+    """
+
+    def test_non_property_position(self):
+        bi = BoardInformation(["red","blue"], 10000)
+        bi.purchase("red", 1)
+        bi.purchase("red", 3)
+
+        self.failUnlessRaises(BoardError, bi.upgrade("red", 2))
+
+    def test_unowned_property(self):
+        bi = BoardInformation(["red","blue"], 10000)
+        bi.purchase("red", 1)
+        bi.purchase("red", 3)
+
+        self.failUnlessRaises(BoardError, bi.upgrade("red", 6))
+
+    def test_wrong_player(self):
+        bi = BoardInformation(["red","blue"], 10000)
+        bi.purchase("red", 1)
+        bi.purchase("red", 3)
+
+        self.failUnlessRaises(BoardError, bi.upgrade("blue", 3))
+
+    def test_unknown_player(self):
+        bi = BoardInformation(["red","blue"], 10000)
+        bi.purchase("red", 1)
+        bi.purchase("red", 3)
+
+        self.failUnlessRaises(BoardError, bi.upgrade("reed", 3))
+
+    def test_value(self):
+        bi = BoardInformation(["red","blue"], 10000)
+
+        bi.purchase("red", 1)
+        bi.purchase("red", 3)
+
+        bi.upgrade("red", 1)
+
+        self.assertEquals(110, bi.get_value(1))
+
+        bi.upgrade("red", 1)
+
+        self.assertEquals(160, bi.get_value(1))
+
+    def test_can_downgrade(self):
+        bi = BoardInformation(["red","blue"], 10000)
+
+        bi.purchase("red", 1)
+        bi.purchase("red", 3)
+
+        bi.upgrade("red", 1)
+
+        self.assertTrue(bi.can_downgrade("red", 1))
+
+        bi.upgrade("red", 1)
+        bi.upgrade("red", 1)
+        bi.upgrade("red", 1)
+        bi.upgrade("red", 1)
+
+        self.assertTrue(bi.can_downgrade("red", 1))
+
+    def test_can_mortgage(self):
+        bi = BoardInformation(["red","blue"], 10000)
+
+        bi.purchase("red", 1)
+        bi.purchase("red", 3)
+
+        bi.upgrade("red", 1)
+
+        self.assertFalse(bi.can_mortgage("red", 1))
+
+    def test_can_mortgage_other_props_of_same_color(self):
+        bi = BoardInformation(["red","blue"], 10000)
+
+        bi.purchase("red", 1)
+        bi.purchase("red", 3)
+
+        bi.upgrade("red", 1)
+
+        self.assertFalse(bi.can_mortgage("red", 1))
+        self.assertFalse(bi.can_mortgage("red", 3))
+
+
+    def test_can_unmortgage(self):
+        bi = BoardInformation(["red","blue"], 10000)
+
+        bi.purchase("red", 1)
+        bi.purchase("red", 3)
+
+        bi.upgrade("red", 1)
+
+        self.assertFalse(bi.can_unmortgage("red", 1))
+        self.assertFalse(bi.can_unmortgage("red", 3))
+
+    def test_level(self):
+        bi = BoardInformation(["red","blue"], 10000)
+
+        bi.purchase("red", 1)
+        bi.purchase("red", 3)
+
+        self.assertEquals(1, bi.get_level("red", 1))
+
+        bi.upgrade("red", 1)
+
+        self.assertEquals(2, bi.get_level("red", 1))
+
+        bi.upgrade("red", 1)
+
+        self.assertEquals(3, bi.get_level("red", 1))
+
+        bi.upgrade("red", 1)
+
+        self.assertEquals(4, bi.get_level("red", 1))
+
+        bi.upgrade("red", 1)
+
+        self.assertEquals(5, bi.get_level("red", 1))
+
+        bi.upgrade("red", 1)
+
+        self.assertEquals(6, bi.get_level("red", 1))
+
+    def test_can_upgrade_non_max(self):
+        bi = BoardInformation(["red","blue"], 10000)
+
+        bi.purchase("red", 1)
+        bi.purchase("red", 3)
+
+        bi.upgrade("red", 1)
+
+        self.assertTrue(bi.can_upgrade("red", 1))
+
+    def test_can_upgrade_max(self):
+        bi = BoardInformation(["red","blue"], 10000)
+
+        bi.purchase("red", 1)
+        bi.purchase("red", 3)
+
+        bi.upgrade("red", 1)
+        bi.upgrade("red", 1)
+        bi.upgrade("red", 1)
+        bi.upgrade("red", 1)
+        bi.upgrade("red", 1)
+
+        self.assertFalse(bi.can_upgrade("red", 1))
+
+    def test_current_rent_amount(self):
+        bi = BoardInformation(["red","blue"], 10000)
+
+        bi.purchase("red", 1)
+        bi.purchase("red", 3)
+
+        self.assertEquals(4, bi.get_rent("red", 1, 7))
+        bi.upgrade("red", 1)
+
+        self.assertEquals(20, bi.get_rent("red", 1, 7))
+        bi.upgrade("red", 1)
+
+        self.assertEquals(60, bi.get_rent("red", 1, 7))
+        bi.upgrade("red", 1)
+
+        self.assertEquals(180, bi.get_rent("red", 1, 7))
+        bi.upgrade("red", 1)
+
+        self.assertEquals(320, bi.get_rent("red", 1, 7))
+        bi.upgrade("red", 1)
+
+        self.assertEquals(450, bi.get_rent("red", 1, 7))
+
+    def test_houses_decline(self):
+        bi = BoardInformation(["red","blue"], 10000, 20, 4)
+
+        bi.purchase("red", 1)
+        bi.purchase("red", 3)
+
+        self.assertEquals(20, bi.available_houses)
+        bi.upgrade("red", 1)
+        self.assertEquals(19, bi.available_houses)
+        bi.upgrade("red", 1)
+        self.assertEquals(18, bi.available_houses)
+        bi.upgrade("red", 1)
+        self.assertEquals(17, bi.available_houses)
+
+    def test_houses_return_when_hotel_upgrade(self):
+        bi = BoardInformation(["red","blue"], 10000, 20, 4)
+
+        bi.purchase("red", 1)
+        bi.purchase("red", 3)
+
+        self.assertEquals(20, bi.available_houses)
+        self.assertEquals(4, bi.available_hotels)
+        bi.upgrade("red", 1)
+        self.assertEquals(19, bi.available_houses)
+        self.assertEquals(4, bi.available_hotels)
+        bi.upgrade("red", 1)
+        self.assertEquals(18, bi.available_houses)
+        self.assertEquals(4, bi.available_hotels)
+        bi.upgrade("red", 1)
+        self.assertEquals(17, bi.available_houses)
+        self.assertEquals(4, bi.available_hotels)
+        bi.upgrade("red", 1)
+        self.assertEquals(16, bi.available_houses)
+        self.assertEquals(4, bi.available_hotels)
+
+        bi.upgrade("red", 1)
+        self.assertEquals(20, bi.available_houses)
+        self.assertEquals(3, bi.available_hotels)
+
+
 
 
 """
