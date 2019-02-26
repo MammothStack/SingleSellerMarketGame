@@ -880,7 +880,7 @@ class TestMortgage(unittest.TestCase):
         self.assertRaises(BoardError, lambda: bi.upgrade("red", 3))
         self.assertRaises(BoardError, lambda: bi.upgrade("red", 1))
 
-class TestUnmortgage(unittes.TestCase):
+class TestUnmortgage(unittest.TestCase):
 
     def test_unowned_property(self):
         bi = BoardInformation(["red","blue"])
@@ -1170,8 +1170,76 @@ class TestUnmortgage(unittes.TestCase):
         self.assertTrue(bi.can_upgrade("red", 8))
         self.assertTrue(bi.can_upgrade("red", 9))
 
+class TestPurchase(unittest.TestCase):
 
+    def test_unowned_property(self):
+        bi = BoardInformation(["red","blue"])
+        bi.purchase("red", 6)
+        self.assertRaise(BoardError, lambda: bi.purchase("blue", 6))
 
+    def test_none_property(self):
+        bi = BoardInformation(["red","blue"])
+        self.assertRaise(BoardError, lambda: bi.purchase("blue", 10))
+
+    def test_non_player(self):
+        bi = BoardInformation(["red","blue"])
+        self.assertRaise(BoardError, lambda: bi.purchase("bloo", 1))
+
+    def test_value(self):
+        bi = BoardInformation(["red","blue"])
+        self.assertEquals(0, bi.get_value(6))
+        self.assertEquals(0, bi.get_value(8))
+        self.assertEquals(0, bi.get_value(9))
+
+        bi.purchase("red", 6)
+        bi.purchase("red", 8)
+        bi.purchase("red", 9)
+
+        self.assertEquals(100, bi.get_value(6))
+        self.assertEquals(100, bi.get_value(8))
+        self.assertEquals(120, bi.get_value(9))
+
+    def test_level(self):
+        bi = BoardInformation(["red","blue"])
+        self.assertEquals(0, bi.get_level(6))
+        self.assertEquals(0, bi.get_level(8))
+        self.assertEquals(0, bi.get_level(9))
+
+        bi.purchase("red", 6)
+        bi.purchase("red", 8)
+        bi.purchase("red", 9)
+
+        self.assertEquals(1, bi.get_level(6))
+        self.assertEquals(1, bi.get_level(8))
+        self.assertEquals(1, bi.get_level(9))
+
+    def test_rent(self):
+        bi = BoardInformation(["red","blue"])
+        self.assertEquals(0, bi.get_rent(6))
+        self.assertEquals(0, bi.get_rent(8))
+        self.assertEquals(0, bi.get_rent(9))
+
+        bi.purchase("red", 6)
+        bi.purchase("red", 8)
+        bi.purchase("red", 9)
+
+        self.assertEquals(6, bi.get_rent(6))
+        self.assertEquals(6, bi.get_rent(8))
+        self.assertEquals(8, bi.get_rent(9))
+
+    def test_can_purchase(self):
+        bi = BoardInformation(["red","blue"])
+        self.assertTrue(bi.can_purchase(6))
+        self.assertTrue(bi.can_purchase(8))
+        self.assertTrue(bi.can_purchase(9))
+
+        bi.purchase("red", 6)
+        bi.purchase("red", 8)
+        bi.purchase("red", 9)
+
+        self.assertFalse(bi.can_purchase(6))
+        self.assertFalse(bi.can_purchase(8))
+        self.assertFalse(bi.can_purchase(9))
 """
 
 can_mortgage(name, position)
@@ -1197,9 +1265,6 @@ is_special(position)
 
 purchase(name, position)
     Sets property at the position to "purchased" by the name
-
-unmortgage(name, position)
-    Unmortgages the property at the position by the player by name
 
 get_rent(positon, dice_roll)
     Returns the calculated rent of the property at the position
