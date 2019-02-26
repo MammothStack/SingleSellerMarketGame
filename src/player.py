@@ -293,7 +293,7 @@ class OperationModel():
     def save(self, destination=None):
         if destination is None:
             destination = ""
-        else
+        else:
             if destination[-1:] != "/": destination += "/"
 
         config = {
