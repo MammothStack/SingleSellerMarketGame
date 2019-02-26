@@ -184,7 +184,7 @@ class Player():
                 self.models[o].learn_training_data(
                     x=np.array(self.x_train[o]),
                     y=np.array(self.y_train[o]),
-                    sample_weight=np.array(self.rewards[o]),
+                    sample_weights=np.array(self.rewards[o]),
                     verbose=0,
                     rewards_sum=self.rewards_sum[o]
                 )
