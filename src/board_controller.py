@@ -281,9 +281,9 @@ class BoardController():
                 p_arr[v.index.get_loc(p)] = 1
 
             if self.players[name].cash >= self.max_cash_limit:
-                cash = 1.0
+                cash = [1.0]
             else:
-                cash = self.players[name].cash / self.max_cash_limit
+                cash = [self.players[name].cash / self.max_cash_limit]
 
             return np.concatenate((cash,p_arr,v.values.flatten("F")))
 
