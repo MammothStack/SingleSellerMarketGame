@@ -327,7 +327,7 @@ class BoardController():
         """
         y_raw = self.players[name].get_decision(x, operation)
         y = np.zeros(len(y_raw))
-        threshold = self.config.getfloat("Threshold", operation)
+        threshold = self.players[name].models[operation].true_threshold
 
         if single:
             ind = np.argmax(y_raw)
