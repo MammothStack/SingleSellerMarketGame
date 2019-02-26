@@ -43,7 +43,7 @@ class BoardController():
         max_turn=800,
         upgrade_limit=20,
         reinforce_config=None,
-        dynamic_cash_equation=True
+        dynamic_reward_risk_level=None
     ):
         self.players = {p.name: p for p in player_list}
         self.board = BoardInformation([p.name for p in player_list], max_cash_limit)
@@ -351,10 +351,21 @@ class BoardController():
         """
         cash = 0 if cash < 0 else cash
 
-        if negative:
-            return (1 / (((risk_level / 1500) * cash) + 0.5) - 1)
+        if self.dynamic_reward_risk_level is None:
+
+            if negative:
+                return (1 / (((risk_level / 1500) * cash) + 0.5) - 1)
+            else:
+                return (-1 / (((risk_level / 1500) * cash) + 0.5) + 1)
+
         else:
-            return (-1 / (((risk_level / 1500) * cash) + 0.5) + 1)
+            risk_level = self.dynamic_reward_risk_level
+
+            if negative:
+                return (1 / (((risk_level / 1500) * cash) + 0.5) - 1)
+            else:
+                return (-1 / (((risk_level / 1500) * cash) + 0.5) + 1)
+
 
 
     def _full_turn(self, name):
