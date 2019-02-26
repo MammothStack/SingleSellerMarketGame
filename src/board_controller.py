@@ -459,7 +459,7 @@ class BoardController():
 
     def _land_property(self, name, position):
         #If the property is purchaseable
-        if self.board.can_purchase(name, position):
+        if self.board.can_purchase(position):
             return True
 
         #is owned
