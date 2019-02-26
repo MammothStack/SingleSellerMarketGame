@@ -184,9 +184,9 @@ class Player():
                 self.models[o].learn_training_data(
                     x=np.array(self.x_train[o]),
                     y=np.array(self.y_train[o]),
-                    sample_weights=np.array(self.rewards[o]),
+                    sample_weight=np.array(self.rewards[o]),
                     verbose=0,
-                    reward_sum=np.array(self.rewards_sum[o])
+                    reward_sum=self.rewards_sum[o]
                 )
 
 class OperationModel():
@@ -262,7 +262,7 @@ class OperationModel():
         res = self.model.predict(np.array((x,)))
         return res[0]
 
-    def learn_training_data(self, x, y, sample_weights, reward_sum=None, verbose=0):
+    def learn_training_data(self, x, y, sample_weight, reward_sum=None, verbose=0):
         """Uses the given data to fit the model
 
         Parameters
@@ -284,7 +284,7 @@ class OperationModel():
 
         """
         if self.can_learn:
-            self.model.fit(x, y, sample_weights, verbose=verbose)
+            self.model.fit(x, y, sample_weight=sample_weight, verbose=verbose)
             if rewards_sum is None: rewards_sum = np.sum(sample_weights)
             self.running_reward = (self.running_reward * self.gamma +
                 rewards_sum * (1-self.gamma))
