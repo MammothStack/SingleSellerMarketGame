@@ -285,9 +285,9 @@ class OperationModel():
         """
         if self.can_learn:
             self.model.fit(x, y, sample_weight=sample_weight, verbose=verbose)
-            if rewards_sum is None: rewards_sum = np.sum(sample_weights)
+            if reward_sum is None: reward_sum = np.sum(sample_weight)
             self.running_reward = (self.running_reward * self.gamma +
-                rewards_sum * (1-self.gamma))
+                reward_sum * (1-self.gamma))
             self.episode_nb += 1
 
     def save(self, destination=None):
