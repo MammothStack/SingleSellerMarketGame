@@ -259,7 +259,7 @@ class OperationModel():
             interpreted
 
         """
-        res = self.model.predict(np.array(x,))
+        res = self.model.predict(np.array((x,)))
         return res[0]
 
     def learn_training_data(self, x, y, sample_weights, reward_sum=None, verbose=0):
