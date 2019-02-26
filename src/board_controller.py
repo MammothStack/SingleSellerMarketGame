@@ -280,13 +280,12 @@ class BoardController():
             if p in v.index:
                 p_arr[v.index.get_loc(p)] = 1
 
-            return np.concatenate(
-                (
-                    [self.players[name].cash / self.max_cash_limit],
-                    p_arr,
-                    v.values.flatten("F")
-                )
-            )
+            if self.players[name].cash >= self.max_cash_limit:
+                cash = 1.0
+            else:
+                cash = self.players[name].cash / self.max_cash_limit
+
+            return np.concatenate((cash,p_arr,v.values.flatten("F")))
 
         gen_state = self.board.get_normalized_general_state().values.flatten("F")
 
@@ -402,8 +401,8 @@ class BoardController():
                         y = self._get_y(name, "trade_offer", x, single=False)
                         reward = self._evaluate_trade_offer(y, name, opponent)
 
-                        x_opp = np.concatenate(y.reshape((-1,3), order="F"), x)
-                        y_opp = self._get_y(opponent, "trade_decision", x, single=True)
+                        x_opp = np.concatenate((x, y))
+                        y_opp = self._get_y(opponent, "trade_decision", x_opp, single=True)
                         reward_opp = -reward
 
                         if y_opp[0] == 1:
@@ -608,10 +607,10 @@ class BoardController():
             return reward, False
 
     def _evaluate_trade_offer(self, offer, name, opponent):
-        offer_cash = self._binary_to_cash(trade_offer[0:14], neg=False)
-        take_cash = self._binary_to_cash(trade_offer[14:28], neg=False)
-        offer_prop = self.board.get_total_value_owned(name, trade_offer[28:56])
-        take_prop = self.board.get_total_value_owned(opponent, trade_offer[56:84])
+        offer_cash = self._binary_to_cash(offer[0:14], neg=False)
+        take_cash = self._binary_to_cash(offer[14:28], neg=False)
+        offer_prop = self.board.get_total_value_owned(name, offer[28:56])
+        take_prop = self.board.get_total_value_owned(opponent, offer[56:84])
 
         limit = max(offer_cash + offer_prop, take_cash + take_prop)
         reward = ((take_cash + take_prop) - (offer_cash + offer_prop)) / limit
