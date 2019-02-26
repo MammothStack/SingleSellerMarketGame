@@ -186,7 +186,7 @@ class Player():
                     y=np.array(self.y_train[o]),
                     sample_weights=np.array(self.rewards[o]),
                     verbose=0,
-                    rewards_sum=self.rewards_sum[o]
+                    reward_sum=self.rewards_sum[o]
                 )
 
 class OperationModel():
