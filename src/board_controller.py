@@ -300,7 +300,7 @@ class BoardController():
         if offer is not None:
             offer_state = offer
 
-        return np.concatenate((offer, opp_state, pla_state, gen_state))
+        return np.concatenate((offer_state, opp_state, pla_state, gen_state))
 
     def _get_y(self, name, operation, x, single=True):
         """Get a decision/prediction from the players for the given operation
