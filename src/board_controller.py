@@ -39,31 +39,25 @@ class BoardController():
         self,
         player_list,
         starting_order=None,
-        max_cash_limit=10000,
         max_turn=800,
         upgrade_limit=20,
-        reinforce_config=None,
-        dynamic_reward_risk_level=None
     ):
+        for p1 in player_list:
+            for p2 in player_list:
+                if p1.max_cash_limit != p2.max_cash_limit:
+                    raise ValueError("Incompatible max cash limits")
+
+        self.max_cash_limit = player_list[0].max_cash_limit
         self.players = {p.name: p for p in player_list}
-        self.board = BoardInformation([p.name for p in player_list], max_cash_limit)
+        self.board = BoardInformation([p.name for p in player_list], self.max_cash_limit)
 
-        if reinforce_config is None:
-            path = os.path.join(os.path.dirname(__file__), 'config.ini')
-            self.config = configparser.ConfigParser()
-            self.config.read(path)
-        else:
-            self.config = None
-
-        self.max_cash_limit = max_cash_limit
-        self.dynamic_reward_risk_level = dynamic_reward_risk_level
-        #self.dynamic_cash_equation = dynamic_cash_equation
         self.alive = True
         self.total_turn = 0
         self.max_turn = max_turn
         self.current_turn = 0
         self.num_players = len(player_list)
         self.upgrade_limit = upgrade_limit
+
         self.binary_pos = [8192, 4096, 2048, 1024, 512, 256,
             128, 64, 32, 16, 8, 4, 2, 1]
         self.binary_neg = [-1, -2, -4, -8, -16, -32, -64, -128,
@@ -76,7 +70,6 @@ class BoardController():
             num_order = random.sample(
                 range(self.num_players), self.num_players)
             self.order = [player_list[i].name for i in num_order]
-
 
 
     def start_game(self,
@@ -347,27 +340,7 @@ class BoardController():
         return y
 
     def _get_dynamic_cash_reward(self, cash, risk_level, negative=False):
-        """
-
-        """
-        cash = 0 if cash < 0 else cash
-
-        if self.dynamic_reward_risk_level is None:
-
-            if negative:
-                return (1 / (((risk_level / 1500) * cash) + 0.5) - 1)
-            else:
-                return (-1 / (((risk_level / 1500) * cash) + 0.5) + 1)
-
-        else:
-            risk_level = self.dynamic_reward_risk_level
-
-            if negative:
-                return (1 / (((risk_level / 1500) * cash) + 0.5) - 1)
-            else:
-                return (-1 / (((risk_level / 1500) * cash) + 0.5) + 1)
-
-
+        pass
 
     def _full_turn(self, name):
         if self.players[name].allowed_to_move:
@@ -495,22 +468,23 @@ class BoardController():
             self.alive = self.players[name].cash >= 0
 
             if self.board.is_monopoly(position):
-                reward = self._get_dynamic_cash_reward(
-                    self.players[name].cash,
-                    self.config.getfloat("dynamic_reward_risk_level", "PurchaseMonopoly"),
-                    negative=False
-                )
+                level = self.players[name].models["purchase"].reward_dict["monopoly"]["level"]
+                scalar = self.players[name].models["purchase"].reward_dict["monopoly"]["scalar"]
             else:
-                reward = self._get_dynamic_cash_reward(
-                    self.players[name].cash,
-                    self.config.getfloat("dynamic_reward_risk_level", "PurchaseStandard"),
-                    negative=False
-                )
+                level = self.players[name].models["purchase"].reward_dict["standard"]["level"]
+                scalar = self.players[name].models["purchase"].reward_dict["standard"]["scalar"]
+
+            reward = self.players[name].models["purchase"].get_dynamic_reward(
+                 self.players[name].cash, level, scalar
+            )
         else:
-            reward = self._get_dynamic_cash_reward(
+            level = self.players[name].models["purchase"].reward_dict["none"]["level"]
+            scalar = self.players[name].models["purchase"].reward_dict["none"]["scalar"]
+
+            reward = self.players[name].models["purchase"].get_dynamic_reward(
                 self.players[name].cash - self.board.get_purchase_amount(position),
-                self.config.getfloat("dynamic_reward_risk_level", "PurchaseNone"),
-                negative=True
+                level,
+                scalar
             )
 
         return reward
@@ -565,10 +539,12 @@ class BoardController():
             if self.board.can_upgrade(name, pos):
                 self.players[name].cash -= self.board.get_upgrade_amount(pos)
                 self.board.upgrade(name, pos)
+
+                level = self.players[name].models["up_down_grade"].reward_dict["upgrade"]["level"]
+                scalar = self.players[name].models["up_down_grade"].reward_dict["upgrade"]["scalar"]
+
                 reward = self._get_dynamic_cash_reward(
-                    self.players[name].cash,
-                    self.config.getfloat("dynamic_reward_risk_level", "Upgrade"),
-                    negative=False
+                    self.players[name].cash, level, scalar
                 )
                 return reward, True
 
@@ -576,15 +552,17 @@ class BoardController():
             elif self.board.can_unmortgage(name, pos):
                 self.players[name].cash -= self.board.get_mortgage_amount(pos)
                 self.board.unmortgage(name, pos)
+
+                level = self.players[name].models["up_down_grade"].reward_dict["unmortgage"]["level"]
+                scalar = self.players[name].models["up_down_grade"].reward_dict["unmortgage"]["scalar"]
+
                 reward = self._get_dynamic_cash_reward(
-                    self.players[name].cash,
-                    self.config.getfloat("dynamic_reward_risk_level", "Unmortgage"),
-                    negative=False
+                    self.players[name].cash, level, scalar
                 )
                 return reward, True
 
             else:
-                reward = self.config.getfloat("static_reward", "UpDownNonExec")
+                reward =  self.players[name].models["up_down_grade"]["nonexecution"]
                 return reward, False
 
         elif downgrade.sum() == 1:
@@ -594,28 +572,32 @@ class BoardController():
             if self.board.can_downgrade(name, pos):
                 self.players[name].cash += self.board.get_downgrade_amount(pos)
                 self.board.downgrade(name, pos)
+
+                level = self.players[name].models["up_down_grade"].reward_dict["downgrade"]["level"]
+                scalar = self.players[name].models["up_down_grade"].reward_dict["downgrade"]["scalar"]
+
                 reward = self._get_dynamic_cash_reward(
-                    self.players[name].cash,
-                    self.config.getfloat("dynamic_reward_risk_level", "Downgrade"),
-                    negative=True
+                    self.players[name].cash, level, scalar
                 )
                 return reward, True
 
             elif self.board.can_mortgage(name, pos):
                 self.players[name].cash += self.board.get_mortgage_amount(pos)
                 self.board.mortgage(name, pos)
+
+                level = self.players[name].models["up_down_grade"].reward_dict["mortgage"]["level"]
+                scalar = self.players[name].models["up_down_grade"].reward_dict["mortgage"]["scalar"]
+
                 reward = self._get_dynamic_cash_reward(
-                    self.players[name].cash,
-                    self.config.getfloat("dynamic_reward_risk_level", "Mortgage"),
-                    negative=True
+                    self.players[name].cash, level, scalar
                 )
                 return reward, True
 
             else:
-                reward = self.config.getfloat("static_reward", "UpDownNonExec")
+                reward =  self.players[name].models["up_down_grade"]["nonexecution"]
                 return reward, False
         else:
-            reward = self.config.getfloat("static_reward", "UpDownNone")
+            reward =  self.players[name].models["up_down_grade"]["none"]
             return reward, False
 
     def _evaluate_trade_offer(self, offer, name, opponent):
