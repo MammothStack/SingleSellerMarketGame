@@ -56,6 +56,7 @@ class BoardController():
             self.config = None
 
         self.max_cash_limit = max_cash_limit
+        self.dynamic_reward_risk_level = dynamic_reward_risk_level
         #self.dynamic_cash_equation = dynamic_cash_equation
         self.alive = True
         self.total_turn = 0
