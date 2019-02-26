@@ -976,25 +976,25 @@ class TestUnmortgage(unittest.TestCase):
         bi.purchase("red", 8)
         bi.purchase("red", 9)
 
-        self.assertEquals(6, bi.get_rent(6))
-        self.assertEquals(6, bi.get_rent(8))
-        self.assertEquals(8, bi.get_rent(9))
+        self.assertEquals(6, bi.get_rent(6, 7))
+        self.assertEquals(6, bi.get_rent(8, 7))
+        self.assertEquals(8, bi.get_rent(9, 7))
 
         bi.mortgage("red", 6)
         bi.mortgage("red", 8)
         bi.mortgage("red", 9)
 
-        self.assertEquals(0, bi.get_rent(6))
-        self.assertEquals(0, bi.get_rent(8))
-        self.assertEquals(0, bi.get_rent(9))
+        self.assertEquals(0, bi.get_rent(6, 7))
+        self.assertEquals(0, bi.get_rent(8, 7))
+        self.assertEquals(0, bi.get_rent(9, 7))
 
         bi.unmortgage("red", 6)
         bi.unmortgage("red", 8)
         bi.unmortgage("red", 9)
 
-        self.assertEquals(6, bi.get_rent(6))
-        self.assertEquals(6, bi.get_rent(8))
-        self.assertEquals(8, bi.get_rent(9))
+        self.assertEquals(6, bi.get_rent(6, 7))
+        self.assertEquals(6, bi.get_rent(8, 7))
+        self.assertEquals(8, bi.get_rent(9, 7))
 
     def test_unmortgage_without_mortgaging(self):
         bi = BoardInformation(["red","blue"])
@@ -1090,9 +1090,9 @@ class TestUnmortgage(unittest.TestCase):
         bi.purchase("red", 8)
         bi.purchase("red", 9)
 
-        self.assertTrue(bi.can_downgrade("red", 6))
-        self.assertTrue(bi.can_downgrade("red", 8))
-        self.assertTrue(bi.can_downgrade("red", 9))
+        self.assertFalse(bi.can_downgrade("red", 6))
+        self.assertFalse(bi.can_downgrade("red", 8))
+        self.assertFalse(bi.can_downgrade("red", 9))
 
         bi.mortgage("red", 6)
         bi.mortgage("red", 8)
@@ -1106,9 +1106,9 @@ class TestUnmortgage(unittest.TestCase):
         bi.unmortgage("red", 8)
         bi.unmortgage("red", 9)
 
-        self.assertTrue(bi.can_downgrade("red", 6))
-        self.assertTrue(bi.can_downgrade("red", 8))
-        self.assertTrue(bi.can_downgrade("red", 9))
+        self.assertFalse(bi.can_downgrade("red", 6))
+        self.assertFalse(bi.can_downgrade("red", 8))
+        self.assertFalse(bi.can_downgrade("red", 9))
 
     def test_can_purchase(self):
         bi = BoardInformation(["red","blue"])
@@ -1116,25 +1116,25 @@ class TestUnmortgage(unittest.TestCase):
         bi.purchase("red", 8)
         bi.purchase("red", 9)
 
-        self.assertFalse(bi.can_purchase("red", 6))
-        self.assertFalse(bi.can_purchase("red", 8))
-        self.assertFalse(bi.can_purchase("red", 9))
+        self.assertFalse(bi.can_purchase(6))
+        self.assertFalse(bi.can_purchase(8))
+        self.assertFalse(bi.can_purchase(9))
 
         bi.mortgage("red", 6)
         bi.mortgage("red", 8)
         bi.mortgage("red", 9)
 
-        self.assertFalse(bi.can_purchase("red", 6))
-        self.assertFalse(bi.can_purchase("red", 8))
-        self.assertFalse(bi.can_purchase("red", 9))
+        self.assertFalse(bi.can_purchase(6))
+        self.assertFalse(bi.can_purchase(8))
+        self.assertFalse(bi.can_purchase(9))
 
         bi.unmortgage("red", 6)
         bi.unmortgage("red", 8)
         bi.unmortgage("red", 9)
 
-        self.assertFalse(bi.can_purchase("red", 6))
-        self.assertFalse(bi.can_purchase("red", 8))
-        self.assertFalse(bi.can_purchase("red", 9))
+        self.assertFalse(bi.can_purchase(6))
+        self.assertFalse(bi.can_purchase(8))
+        self.assertFalse(bi.can_purchase(9))
 
     def test_other_can_upgrade_when_unmortgaging(self):
         bi = BoardInformation(["red","blue"])
@@ -1175,15 +1175,15 @@ class TestPurchase(unittest.TestCase):
     def test_unowned_property(self):
         bi = BoardInformation(["red","blue"])
         bi.purchase("red", 6)
-        self.assertRaise(BoardError, lambda: bi.purchase("blue", 6))
+        self.assertRaises(BoardError, lambda: bi.purchase("blue", 6))
 
     def test_none_property(self):
         bi = BoardInformation(["red","blue"])
-        self.assertRaise(BoardError, lambda: bi.purchase("blue", 10))
+        self.assertRaises(BoardError, lambda: bi.purchase("blue", 10))
 
     def test_non_player(self):
         bi = BoardInformation(["red","blue"])
-        self.assertRaise(BoardError, lambda: bi.purchase("bloo", 1))
+        self.assertRaises(BoardError, lambda: bi.purchase("bloo", 1))
 
     def test_value(self):
         bi = BoardInformation(["red","blue"])
@@ -1215,17 +1215,17 @@ class TestPurchase(unittest.TestCase):
 
     def test_rent(self):
         bi = BoardInformation(["red","blue"])
-        self.assertEquals(0, bi.get_rent(6))
-        self.assertEquals(0, bi.get_rent(8))
-        self.assertEquals(0, bi.get_rent(9))
+        self.assertEquals(0, bi.get_rent(6, 7))
+        self.assertEquals(0, bi.get_rent(8, 7))
+        self.assertEquals(0, bi.get_rent(9, 7))
 
         bi.purchase("red", 6)
         bi.purchase("red", 8)
         bi.purchase("red", 9)
 
-        self.assertEquals(6, bi.get_rent(6))
-        self.assertEquals(6, bi.get_rent(8))
-        self.assertEquals(8, bi.get_rent(9))
+        self.assertEquals(6, bi.get_rent(6, 7))
+        self.assertEquals(6, bi.get_rent(8, 7))
+        self.assertEquals(8, bi.get_rent(9, 7))
 
     def test_can_purchase(self):
         bi = BoardInformation(["red","blue"])
@@ -1262,9 +1262,6 @@ is_property(position)
 
 is_special(position)
     Returns if the given position is a special property
-
-purchase(name, position)
-    Sets property at the position to "purchased" by the name
 
 get_rent(positon, dice_roll)
     Returns the calculated rent of the property at the position
