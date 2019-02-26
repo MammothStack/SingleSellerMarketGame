@@ -56,7 +56,7 @@ class BoardController():
             self.config = None
 
         self.max_cash_limit = max_cash_limit
-        self.dynamic_cash_equation = dynamic_cash_equation
+        #self.dynamic_cash_equation = dynamic_cash_equation
         self.alive = True
         self.total_turn = 0
         self.max_turn = max_turn
