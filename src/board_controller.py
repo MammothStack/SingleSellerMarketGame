@@ -374,7 +374,6 @@ class BoardController():
                     x = self._get_x(name)
                     y = self._get_y(name, "up_down_grade", x, True)
                     reward, cont = self._execute_up_down_grade(name, y)
-                    print(reward)
                     count += 1
                     self.players[name].add_training_data("up_down_grade",
                         x, y, reward)
