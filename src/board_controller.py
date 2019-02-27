@@ -163,7 +163,7 @@ class BoardController():
                         "train_up_down_grade",
                         "train_trade_offer",
                         "train_trade_decision"],
-                    name=p)}
+                    name=p)
             return result_dict
 
     def reset_game(self):
