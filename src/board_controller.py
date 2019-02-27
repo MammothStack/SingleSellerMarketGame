@@ -562,7 +562,7 @@ class BoardController():
                 return reward, True
 
             else:
-                reward =  self.players[name].models["up_down_grade"]["nonexecution"]
+                reward =  self.players[name].models["up_down_grade"].reward_dict["nonexecution"]
                 return reward, False
 
         elif downgrade.sum() == 1:
