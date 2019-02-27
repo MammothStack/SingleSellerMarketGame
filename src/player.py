@@ -329,6 +329,10 @@ class OperationModel():
             json.dump(config, config_file, indent=4)
         config_file.close()
 
+    def __repr__(self):
+        return (f'{self.__class__.__name__}('
+            f'{self.name!r}, {self.episode_nb!r}, {self.running_reward!r})')
+
 def load_operation_model(file_path, config_file_name):
     if file_path[-1:] != "/":
         file_path += "/"
