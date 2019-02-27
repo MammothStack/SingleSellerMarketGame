@@ -544,7 +544,7 @@ class BoardController():
                 level = self.players[name].models["up_down_grade"].reward_dict["upgrade"]["level"]
                 scalar = self.players[name].models["up_down_grade"].reward_dict["upgrade"]["scalar"]
 
-                reward = self._get_dynamic_cash_reward(
+                reward = self.players[name].models["up_down_grade"].get_dynamic_reward(
                     self.players[name].cash, level, scalar
                 )
                 return reward, True
@@ -557,7 +557,7 @@ class BoardController():
                 level = self.players[name].models["up_down_grade"].reward_dict["unmortgage"]["level"]
                 scalar = self.players[name].models["up_down_grade"].reward_dict["unmortgage"]["scalar"]
 
-                reward = self._get_dynamic_cash_reward(
+                reward = self.players[name].models["up_down_grade"].get_dynamic_reward(
                     self.players[name].cash, level, scalar
                 )
                 return reward, True
@@ -577,7 +577,7 @@ class BoardController():
                 level = self.players[name].models["up_down_grade"].reward_dict["downgrade"]["level"]
                 scalar = self.players[name].models["up_down_grade"].reward_dict["downgrade"]["scalar"]
 
-                reward = self._get_dynamic_cash_reward(
+                reward = self.players[name].models["up_down_grade"].get_dynamic_reward(
                     self.players[name].cash, level, scalar
                 )
                 return reward, True
@@ -589,7 +589,7 @@ class BoardController():
                 level = self.players[name].models["up_down_grade"].reward_dict["mortgage"]["level"]
                 scalar = self.players[name].models["up_down_grade"].reward_dict["mortgage"]["scalar"]
 
-                reward = self._get_dynamic_cash_reward(
+                reward = self.players[name].models["up_down_grade"].get_dynamic_reward(
                     self.players[name].cash, level, scalar
                 )
                 return reward, True
