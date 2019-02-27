@@ -144,7 +144,7 @@ class BoardController():
                 o = self.board.get_amount_properties_owned(p)
                 l = self.board.get_total_levels_owned(p)
 
-                result_dict = {p: pd.Series(
+                result_dict[p] = pd.Series(
                     data=[p,
                         self.players[p].cash,
                         o,
