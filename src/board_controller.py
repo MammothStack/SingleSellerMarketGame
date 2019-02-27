@@ -355,7 +355,7 @@ class BoardController():
                 self._land_action_field(name, new_pos)
                 purchase = False
             else:
-                purchase = self._land_property(name, new_pos)
+                purchase = self._land_property(name, new_pos, d1, d2)
 
             if (self.operation_config["purchase"] and
                 purchase and
@@ -442,7 +442,7 @@ class BoardController():
             raise ValueError("Something went way wrong here")
 
 
-    def _land_property(self, name, position):
+    def _land_property(self, name, position, d1, d2):
         #If the property is purchaseable
         if self.board.can_purchase(position):
             return True
