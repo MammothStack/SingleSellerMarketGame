@@ -190,7 +190,7 @@ class Player():
                 )
 
     def save_operation_models(self, destination):
-        for model in self.models:
+        for model in self.models.values():
             model.save(destination)
 
 class OperationModel():
