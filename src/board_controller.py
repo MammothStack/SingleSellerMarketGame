@@ -594,10 +594,10 @@ class BoardController():
                 return reward, True
 
             else:
-                reward =  self.players[name].models["up_down_grade"]["nonexecution"]
+                reward =  self.players[name].models["up_down_grade"].reward_dict["nonexecution"]
                 return reward, False
         else:
-            reward =  self.players[name].models["up_down_grade"]["none"]
+            reward =  self.players[name].models["up_down_grade"].reward_dict["none"]
             return reward, False
 
     def _evaluate_trade_offer(self, offer, name, opponent):
