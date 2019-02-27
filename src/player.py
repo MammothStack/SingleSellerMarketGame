@@ -336,11 +336,11 @@ def load_operation_model(file_path, config_file_name):
         config = json.load(config_file)
     config_file.close()
 
-    json_file = open(config["json_path"], 'r')
+    json_file = open(file_path + config["json_path"], 'r')
     loaded_model_json = json_file.read()
     json_file.close()
     model = model_from_json(loaded_model_json)
-    model.load_weights(config["h5_path"])
+    model.load_weights(file_path + config["h5_path"])
     model.name = config["name"]
     model.compile(
         loss=config["loss"],
