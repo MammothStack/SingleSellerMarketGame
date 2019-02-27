@@ -263,7 +263,7 @@ class BoardController():
         Returns
         --------------------
         Gamestate array : numpy.ndarray
-             A one-dimensional array (393,)/(562,)
+             A one-dimensional array (420,)/(616,)
 
         """
         def get_state_for_player(name):
@@ -275,9 +275,9 @@ class BoardController():
                 p_arr[v.index.get_loc(p)] = 1
 
             if self.players[name].cash >= self.max_cash_limit:
-                cash = [1.0]
+                cash = np.full(len(v.index), 1.0)
             else:
-                cash = [self.players[name].cash / self.max_cash_limit]
+                cash = np.full(len(v.index), self.players[name].cash / self.max_cash_limit)
 
             return np.concatenate((cash,p_arr,v.values.flatten("F")))
 

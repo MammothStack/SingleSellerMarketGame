@@ -189,6 +189,10 @@ class Player():
                     reward_sum=self.rewards_sum[o]
                 )
 
+    def save_operation_models(self, destination):
+        for model in self.models:
+            model.save(destination)
+
 class OperationModel():
     """The player to that plays on the Board
 
