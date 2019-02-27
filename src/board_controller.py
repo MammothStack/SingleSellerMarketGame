@@ -594,7 +594,8 @@ class BoardController():
                 return reward, True
 
             else:
-                reward =  self.players[name].models["up_down_grade"].reward_dict["nonexecution"]
+                reward = self.players[name].models["up_down_grade"].reward_dict["nonexecution"]
+                print(reward)
                 return reward, False
         else:
             reward =  self.players[name].models["up_down_grade"].reward_dict["none"]
