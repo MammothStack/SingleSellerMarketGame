@@ -1397,9 +1397,9 @@ class BoardInformation():
         6
 
         """
-        return self._table.loc[
-            self._table[name + ":owned"] == True, "level"
-        ].sum()
+        return np.sum(
+            self._table.loc[
+                self._table[name + ":owned"] == True, "level"].values)
 
     def get_total_value_owned(self, name, properties=None):
         """Returns the total value of the properties owned by the player
