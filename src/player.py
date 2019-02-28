@@ -325,7 +325,7 @@ class OperationModel():
             json_file.write(model_json)
         json_file.close()
 
-        with open(destination + self.name + "_config.json", 'w') as config_file:
+        with open(destination + self.name + "_" +  self.operation + "_config.json", 'w') as config_file:
             json.dump(config, config_file, indent=4)
         config_file.close()
 
