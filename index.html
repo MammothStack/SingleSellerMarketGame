@@ -3,10 +3,439 @@
   <head>
     <meta charset="utf-8">
     <title>Single-Seller-Market Game</title>
+    <link href="style.css" rel="stylesheet" type="text/css">
   </head>
   <body>
-    <p>
-      testing deployment
-    </p>
+    <div class="container">
+      <div class="heading">
+        <h1 class="title">Single-Seller-Market Game</h1>
+        <div class="game-control-container">
+          <a class="start-container">Start</a>
+          <a class="reset-container">Reset</a>
+          <a class="opponent-container">Choose</a>
+        </div>
+      </div>
+
+      <div class="game-container">
+      <div id="ssmg">
+        <ul>
+
+          <li class="field" id="position_0">
+            <div class="field-name">Go</div>
+            <div class="occupation">test</div>
+            <div class="upgrades"></div>
+          </li>
+
+
+          <li class="field" id="position_1">
+            <div class="field-name">Mediterranean Avenue</div>
+            <div class="occupation">do</div>
+            <div class="upgrades">
+              <div class="house-1">1</div>
+              <div class="house-2">2</div>
+              <div class="house-3">3</div>
+              <div class="house-4">4</div>
+              <div class="hotel-5">5</div>
+            </div>
+          </li>
+
+          <li class="field" id="position_2">
+            <div class="field-name">Community Chest</div>
+            <div class="occupation">do</div>
+            <div class="upgrades"></div>
+          </li>
+
+          <li class="field" id="position_3">
+            <div class="field-name">Baltic Avenue</div>
+            <div class="occupation">do</div>
+            <div class="upgrades">
+              <div class="house-1">1</div>
+              <div class="house-2">2</div>
+              <div class="house-3">3</div>
+              <div class="house-4">4</div>
+              <div class="hotel-5">5</div>
+            </div>
+          </li>
+
+          <li class="field" id="position_4">
+            <div class="field-name">Income Tax</div>
+            <div class="occupation">do</div>
+            <div class="upgrades"></div>
+          </li>
+
+          <li class="field" id="position_5">
+            <div class="field-name">Reading Railroad</div>
+            <div class="occupation">do</div>
+            <div class="upgrades">
+              <div class="house-1">
+                x
+              </div>
+            </div>
+          </li>
+
+          <li class="field" id="position_6">
+            <div class="field-name">Oriental Avenue</div>
+            <div class="occupation">do</div>
+            <div class="upgrades">
+              <div class="house-1">1</div>
+              <div class="house-2">2</div>
+              <div class="house-3">3</div>
+              <div class="house-4">4</div>
+              <div class="hotel-5">5</div>
+            </div>
+          </li>
+
+          <li class="field" id="position_7">
+            <div class="field-name">Chance</div>
+            <div class="occupation">do</div>
+            <div class="upgrades"></div>
+          </li>
+
+          <li class="field" id="position_8">
+            <div class="field-name">Vermont Avenue</div>
+            <div class="occupation">do</div>
+            <div class="upgrades">
+              <div class="house-1">1</div>
+              <div class="house-2">2</div>
+              <div class="house-3">3</div>
+              <div class="house-4">4</div>
+              <div class="hotel-5">5</div>
+            </div>
+          </li>
+
+          <li class="field" id="position_9">
+            <div class="field-name">Conneticut Avenue</div>
+            <div class="occupation">do</div>
+            <div class="upgrades">
+              <div class="house-1">1</div>
+              <div class="house-2">2</div>
+              <div class="house-3">3</div>
+              <div class="house-4">4</div>
+              <div class="hotel-5">5</div>
+            </div>
+          </li>
+
+          <li class="field" id="position_10">
+            <div class="field-name">Jail</div>
+            <div class="occupation">do</div>
+            <div class="upgrades"></div>
+          </li>
+
+          <li class="field" id="position_11">
+            <div class="field-name">St. Charles Place</div>
+            <div class="occupation">do</div>
+            <div class="upgrades">
+              <div class="house-1">1</div>
+              <div class="house-2">2</div>
+              <div class="house-3">3</div>
+              <div class="house-4">4</div>
+              <div class="hotel-5">5</div>
+            </div>
+          </li>
+
+
+          <li class="field" id="position_12">
+            <div class="field-name">Electric Company</div>
+            <div class="occupation">do</div>
+            <div class="upgrades"></div>
+          </li>
+
+
+          <li class="field" id="position_13">
+            <div class="field-name">States Avenue</div>
+            <div class="occupation">do</div>
+            <div class="upgrades">
+              <div class="house-1">1</div>
+              <div class="house-2">2</div>
+              <div class="house-3">3</div>
+              <div class="house-4">4</div>
+              <div class="hotel-5">5</div>
+            </div>
+          </li>
+
+
+          <li class="field" id="position_14">
+            <div class="field-name">States Avenue</div>
+            <div class="occupation">do</div>
+            <div class="upgrades">
+              <div class="house-1">1</div>
+              <div class="house-2">2</div>
+              <div class="house-3">3</div>
+              <div class="house-4">4</div>
+              <div class="hotel-5">5</div>
+            </div>
+          </li>
+
+          <li class="field" id="position_15">
+            <div class="field-name">Pennsylvania Railroad</div>
+            <div class="occupation">do</div>
+            <div class="upgrades"></div>
+          </li>
+
+
+          <li class="field" id="position_16">
+            <div class="field-name">St. James Place</div>
+            <div class="occupation">do</div>
+            <div class="upgrades">
+              <div class="house-1">1</div>
+              <div class="house-2">2</div>
+              <div class="house-3">3</div>
+              <div class="house-4">4</div>
+              <div class="hotel-5">5</div>
+            </div>
+          </li>
+
+          <li class="field" id="position_17">
+            <div class="field-name">Community Chest</div>
+            <div class="occupation">do</div>
+            <div class="upgrades"></div>
+          </li>
+
+          <li class="field" id="position_18">
+            <div class="field-name">Tennessee Avenue</div>
+            <div class="occupation">do</div>
+            <div class="upgrades">
+              <div class="house-1">1</div>
+              <div class="house-2">2</div>
+              <div class="house-3">3</div>
+              <div class="house-4">4</div>
+              <div class="hotel-5">5</div>
+            </div>
+          </li>
+
+          <li class="field" id="position_19">
+            <div class="field-name">New York Avenue</div>
+            <div class="occupation">do</div>
+            <div class="upgrades">
+              <div class="house-1">1</div>
+              <div class="house-2">2</div>
+              <div class="house-3">3</div>
+              <div class="house-4">4</div>
+              <div class="hotel-5">5</div>
+            </div>
+          </li>
+
+          <li class="field" id="position_20">
+            <div class="field-name">Free Parking</div>
+            <div class="occupation">do</div>
+            <div class="upgrades"></div>
+          </li>
+
+          <li class="field" id="position_21">
+            <div class="field-name">Kentucky Avenue</div>
+            <div class="occupation">do</div>
+            <div class="upgrades">
+              <div class="house-1">1</div>
+              <div class="house-2">2</div>
+              <div class="house-3">3</div>
+              <div class="house-4">4</div>
+              <div class="hotel-5">5</div>
+            </div>
+          </li>
+
+          <li class="field" id="position_22">
+            <div class="field-name">Chance</div>
+            <div class="occupation">do</div>
+            <div class="upgrades"></div>
+          </li>
+
+          <li class="field" id="position_23">
+            <div class="field-name">Indiana Avenue</div>
+            <div class="occupation">do</div>
+            <div class="upgrades">
+              <div class="house-1">1</div>
+              <div class="house-2">2</div>
+              <div class="house-3">3</div>
+              <div class="house-4">4</div>
+              <div class="hotel-5">5</div>
+            </div>
+          </li>
+
+          <li class="field" id="position_24">
+            <div class="field-name">Illinois Avenue</div>
+            <div class="occupation">do</div>
+            <div class="upgrades">
+              <div class="house-1">1</div>
+              <div class="house-2">2</div>
+              <div class="house-3">3</div>
+              <div class="house-4">4</div>
+              <div class="hotel-5">5</div>
+            </div>
+          </li>
+
+          <li class="field" id="position_25">
+            <div class="field-name">B. & O. Railroad</div>
+            <div class="occupation">do</div>
+            <div class="upgrades"></div>
+          </li>
+
+          <li class="field" id="position_26">
+            <div class="field-name">Atlantic Avenue</div>
+            <div class="occupation">do</div>
+            <div class="upgrades">
+              <div class="house-1">1</div>
+              <div class="house-2">2</div>
+              <div class="house-3">3</div>
+              <div class="house-4">4</div>
+              <div class="hotel-5">5</div>
+            </div>
+          </li>
+
+
+          <li class="field" id="position_27">
+            <div class="field-name">Ventor Avenue</div>
+            <div class="occupation">do</div>
+            <div class="upgrades">
+              <div class="house-1">1</div>
+              <div class="house-2">2</div>
+              <div class="house-3">3</div>
+              <div class="house-4">4</div>
+              <div class="hotel-5">5</div>
+            </div>
+          </li>
+
+
+          <li class="field" id="position_28">
+            <div class="field-name">Water Works</div>
+            <div class="occupation">do</div>
+            <div class="upgrades"></div>
+          </li>
+
+
+          <li class="field" id="position_29">
+            <div class="field-name">Marvin Gardens</div>
+            <div class="occupation">do</div>
+            <div class="upgrades">
+              <div class="house-1">1</div>
+              <div class="house-2">2</div>
+              <div class="house-3">3</div>
+              <div class="house-4">4</div>
+              <div class="hotel-5">5</div>
+            </div>
+          </li>
+
+          <li class="field" id="position_30">
+            <div class="field-name">Go to Jail</div>
+            <div class="occupation">do</div>
+            <div class="upgrades"></div>
+          </li>
+
+
+          <li class="field" id="position_31">
+            <div class="field-name">Pacific Avenue</div>
+            <div class="occupation">do</div>
+            <div class="upgrades">
+              <div class="house-1">1</div>
+              <div class="house-2">2</div>
+              <div class="house-3">3</div>
+              <div class="house-4">4</div>
+              <div class="hotel-5">5</div>
+            </div>
+          </li>
+
+
+          <li class="field" id="position_32">
+            <div class="field-name">North Carolina Avenue</div>
+            <div class="occupation">do</div>
+            <div class="upgrades">
+              <div class="house-1">1</div>
+              <div class="house-2">2</div>
+              <div class="house-3">3</div>
+              <div class="house-4">4</div>
+              <div class="hotel-5">5</div>
+            </div>
+          </li>
+
+
+          <li class="field" id="position_33">
+            <div class="field-name">Community Chest</div>
+            <div class="occupation">do</div>
+            <div class="upgrades"></div>
+          </li>
+
+
+          <li class="field" id="position_34">
+            <div class="field-name">Pennsylvania Avenue</div>
+            <div class="occupation">do</div>
+            <div class="upgrades">
+              <div class="house-1">1</div>
+              <div class="house-2">2</div>
+              <div class="house-3">3</div>
+              <div class="house-4">4</div>
+              <div class="hotel-5">5</div>
+            </div>
+          </li>
+
+          <li class="field" id="position_35">
+            <div class="field-name">Short Line Railroad</div>
+            <div class="occupation">do</div>
+            <div class="upgrades"></div>
+          </li>
+
+
+          <li class="field" id="position_36">
+            <div class="field-name">Chance</div>
+            <div class="occupation">do</div>
+            <div class="upgrades"></div>
+          </li>
+
+
+          <li class="field" id="position_37">
+            <div class="field-name">Park Place</div>
+            <div class="occupation">do</div>
+            <div class="upgrades">
+              <div class="house-1">1</div>
+              <div class="house-2">2</div>
+              <div class="house-3">3</div>
+              <div class="house-4">4</div>
+              <div class="hotel-5">5</div>
+            </div>
+          </li>
+
+
+          <li class="field" id="position_38">
+            <div class="field-name">Luxury Tax</div>
+            <div class="occupation">do</div>
+            <div class="upgrades"></div>
+          </li>
+
+
+          <li class="field" id="position_39">
+            <div class="field-name">Boardwalk</div>
+            <div class="occupation">do</div>
+            <div class="upgrades">
+              <div class="house-1">1</div>
+              <div class="house-2">2</div>
+              <div class="house-3">3</div>
+              <div class="house-4">4</div>
+              <div class="hotel-5">5</div>
+            </div>
+          </li>
+
+
+          <li>
+            <div class="player-information-container">
+              <div class="cash">
+                1500
+              </div>
+              <div class="status">
+                Alive
+              </div>
+            </div>
+          </li>
+          <li>
+            <div class="opponent-information-container">
+              <div class="cash">
+                1500
+              </div>
+              <div class="status">
+                Alive
+              </div>
+            </div>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </div>
   </body>
 </html>
