@@ -719,7 +719,6 @@ class BoardInformation():
         self._table.at[
             position, "value"
         ] = self._table.at[position, "purchase_amount"]
-<<<<<<< HEAD:src/board_information.py
 
         self._table.at[
             position, "value:normal"
@@ -727,8 +726,6 @@ class BoardInformation():
 
         #level
         self._table.at[position, "level"] = 1
-=======
->>>>>>> parent of 16dde60... Changed levels of special fields when mortgaged:logic/board_information.py
 
         if position in self._fp_special:
             self._update_special_field(name, color)
@@ -738,14 +735,9 @@ class BoardInformation():
                 position, "current_rent_amount"
             ] = self._table.at[position, "rent_level:1"]
 
-<<<<<<< HEAD:src/board_information.py
             self._table.at[
                 position, "current_rent_amount:normal"
             ] = self._table.at[position, "current_rent_amount"] / self._max_cash_limit
-=======
-            #level
-            self._table.at[position, "level"] = 1
->>>>>>> parent of 16dde60... Changed levels of special fields when mortgaged:logic/board_information.py
 
             #update monopoly status
             if self._is_color_monopoly(name, color):
@@ -833,24 +825,12 @@ class BoardInformation():
         ] = True
 
         #current_rent_amount
-<<<<<<< HEAD:src/board_information.py
         self._table.at[position, "current_rent_amount"] = 0
 
         self._table.at[position, "current_rent_amount:normal"] = 0
 
         #level
         self._table.at[position, "level"] = 0
-=======
-        self._table.at[
-            position, "current_rent_amount"
-        ] = 0
-
-        if position in self._fp_normal:
-            #level
-            self._table.at[
-                position, "level"
-            ] = 0
->>>>>>> parent of 16dde60... Changed levels of special fields when mortgaged:logic/board_information.py
 
     def unmortgage(self, name, position):
         """Sets property at position to unmortgaged by the player
@@ -912,16 +892,10 @@ class BoardInformation():
         self._table.at[position, name + ":can_mortgage"] = True
 
         #can unmortgage
-<<<<<<< HEAD:src/board_information.py
         self._table.at[position, name + ":can_unmortgage"] = False
 
         #level
         self._table.at[position, "level"] = 1
-=======
-        self._table.at[
-            position, name + ":can_unmortgage"
-        ] = False
->>>>>>> parent of 16dde60... Changed levels of special fields when mortgaged:logic/board_information.py
 
         if position in self._fp_special:
             #can upgrade
@@ -930,14 +904,6 @@ class BoardInformation():
             #current_rent_amount
             self._update_special_field(name, color)
         else:
-<<<<<<< HEAD:src/board_information.py
-=======
-            #level
-            self._table.at[
-                position, "level"
-            ] = 1
-
->>>>>>> parent of 16dde60... Changed levels of special fields when mortgaged:logic/board_information.py
             #can upgrade
             if self._is_color_monopoly(name, color):
                 self._table.loc[
