@@ -339,9 +339,6 @@ class BoardController():
 
         return y
 
-    def _get_dynamic_cash_reward(self, cash, risk_level, negative=False):
-        pass
-
     def _full_turn(self, name):
         if self.players[name].allowed_to_move:
             #Roll the dice
@@ -391,6 +388,7 @@ class BoardController():
                         reward_opp = -reward
 
                         if y_opp[0] == 1:
+                            self._execute_trade(y, name, opponent)
                             self.players[name].add_training_data("trade_offer",
                                 x, y, reward)
                             self.players[name].add_training_data("trade_decision",
@@ -600,14 +598,23 @@ class BoardController():
             reward =  self.players[name].models["up_down_grade"].reward_dict["none"]
             return reward, False
 
-    def _evaluate_trade_offer(self, offer, name, opponent):
-        offer_cash = self._binary_to_cash(offer[0:14], neg=False)
-        take_cash = self._binary_to_cash(offer[14:28], neg=False)
-        offer_prop = self.board.get_total_value_owned(name, offer[28:56])
-        take_prop = self.board.get_total_value_owned(opponent, offer[56:84])
+    def _get_values_from_trade_offer(self, trade_offer):
+        offer_cash = self._binary_to_cash(trade_offer[0:14], neg=False)
+        take_cash = self._binary_to_cash(trade_offer[14:28], neg=False)
+        offer_prop = trade_offer[28:56]
+        take_prop = trade_offer[56:84]
 
-        limit = max(offer_cash + offer_prop, take_cash + take_prop)
-        reward = ((take_cash + take_prop) - (offer_cash + offer_prop)) / limit
+        return offer_cash, take_cash, offer_prop, take_prop
+
+    def _evaluate_trade_offer(self, offer, name, opponent):
+
+        offer_cash, take_cash, offer_prop, take_prop = self._get_values_from_trade_offer(offer)
+        offer_prop_value = self.board.get_total_value_owned(name, offer_prop)
+        take_prop_value = self.board.get_total_value_owned(opponent, take_prop)
+
+        limit = max(offer_cash + offer_prop_value, take_cash + take_prop_value)
+        reward = ((take_cash + take_prop_value) - (offer_cash + offer_prop_value)) / limit
+
         return reward
 
     def _evaluate_trade_decision(self):
@@ -615,12 +622,11 @@ class BoardController():
         pass
 
     def _execute_trade(self, offer, name, opponent):
-        self._transfer_cash(
-            name, opponent, self._binary_to_cash(offer[0:14], neg=False))
-        self._transfer_cash(
-            opponent, name, self._binary_to_cash(offer[14:28], neg=False))
-        self._transfer_properties(name, opponent, offer[28:56])
-        self._transfer_properties(opponent, name, offer[56:84])
+        offer_cash, take_cash, offer_prop, take_prop = self._get_values_from_trade_offer(offer)
+        self._transfer_cash(name, opponent, offer_cash)
+        self._transfer_cash(opponent, name, take_cash)
+        self._transfer_properties(name, opponent, offer_prop)
+        self._transfer_properties(opponent, name, take_prop)
 
     def _roll_dice(self):
         return randrange(1,7), randrange(1,7)
