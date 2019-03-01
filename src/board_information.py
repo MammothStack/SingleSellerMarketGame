@@ -719,9 +719,6 @@ class BoardInformation():
         self._table.at[
             position, "value"
         ] = self._table.at[position, "purchase_amount"]
-        
-        #level
-        self._table.at[position, "level"] = 1
 
         self._table.at[
             position, "value:normal"
@@ -738,13 +735,10 @@ class BoardInformation():
                 position, "current_rent_amount"
             ] = self._table.at[position, "rent_level:1"]
 
-<<<<<<< HEAD:logic/board_information.py
-=======
             self._table.at[
                 position, "current_rent_amount:normal"
             ] = self._table.at[position, "current_rent_amount"] / self._max_cash_limit
 
->>>>>>> trading_impl:src/board_information.py
             #update monopoly status
             if self._is_color_monopoly(name, color):
                 #Set monopoly
@@ -821,21 +815,19 @@ class BoardInformation():
         ] = False
 
         #can mortgage
-        self._table.at[position, name + ":can_mortgage"] = False
+        self._table.at[
+            position, name + ":can_mortgage"
+        ] = False
 
         #can unmortgage
-        self._table.at[position, name + ":can_unmortgage"] = True
+        self._table.at[
+            position, name + ":can_unmortgage"
+        ] = True
 
         #current_rent_amount
         self._table.at[position, "current_rent_amount"] = 0
-<<<<<<< HEAD:logic/board_information.py
-        
-        #level
-        self._table.at[position, "level"] = 0
-=======
 
         self._table.at[position, "current_rent_amount:normal"] = 0
->>>>>>> trading_impl:src/board_information.py
 
         #level
         self._table.at[position, "level"] = 0
@@ -900,15 +892,8 @@ class BoardInformation():
         self._table.at[position, name + ":can_mortgage"] = True
 
         #can unmortgage
-<<<<<<< HEAD:logic/board_information.py
-        self._table.at[
-            position, name + ":can_unmortgage"
-        ] = False
-        
-=======
         self._table.at[position, name + ":can_unmortgage"] = False
 
->>>>>>> trading_impl:src/board_information.py
         #level
         self._table.at[position, "level"] = 1
 
@@ -919,11 +904,6 @@ class BoardInformation():
             #current_rent_amount
             self._update_special_field(name, color)
         else:
-<<<<<<< HEAD:logic/board_information.py
-            
-
-=======
->>>>>>> trading_impl:src/board_information.py
             #can upgrade
             if self._is_color_monopoly(name, color):
                 self._table.loc[
