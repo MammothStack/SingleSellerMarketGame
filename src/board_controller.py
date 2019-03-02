@@ -76,7 +76,8 @@ class BoardController():
         purchase=True,
         up_down_grade=True,
         trade=True,
-        gather_results=False):
+        gather_results=False,
+        log=False):
         """Starts the game
 
         Starts the game with the current configuration. The parameters that can

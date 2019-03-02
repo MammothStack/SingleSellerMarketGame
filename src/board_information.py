@@ -1365,13 +1365,16 @@ class BoardInformation():
 
         return list(self._table.loc[self._table["owned"] == True].index)
 
-    def get_amount_properties_owned(self, name):
+    def get_amount_properties_owned(self, name, include_special=True):
         """Gets the total amount of properties owned by the given player
 
         Parameters
         --------------------
         name : str
             The name of the player whose properties should be counted
+
+        include_special : boolean
+            Wether special properties should be included
 
         Examples
         --------------------

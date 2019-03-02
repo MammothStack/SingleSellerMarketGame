@@ -1,4 +1,4 @@
-from src import BoardInformation, BoardError
+from SingleSellerMarket.src import BoardInformation, BoardError
 
 import unittest
 
@@ -1240,6 +1240,34 @@ class TestPurchase(unittest.TestCase):
         self.assertFalse(bi.can_purchase(6))
         self.assertFalse(bi.can_purchase(8))
         self.assertFalse(bi.can_purchase(9))
+
+class TestGet_total_levels_owned(unittest.TestCase):
+
+    def test_proper_number(self):
+        bi = BoardInformation(["red","blue"])
+        bi.purchase("red", 6)
+
+        self.assertEquals(1, b.get_total_levels_owned("red"))
+        self.assertEquals(0, b.get_total_levels_owned("blue"))
+
+        bi.purchase("red", 8)
+        bi.purchase("red", 9)
+
+        self.assertEquals(3, b.get_total_levels_owned("red"))
+
+        bi.upgrade("red", 6)
+        bi.upgrade("red", 6)
+        bi.upgrade("red", 6)
+
+        self.assertEquals(6, b.get_total_levels_owned("red"))
+
+        bi.upgrade("red", 8)
+        bi.upgrade("red", 8)
+        bi.upgrade("red", 8)
+
+        self.assertEquals(9, b.get_total_levels_owned("red"))
+
+
 """
 
 can_mortgage(name, position)
