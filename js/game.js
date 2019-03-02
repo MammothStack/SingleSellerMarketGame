@@ -49,3 +49,13 @@ class BoardController {
     this.upgrade_limit = upgrade_limit;
   }
 }
+
+
+
+function start_game() {
+  const model = tf.sequential();
+
+  alert(model.name)
+
+  alert("Not yet implented. coming soon");
+}

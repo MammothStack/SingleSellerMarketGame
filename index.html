@@ -4,15 +4,17 @@
     <meta charset="utf-8">
     <title>Single-Seller-Market Game</title>
     <link href="style.css" rel="stylesheet" type="text/css">
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@0.15.3/dist/tf.min.js"></script>
+    <script src="js/game.js"></script>
   </head>
   <body>
     <div class="container">
       <div class="heading">
         <h1 class="title">Single-Seller-Market Game</h1>
         <div class="game-control-container">
-          <a class="start-container">Start</a>
-          <a class="reset-container">Reset</a>
-          <a class="opponent-container">Choose</a>
+          <button type="button" id="start-button" onclick="start_game()">Start</button>
+          <button type="button">Reset</button>
+          <button type="button">Choose</button>
         </div>
       </div>
 

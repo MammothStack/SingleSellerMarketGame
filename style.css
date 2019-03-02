@@ -11,6 +11,15 @@
   grid-gap: 0.3rem;
 }
 
+body .container .heading .game-control-container * {
+  padding-top: 5px;
+  padding-bottom: 5px;
+}
+
+body .container .heading .game-control-container {
+  padding-bottom: 5px;
+}
+
 #ssmg .field {
   display: flex;
   flex-direction: column;
