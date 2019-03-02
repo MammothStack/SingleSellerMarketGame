@@ -76,7 +76,6 @@ class BoardController():
         purchase=True,
         up_down_grade=True,
         trade=True,
-        gather_results=False,
         log_game=False):
         """Starts the game
 
@@ -94,10 +93,6 @@ class BoardController():
 
         trade : boolean (default=True)
             If the game should have the trade actions
-
-        gather_results : boolean (default=True)
-            If at the end of the game the results of the games should be
-            gathered and returned
 
         log_game : boolean (default=False)
             If the game levels should be logged
@@ -133,7 +128,7 @@ class BoardController():
             current_player = self.order[self.current_turn]
             self._full_turn(current_player)
             if log_game:
-                log[current_player].append(
+                log[current_player] = log[current_player].append(
                     self.board.get_levels(
                         current_player).to_frame().T, ignore_index=True)
 
@@ -154,37 +149,33 @@ class BoardController():
                 for p in self.players.values():
                     p.learn()
 
-
             #Turn is incremented
             self.total_turn += 1
 
+        for p in self.players:
+            o = self.board.get_amount_properties_owned(p)
+            l = self.board.get_total_levels_owned(p)
 
-
-        if gather_results:
-            for p in self.players:
-                o = self.board.get_amount_properties_owned(p)
-                l = self.board.get_total_levels_owned(p)
-
-                result_dict[p] = pd.Series(
-                    data=[p,
-                        self.players[p].cash,
-                        o,
-                        l/o,
-                        self.total_turn,
-                        self.players[p].get_training_data("purchase"),
-                        self.players[p].get_training_data("up_down_grade"),
-                        self.players[p].get_training_data("trade_offer"),
-                        self.players[p].get_training_data("trade_decision")],
-                    index=["name",
-                        "cash",
-                        "prop_owned",
-                        "prop_average_level",
-                        "turn_count",
-                        "train_purchase",
-                        "train_up_down_grade",
-                        "train_trade_offer",
-                        "train_trade_decision"],
-                    name=p)
+            result_dict[p] = pd.Series(
+                data=[p,
+                    self.players[p].cash,
+                    o,
+                    l/o,
+                    self.total_turn,
+                    self.players[p].get_training_data("purchase"),
+                    self.players[p].get_training_data("up_down_grade"),
+                    self.players[p].get_training_data("trade_offer"),
+                    self.players[p].get_training_data("trade_decision")],
+                index=["name",
+                    "cash",
+                    "prop_owned",
+                    "prop_average_level",
+                    "turn_count",
+                    "train_purchase",
+                    "train_up_down_grade",
+                    "train_trade_offer",
+                    "train_trade_decision"],
+                name=p)
 
         return result_dict, log
 
