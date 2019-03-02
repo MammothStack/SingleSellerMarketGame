@@ -50,11 +50,9 @@ class BoardController {
   }
 }
 
-
-
-function start_game() {
+async function start_game() {
   var loc = window.location.pathname;
-  const model = await tf.loadModel('models/js/amaranth/model.json');
+  const model = await tf.loadModel('https://mammothstack.github.io/SingleSellerMarketGame/models/js/amaranth/model.json');
 
   alert(model.name)
   alert(loc)
