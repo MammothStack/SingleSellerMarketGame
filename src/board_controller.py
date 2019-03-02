@@ -77,7 +77,7 @@ class BoardController():
         up_down_grade=True,
         trade=True,
         gather_results=False,
-        log=False):
+        log_game=False):
         """Starts the game
 
         Starts the game with the current configuration. The parameters that can
@@ -99,12 +99,19 @@ class BoardController():
             If at the end of the game the results of the games should be
             gathered and returned
 
+        log_game : boolean (default=False)
+            If the game levels should be logged
+
         Returns
         --------------------
         result_dict : dict
             A dictionary of results where the keys are the players of the game
             and the values are a Pandas.Series object containing game
             information
+
+        log : dict
+            A dictionary where the player names are the keys and the values
+            consist of their level aquisition throughout the game
 
         """
 
@@ -114,9 +121,21 @@ class BoardController():
             "trade" : trade
         }
 
+        result_dict = {}
+        log = {}
+
+        if log_game:
+            log = {p: pd.DataFrame([], columns=self.board.index) for p in self.players.keys()}
+
+
         while self.alive:
             #Runs through all three actions
-            self._full_turn(self.order[self.current_turn])
+            current_player = self.order[self.current_turn]
+            self._full_turn(current_player)
+            if log_game:
+                log[current_player].append(
+                    self.board.get_levels(
+                        current_player).to_frame().T, ignore_index=True)
 
             #Checks if any properties can still be bought. quit if none
             if up_down_grade == False and trade == False:
@@ -135,12 +154,13 @@ class BoardController():
                 for p in self.players.values():
                     p.learn()
 
+
             #Turn is incremented
             self.total_turn += 1
 
-        if gather_results:
-            result_dict = {}
 
+
+        if gather_results:
             for p in self.players:
                 o = self.board.get_amount_properties_owned(p)
                 l = self.board.get_total_levels_owned(p)
@@ -165,7 +185,8 @@ class BoardController():
                         "train_trade_offer",
                         "train_trade_decision"],
                     name=p)
-            return result_dict
+
+        return result_dict, log
 
     def reset_game(self):
         """Resets all the game parameters so their default values
