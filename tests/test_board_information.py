@@ -1,4 +1,4 @@
-from SingleSellerMarket.src import BoardInformation, BoardError
+from src import BoardInformation, BoardError
 
 import unittest
 
