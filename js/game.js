@@ -54,9 +54,9 @@ class BoardController {
 
 function start_game() {
   var loc = window.location.pathname;
-  //const model = tf.loadModel('http://github.com/MammothStack/SingleSellerMarketGame/tree/master/models/js/amaranth/model.json');
+  const model = tf.loadModel(loc + 'models/js/amaranth/model.json');
 
-  //alert(model.name)
+  alert(model.name)
   alert(loc)
   alert("Not yet implented. coming soon");
 }
