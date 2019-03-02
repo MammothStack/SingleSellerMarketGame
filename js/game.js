@@ -53,9 +53,8 @@ class BoardController {
 
 
 function start_game() {
-  const model = tf.sequential();
+  const model = tf.loadModel('https://github.com/MammothStack/SingleSellerMarketGame/tree/master/models/js/amaranth/model.json');
 
   alert(model.name)
-
   alert("Not yet implented. coming soon");
 }
