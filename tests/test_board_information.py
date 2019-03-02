@@ -1247,25 +1247,25 @@ class TestGet_total_levels_owned(unittest.TestCase):
         bi = BoardInformation(["red","blue"])
         bi.purchase("red", 6)
 
-        self.assertEquals(1, b.get_total_levels_owned("red"))
-        self.assertEquals(0, b.get_total_levels_owned("blue"))
+        self.assertEquals(1, bi.get_total_levels_owned("red"))
+        self.assertEquals(0, bi.get_total_levels_owned("blue"))
 
         bi.purchase("red", 8)
         bi.purchase("red", 9)
 
-        self.assertEquals(3, b.get_total_levels_owned("red"))
+        self.assertEquals(3, bi.get_total_levels_owned("red"))
 
         bi.upgrade("red", 6)
         bi.upgrade("red", 6)
         bi.upgrade("red", 6)
 
-        self.assertEquals(6, b.get_total_levels_owned("red"))
+        self.assertEquals(6, bi.get_total_levels_owned("red"))
 
         bi.upgrade("red", 8)
         bi.upgrade("red", 8)
         bi.upgrade("red", 8)
 
-        self.assertEquals(9, b.get_total_levels_owned("red"))
+        self.assertEquals(9, bi.get_total_levels_owned("red"))
 
 
 """
