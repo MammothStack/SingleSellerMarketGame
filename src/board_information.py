@@ -1443,6 +1443,12 @@ class BoardInformation():
         """
         return list(self._table.loc[self._table["color"] == color].index)
 
+     def get_levels(self, name=None):
+         if name is None:
+             return self._table["level"]
+         else:
+             return self._table.apply(lambda x: x["level"] if x[name + ":owned"] == True else 0, axis=1)
+
     #Information getting
     def get_normalized_general_state(self):
         """Returns the normalized state of the board
@@ -1502,6 +1508,9 @@ class BoardInformation():
              name + ":can_downgrade",
              name + ":can_mortgage",
              name + ":can_unmortgage"]].astype("float")
+
+
+
 
 
 class BoardError(Exception):
