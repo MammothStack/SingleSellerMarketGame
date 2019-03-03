@@ -1290,6 +1290,26 @@ class BoardInformation():
                 [name + ":can_downgrade"]
             ] = True
 
+    def add_to_free_parking(self, amount):
+        """Adds the given amount to free parking"""
+        self._table.loc[20, "action"]["free parking"] += amount
+
+    def get_free_parking(self, clear=False):
+        """Returns the current cash thats on free parking
+
+        Parameters
+        --------------------
+        clear : boolean
+            If the value should be reset
+
+        """
+        v = self._table.loc[20, "action"]["free parking"]
+
+        if clear:
+            self._table.loc[20, "action"]["free parking"] = 0
+
+        return v
+
     def get_rent(self, position, dice_roll):
         """Returns the rent of the property
 

@@ -314,8 +314,8 @@ class BoardController():
 
             #If player landed on action field
             if self.board.is_action(new_pos):
-                self._land_action_field(name, new_pos)
-                purchase = False
+                r = self._land_action_field(name, new_pos)
+                purchase = r is not None
             else:
                 purchase = self._land_property(name, new_pos, d1, d2)
 
@@ -332,22 +332,7 @@ class BoardController():
 
         #trade
         if self.operation_config["trade"] and self.players[name].can_trade_offer:
-            for opponent in self.players.keys():
-                if name != opponent and self.players[opponent].can_trade_decision:
-                    x = self._get_state(name, opponent)
-                    y = self.players[name].get_action(x, "trade_offer")
-                    reward = self._evaluate_trade_offer(y, name, opponent)
-
-                    x_opp = np.concatenate((x, y))
-                    y_opp = self.players[name].get_action(x, "trade_decision")
-                    reward_opp = -reward
-
-                    if y_opp[0] == 1:
-                        self._execute_trade(y, name, opponent)
-                        self.players[name].add_training_data("trade_offer",
-                            x, y, reward)
-                        self.players[name].add_training_data("trade_decision",
-                            x_opp, y_opp, reward_opp)
+            self._trade_turn(name)
 
     def _purchase_turn(self, name, new_position):
         state = self._get_state(name)
@@ -377,61 +362,52 @@ class BoardController():
                 action = self.players[name].get_action(state, "trade_offer")
                 reward = self._evaluate_trade_offer(action, name, opponent)
 
-                x_opp = np.concatenate((x, y))
-                y_opp = self.players[name].get_action(x, "trade_decision")
+                state_opp = np.concatenate((state, action))
+                action_opp = self.players[name].get_action(state_opp, "trade_decision")
                 reward_opp = -reward
 
-                if y_opp[0] == 1:
-                    self._execute_trade(y, name, opponent)
-                    self.players[name].add_training_data("trade_offer",
-                        x, y, reward)
-                    self.players[name].add_training_data("trade_decision",
-                        x_opp, y_opp, reward_opp)
+                if action_opp[0] == 1:
+                    self._execute_trade(action, name, opponent)
+
+                    next_state = self._get_state(name, opponent)
+                    potential_action = self.players[name].get_action(next_state, "trade_offer")
+                    next_state_opp = np.concatenate((next_state, potential_action))
+
+                    self.players[name].add_training_data(
+                        "trade_offer", state, action, reward, next_state, False)
+                    self.players[opponent].add_training_data(
+                        "trade_decision", state_opp, action_opp, reward_opp, next_state_opp, False)
 
     def _land_action_field(self, name, position):
         #get the action from the position
         act = self.board.get_action(position)
 
+        if type(act) == int:
+            self.players[name].cash += cash
+            if cash < 0:
+                self.board.add_to_free_parking(-cash)
+        #If the action is money transfer
+        elif type(act) == dict:
+            if "goto" in act.keys():
+                g = act["goto"]
+                new_pos, cash = self.board.move_player(name, position=g)
+                self.players[name].cash += cash
+                if g == 0:
+                    pass
+                elif g == 10:
+                    self.players[name].allowed_to_move = False
+                elif g == 20:
+                    self.players[name].cash += self.board.get_free_parking(clear=True)
+                elif self.board.is_utility(g) or self.board.is_property(g):
+                    return self._land_property(name, g)
+            elif "free parking" in act.keys():
+                self.players[name].cash += self.board.get_free_parking(clear=True)
         #If the action requires nothing
-        if act is None:
+        elif act is None:
             pass
 
-        #If the action is free parking
-        elif type(act) == str:
-            self.players[name].cash += self.board.free_parking_cash
-            self.board.free_parking_cash = 0
 
-        #If the action is money transfer
-        elif type(act) == int:
-            #change player cash amount
-            self.players[name].cash += act
-
-            #if negative, cash added to free parking
-            if act < 0:
-                self.board.free_parking_cash -= act
-
-        #if the action is a "goto"
-        elif type(act) == tuple:
-            #move the player
-            self._move_player(name, position=act[1])
-
-            #if player moves to go
-            if act[1] == 0:
-                pass
-
-            #if player moves to jail
-            elif act[1] == 10:
-                self.players[name].allowed_to_move = False
-
-            #if player moves to free parking
-            elif act[1] == 20:
-                self.players[name].cash += self.board.free_parking_cash
-                self.board.free_parking_cash = 0
-        else:
-            raise ValueError("Something went way wrong here")
-
-
-    def _land_property(self, name, position, d1, d2):
+    def _land_property(self, name, position, dice_roll=7):
         #If the property is purchaseable
         if self.board.can_purchase(position):
             return True
@@ -443,7 +419,7 @@ class BoardController():
             #is owned by opponent
             else:
                 opponent_name = self.board.get_owner_name(position)
-                rent = self.board.get_rent(position, d1 + d2)
+                rent = self.board.get_rent(position, dice_roll)
                 self.players[opponent_name].cash += rent
                 self.players[name].cash -= rent
                 return False
