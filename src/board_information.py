@@ -1444,6 +1444,19 @@ class BoardInformation():
         return list(self._table.loc[self._table["color"] == color].index)
 
     def get_levels(self, name=None):
+        """Returns the levels of all the board properties
+
+        Parameters
+        --------------------
+        name : str (default=None)
+            The name of the player for which the levels should be fetched for
+
+        Returns
+        --------------------
+        levels : pandas.Series
+            The levels of all properties
+        """
+
         if name is None:
             return self._table["level"]
         else:

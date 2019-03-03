@@ -1,5 +1,6 @@
 import numpy as np
 import pandas as pd
+import random
 import json
 from tensorflow.keras.models import model_from_json
 
@@ -34,20 +35,18 @@ class Player():
         self.models = self.set_models(models)
         self._init_cash = cash
         self._init_position = position
-        self.reset_player()
+        self.cash = self._init_cash
+        self.position = self._init_position
+        self.allowed_to_move = True
 
     def __repr__(self):
         return (f'{self.__class__.__name__}('
-            f'{self.name!r}, {list(self.models.keys())!r})')
+            f'{self.name!r}, {list(self.models.values()!r})')
 
     def reset_player(self):
         self.cash = self._init_cash
         self.position = self._init_position
         self.allowed_to_move = True
-        self.x_train = {o:[] for o in self.models.keys()}
-        self.y_train = {o:[] for o in self.models.keys()}
-        self.rewards = {o:[] for o in self.models.keys()}
-        self.rewards_sum = {o:0 for o in self.models.keys()}
 
     def set_models(self, models):
         """Sets the models of the player for the various operations
@@ -76,42 +75,11 @@ class Player():
 
         return {m.operation: m for m in models}
 
-    def add_training_data(self, operation, x, y, reward):
-        """Adds an instance of training data
-
-        Adds an x, y, and reward values for later training. This is added for a
-        specific operation given by the operation parameter
-
-        Parameters
-        --------------------
-        operation : str
-            The operation for which the training data should be added to
-
-        x : ndarray
-            X training data that corresponds to the given x parameter
-
-        y : ndarray
-            y training data that corresponds to the given y parameter
-
-        reward : ndarray
-            reward training data that corresponds to the y and x values given
-
-        """
-        if(operation not in self.x_train.keys() or
-            operation not in self.y_train.keys() or
-            operation not in self.rewards.keys() or
-            operation not in self.rewards_sum.keys()):
-            raise ValueError("Given Operation is not in the data set")
-        self.x_train[operation].append(x)
-        self.y_train[operation].append(y)
-        self.rewards[operation].append(reward)
-        self.rewards_sum[operation] += reward
-
     def get_training_data(self, operation):
         """Returns all the training data that was appended during the game
 
-        The returned data is in a pandas DataFrame, with the x_train, y_train,
-        and rewards are stored in their respective columns.
+        The returned data is in a pandas DataFrame, with the state, action,
+        rewards, next_state, done are stored in their respective columns.
 
         Parameters
         --------------------
@@ -122,24 +90,12 @@ class Player():
         --------------------
         training_data: pd.DataFrame
             The training data for the specified operation.DataFrame, with the
-            x_train, y_train, and rewards are stored
+            state, action, rewards, next_state, done are stored
 
-        Raises
-        --------------------
-        ValueError
-            When the length of the X, y, rewards do not align, meaning gaps
-            in information,
 
         """
-        if len(self.x_train[operation]) != len(self.y_train[operation]):
-            raise ValueError("x and y train arrays are not the same length for " + operation)
-        if len(self.x_train[operation]) != len(self.rewards[operation]):
-            raise ValueError("x and rewards arrays are not the same length for " + operation)
-        return pd.DataFrame(
-            [self.x_train[operation],
-             self.y_train[operation],
-             self.rewards[operation]],
-            index=["x_train","y_train","rewards"]).T
+        return pd.DataFrame(list(self.models[operation].memory),
+            columns=["state","action","reward","next_state","done"])
 
     def get_decision(self, gamestate, operation):
         """Returns the decision of the player for the given operation
@@ -163,38 +119,27 @@ class Player():
             interpreted
 
         """
-        return self.models[operation].get_decision(gamestate)
+        return self.models[operation].get_action(gamestate)
 
-    def learn(self):
+    def learn(self, batch_size=None):
         """Takes accumulated training data and fits it to the models
 
-        Raises
+        Parameters
         --------------------
-        ValueError
-            When the lengths of the training data are not aligned
+        batch_size : int (default=None)
+            The size of the batch that should be used for training
 
         """
 
         for o in self.models.keys():
-            if len(self.x_train[o]) != len(self.y_train[o]):
-                raise ValueError("x and y train arrays are not the same length for " + o)
-            if len(self.x_train[o]) != len(self.rewards[o]):
-                raise ValueError("x and rewards arrays are not the same length for " + o)
-            if self.x_train[o] != []:
-                self.models[o].learn_training_data(
-                    x=np.array(self.x_train[o]),
-                    y=np.array(self.y_train[o]),
-                    sample_weight=np.array(self.rewards[o]),
-                    verbose=0,
-                    reward_sum=self.rewards_sum[o]
-                )
+            o.replay() if batch_size is None else o.replay(batch_size)
 
     def save_operation_models(self, destination):
         for model in self.models.values():
             model.save(destination)
 
 class OperationModel():
-    """The player to that plays on the Board
+    """The Agent that carry out a specific operation of the board
 
     Parameters
     --------------------
@@ -208,51 +153,70 @@ class OperationModel():
 
     """
 
-    def __init__(
-        self,
-        model,
-        name,
-        operation,
-        loss,
-        reward_dict,
-        true_threshold,
-        max_cash_limit,
-        reward_equation_str,
-        running_reward=0,
-        episode_nb=0,
-        gamma=0.99,
-        can_learn=True,
-        optimizer="adam",
-        metrics=['accuracy']):
+    def __init__(self, model, optimizer, metrics=['accuracy'], name, operation,
+        loss, true_threshold, single_label, max_cash_limit, running_reward=0, episode_nb=0,
+        gamma=1.0, epsilon=1.0, epsilon_min=0.01, epsilon_decay=0.99, alpha=0.001,
+        alpha_decay=0.001, can_learn=True):
 
         self.model = model
+        self.model_output_dim = self.model.layers[-1].output_shape[1]
         self.name = name
         self.operation = operation
         self.loss = loss
         self.optimizer = optimizer
         self.metrics = metrics
-        self.reward_dict = reward_dict
         self.true_threshold = true_threshold
+        self.single_label = single_label
         self.max_cash_limit = max_cash_limit
-        self.reward_equation_str = reward_equation_str
-        self.reward_equation = eval(reward_equation_str)
         self.running_reward = running_reward
         self.episode_nb = episode_nb
         self.can_learn = can_learn
         self.gamma = gamma
+        self.epsilon = epsilon
+        self.epsilon_min = epsilon_min
+        self.epsilon_decay = epsilon_decay
+        self.alpha = alpha
+        self.alpha_decay = alpha_decay
+        self.memory = deque(maxlen=100000)
 
+    def remember(self, state, action, reward, next_state, done):
+        """Stores data for later learning
+
+        Parameters
+        --------------------
+        state : np.ndarray
+            The state of the game
+
+        action : np.ndarray
+            The action taken based on the state
+
+        reward : float
+            The reward received based on the action
+
+        next_state : np.ndarray
+            The state of the game after the action was carried out
+
+        done : boolean
+            if the game is finished
+
+        """
+        self.memory.append((state, action, reward, next_state, done))
+
+    """
     def get_dynamic_reward(self, cash, level, scalar):
         cash = 0 if cash <= 0 else cash
         return self.reward_equation(cash, level, self.max_cash_limit, scalar)
 
-    def get_decision(self, x):
+    """
+
+    def get_action(self, state):
         """Returns the decision of the Operation Model
 
         Takes the x data and produces an output
 
         Parameters
         --------------------
-        x : numpy.ndarray
+        state : numpy.ndarray
             array consisting of gamedata. The shape of the parameter must match
             the input requirement of the model.
 
@@ -263,28 +227,47 @@ class OperationModel():
             interpreted
 
         """
-        res = self.model.predict(np.array((x,)))
-        return res[0]
+        if (np.random.random() <= self.epsilon):
+            action_raw = np.random.rand(self.model_output_dim)
+        else:
+            action_raw = self.model.predict(state)[0]
+            #return self.model.predict(state)[0]
+        action = np.zeros(self.model_output_dim)
 
-    def learn_training_data(self, x, y, sample_weight, reward_sum=None, verbose=0):
+        if self.single_label:
+            ind = np.argmax(action_raw)
+            if action_raw[ind] >= self.true_threshold:
+                action[ind] = 1
+        else:
+            ind = np.argwhere(action_raw >= self.true_threshold).flatten()
+            np.put(action, ind, 1)
+
+        return action
+
+    def replay(self, batch_size=32):
         """Uses the given data to fit the model
 
         Parameters
         --------------------
-        x : ndarray
-            X training data that corresponds to the given x parameter
+        batch_size : int
+            The size of the batch that should be used for training
 
-        y : ndarray
-            y training data that corresponds to the given y parameter
+        """
+        if self.can_learn:
+            x_batch, y_batch = [], []
+            minibatch = random.sample(
+                self.memory, min(len(self.memory), batch_size))
 
-        sample_weights : ndarray
-            Sample weights that should be applied to the training
+            for state, action, reward, next_state, done in minibatch:
+                y_target = self.model.predict(state)
+                y_target[0][action] = reward if done else reward + self.gamma * np.max(self.model.predict(next_state)[0])
+                x_batch.append(state[0])
+                y_batch.append(y_target[0])
 
-        reward_sum : float
-            The sum of all the rewards received during the execution phase
-
-        verbose : int
-            Level of verbosity during training
+            self.model.fit(np.array(x_batch), np.array(y_batch), batch_size=len(x_batch), verbose=0)
+            if self.epsilon > self.epsilon_min:
+                self.epsilon *= self.epsilon_decay
+            self.episode_nb += 1
 
         """
         if self.can_learn:
@@ -293,6 +276,8 @@ class OperationModel():
             self.running_reward = (self.running_reward * self.gamma +
                 reward_sum * (1-self.gamma))
             self.episode_nb += 1
+
+        """
 
     def save(self, destination=None):
         if destination is None:
@@ -303,10 +288,8 @@ class OperationModel():
         config = {
             "name": self.name,
             "operation": self.operation,
-            "reward_dict": self.reward_dict,
             "true_threshold": self.true_threshold,
             "max_cash_limit": self.max_cash_limit,
-            "reward_equation_str": self.reward_equation_str,
             "running_reward": self.running_reward,
             "episode_nb": self.episode_nb,
             "h5_path": self.name + "_" + self.operation + ".h5",
@@ -314,8 +297,14 @@ class OperationModel():
             "loss": self.loss,
             "optimizer": self.optimizer,
             "metrics": self.metrics,
+            "single_label": self.single_label,
             "can_learn": self.can_learn,
             "gamma": self.gamma,
+            "epsilon":self.epsilon,
+            "epsilon_min":self.epsilon_min,
+            "epsilon_decay":self.epsilon_decay,
+            "alpha": self.alpha,
+            "alpha_decay":self.alpha_decay
         }
 
         self.model.save_weights(destination + config["h5_path"])
@@ -331,7 +320,7 @@ class OperationModel():
 
     def __repr__(self):
         return (f'{self.__class__.__name__}('
-            f'{self.name!r}, {self.operation!r},{self.episode_nb!r}, {self.running_reward!r})')
+            f'{self.name!r}, {self.operation!r},{self.episode_nb!r}, {self.epsilon!r})')
 
 def load_operation_model(file_path, config_file_name):
     if file_path[-1:] != "/":
@@ -357,14 +346,18 @@ def load_operation_model(file_path, config_file_name):
         name=config["name"],
         operation=config["operation"],
         loss=config["loss"],
-        reward_dict=config["reward_dict"],
+        single_label = config["single_label"],
         true_threshold=config["true_threshold"],
         max_cash_limit=config["max_cash_limit"],
-        reward_equation_str=config["reward_equation_str"],
         running_reward=config["running_reward"],
         episode_nb=config["episode_nb"],
         can_learn=config["can_learn"],
         optimizer = config["optimizer"],
         metrics = config["metrics"],
-        gamma = config["gamma"]
+        gamma = config["gamma"],
+        epsilon=config["epsilon"],
+        epsilon_min=config["epsilon_min"],
+        epsilon_decay=config["epsilon_decay"],
+        alpha=config["alpha"],
+        alpha_decay=config["alpha_decay"],
     )

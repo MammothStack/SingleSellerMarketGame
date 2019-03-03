@@ -307,50 +307,8 @@ class BoardController():
         if offer is not None:
             offer_state = offer
 
-        return np.concatenate((offer_state, opp_state, pla_state, gen_state))
-
-    def _get_y(self, name, operation, x, single=True):
-        """Get a decision/prediction from the players for the given operation
-
-        Input a player name and an operation for which a decision should be
-        made. There is an option to include the opponent in the decision making
-        decision, which is the case for trading.
-
-        Parameters
-        --------------------
-        name : str
-            The name of the player making the decision
-
-        operation : str
-            The name of the operation for which the decision should be made
-
-        x : numpy.ndarray
-            The x input for which the decision should be calculated
-
-        single : boolean (default=True)
-            Signifies if only one result can be true or if multiple choices
-            can also be true
-
-        Returns
-        --------------------
-        y : np.array
-            Array of length n (where n is the length of the raw input),
-            containing only 0 or 1 integers.
-
-        """
-        y_raw = self.players[name].get_decision(x, operation)
-        y = np.zeros(len(y_raw))
-        threshold = self.players[name].models[operation].true_threshold
-
-        if single:
-            ind = np.argmax(y_raw)
-            if y_raw[ind] >= threshold:
-                y[ind] = 1
-        else:
-            ind = np.argwhere(y_raw >= threshold).flatten()
-            np.put(y, ind, 1)
-
-        return y
+        concatenated = np.concatenate((offer_state, opp_state, pla_state, gen_state))
+        return np.array((concatenated,))
 
     def _full_turn(self, name):
         if self.players[name].allowed_to_move:
@@ -371,44 +329,44 @@ class BoardController():
                 purchase and
                 self.players[name].can_purchase):
                 x = self._get_x(name)
-                y = self._get_y(name, "purchase", x, True)
+                y = self.players[name].get_decision(x, "purchase")
                 reward = self._execute_purchase(name, new_pos, y)
                 self.players[name].add_training_data("purchase", x, y, reward)
-
-            #upgrade/downgrade
-            cont = True
-            count = 0
-            if (self.operation_config["up_down_grade"] and
-                self.players[name].can_up_down_grade):
-                while cont and count < self.upgrade_limit:
-                    x = self._get_x(name)
-                    y = self._get_y(name, "up_down_grade", x, True)
-                    reward, cont = self._execute_up_down_grade(name, y)
-                    count += 1
-                    self.players[name].add_training_data("up_down_grade",
-                        x, y, reward)
-
-            #trade
-            if self.operation_config["trade"] and self.players[name].can_trade_offer:
-                for opponent in self.players.keys():
-                    if name != opponent and self.players[opponent].can_trade_decision:
-                        x = self._get_x(name, opponent)
-                        y = self._get_y(name, "trade_offer", x, single=False)
-                        reward = self._evaluate_trade_offer(y, name, opponent)
-
-                        x_opp = np.concatenate((x, y))
-                        y_opp = self._get_y(opponent, "trade_decision", x_opp, single=True)
-                        reward_opp = -reward
-
-                        if y_opp[0] == 1:
-                            self._execute_trade(y, name, opponent)
-                            self.players[name].add_training_data("trade_offer",
-                                x, y, reward)
-                            self.players[name].add_training_data("trade_decision",
-                                x_opp, y_opp, reward_opp)
-
         else:
             self.players[name].allowed_to_move = True
+
+        #upgrade/downgrade
+        cont = True
+        count = 0
+        if (self.operation_config["up_down_grade"] and
+            self.players[name].can_up_down_grade):
+            while cont and count < self.upgrade_limit:
+                x = self._get_x(name)
+                y = self.players[name].get_decision(x, "up_down_grade")
+                reward, cont = self._execute_up_down_grade(name, y)
+                count += 1
+                self.players[name].add_training_data("up_down_grade",
+                    x, y, reward)
+
+        #trade
+        if self.operation_config["trade"] and self.players[name].can_trade_offer:
+            for opponent in self.players.keys():
+                if name != opponent and self.players[opponent].can_trade_decision:
+                    x = self._get_x(name, opponent)
+                    y = self.players[name].get_decision(x, "trade_offer")
+                    reward = self._evaluate_trade_offer(y, name, opponent)
+
+                    x_opp = np.concatenate((x, y))
+                    y_opp = self.players[name].get_decision(x, "trade_decision")
+                    reward_opp = -reward
+
+                    if y_opp[0] == 1:
+                        self._execute_trade(y, name, opponent)
+                        self.players[name].add_training_data("trade_offer",
+                            x, y, reward)
+                        self.players[name].add_training_data("trade_decision",
+                            x_opp, y_opp, reward_opp)
+
 
     def _land_action_field(self, name, position):
         #get the action from the position
