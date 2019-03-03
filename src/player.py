@@ -3,6 +3,7 @@ import pandas as pd
 import random
 import json
 from tensorflow.keras.models import model_from_json
+from collections import deque
 
 class Player():
     """The player to that plays on the Board
