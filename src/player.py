@@ -23,8 +23,8 @@ class Player():
         self,
         name,
         models,
+        alive=True,
         cash=1500,
-        position=0,
     ):
         for m1 in models:
             for m2 in models:
@@ -34,10 +34,9 @@ class Player():
         self.max_cash_limit = models[0].max_cash_limit
         self.name = name
         self.models = self.set_models(models)
+        self.alive = alive
         self._init_cash = cash
-        self._init_position = position
         self.cash = self._init_cash
-        self.position = self._init_position
         self.allowed_to_move = True
 
     def __repr__(self):
@@ -46,8 +45,8 @@ class Player():
 
     def reset_player(self):
         self.cash = self._init_cash
-        self.position = self._init_position
         self.allowed_to_move = True
+        self.alive = True
 
     def set_models(self, models):
         """Sets the models of the player for the various operations
@@ -76,6 +75,33 @@ class Player():
 
         return {m.operation: m for m in models}
 
+    def add_training_data(self, operation, state, action, reward, next_state, done):
+        """Stores data for later learning to the appropriate model
+
+        Parameters
+        --------------------
+        operation : str
+            The operation that corresponds to the model for which the training
+            data should be added
+
+        state : np.ndarray
+            The state of the game
+
+        action : np.ndarray
+            The action taken based on the state
+
+        reward : float
+            The reward received based on the action
+
+        next_state : np.ndarray
+            The state of the game after the action was carried out
+
+        done : boolean
+            if the game is finished
+
+        """
+        self.models[operation].remember(state, action, reward, next_state, done)
+
     def get_training_data(self, operation):
         """Returns all the training data that was appended during the game
 
@@ -98,7 +124,7 @@ class Player():
         return pd.DataFrame(list(self.models[operation].memory),
             columns=["state","action","reward","next_state","done"])
 
-    def get_decision(self, gamestate, operation):
+    def get_action(self, gamestate, operation):
         """Returns the decision of the player for the given operation
 
         Takes the gamestate and produces an output for the given operation and

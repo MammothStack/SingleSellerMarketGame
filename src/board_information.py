@@ -76,13 +76,13 @@ class BoardInformation():
     is_owned_by(position, name)
         Returns if the property at position is owned by the player by name
 
-    is_actionfield(position)
+    is_action(position)
         Returns if the given position is an actionfield
 
     is_property(position)
         Returns if the given position is a property
 
-    is_special(position)
+    is_utility(position)
         Returns if the given position is a special property
 
     purchase(name, position)
@@ -157,6 +157,8 @@ class BoardInformation():
         self.available_houses = available_houses
         self.available_hotels = available_hotels
         self.free_parking_cash = 0
+
+        """
         self._fp_normal = [1,3,6,8,9,11,13,14,16,18,19,21,23,
                            24,26,27,29,31,32,34,37,39]
         self._fp_special = [5,12,15,25,28,35]
@@ -178,6 +180,8 @@ class BoardInformation():
                 30,40,50,80,100, ("goto", 0),("goto", 10), ("goto", 20)],
             38:-100
         }
+
+        """
 
         self._table = self._set_table(player_names)
         self.index = list(self._table.index)
@@ -223,6 +227,7 @@ class BoardInformation():
 
             """
             categories = [
+                ":position",
                 ":owned",
                 ":can_upgrade",
                 ":can_downgrade",
@@ -236,13 +241,16 @@ class BoardInformation():
                     index=index,
                     dtype="bool"
             ) for category in categories]
+            conc = pd.concat(l,axis=1)
+            conc.loc[0, name + ":position"] = 1
 
-            return pd.concat(l,axis=1)
+            return conc
 
         path = os.path.join(os.path.dirname(__file__), 'fields.csv')
-
         table = pd.read_csv(path)
         table.set_index("position", inplace=True)
+
+        table["action"] = table["action"].map(lambda x: x if pd.isna(x) else eval(x))
         table["purchase_amount:normal"] = table["purchase_amount"] / self._max_cash_limit
         table["mortgage_amount:normal"] = table["mortgage_amount"] / self._max_cash_limit
         table["upgrade_amount:normal"] = table["upgrade_amount"] / self._max_cash_limit
@@ -289,7 +297,7 @@ class BoardInformation():
         Raises
         --------------------
         BoardError
-            When the position does not occur in the table
+            When the position does not correspond to property or a utility
 
         Examples
         --------------------
@@ -300,8 +308,8 @@ class BoardInformation():
         False
 
         """
-        if position not in self._table.index:
-            raise BoardError("given position not in table index")
+        if not (self.is_utility(position) or self.is_property(position)):
+            raise BoardError("given position not is not a field that can be purchased")
         return self._table.at[position, "can_purchase"]
 
     def can_downgrade(self, name, position):
@@ -318,7 +326,7 @@ class BoardInformation():
         Raises
         --------------------
         BoardError
-            When the position or name does not occur in the table
+            When the position does not correspond to property or a utility
 
         Examples
         --------------------
@@ -331,7 +339,7 @@ class BoardInformation():
         """
         if name not in self._player_names:
             raise BoardError("Name does not exist in table")
-        if position not in self._table.index:
+        if not (self.is_utility(position) or self.is_property(position)):
             raise BoardError("position does not exist in table")
 
         return self._table.at[position, name + ":can_downgrade"]
@@ -350,7 +358,7 @@ class BoardInformation():
         Raises
         --------------------
         BoardError
-            When the position or name does not occur in the table
+            When the position does not correspond to property or a utility
 
         Examples
         --------------------
@@ -363,7 +371,7 @@ class BoardInformation():
         """
         if name not in self._player_names:
             raise BoardError("Name does not exist in table")
-        if position not in self._table.index:
+        if not (self.is_utility(position) or self.is_property(position)):
             raise BoardError("position does not exist in table")
         return self._table.at[position, name + ":can_upgrade"]
 
@@ -381,7 +389,7 @@ class BoardInformation():
         Raises
         --------------------
         BoardError
-            When the position or name does not occur in the table
+            When the position does not correspond to property or a utility
 
         Examples
         --------------------
@@ -396,7 +404,7 @@ class BoardInformation():
         """
         if name not in self._player_names:
             raise BoardError("Name does not exist in table")
-        if position not in self._table.index:
+        if not (self.is_utility(position) or self.is_property(position)):
             raise BoardError("position does not exist in table")
         return self._table.at[position, name + ":can_mortgage"]
 
@@ -414,13 +422,13 @@ class BoardInformation():
         Raises
         --------------------
         BoardError
-            When the position or name does not occur in the table
+            When the position does not correspond to property or a utility
 
         """
 
         if name not in self._player_names:
             raise BoardError("Name does not exist in table")
-        if position not in self._table.index:
+        if not (self.is_utility(position) or self.is_property(position)):
             raise BoardError("position does not exist in table")
         return self._table.at[position, name + ":can_unmortgage"]
 
@@ -432,6 +440,11 @@ class BoardInformation():
         position : int
             The position of the property that should be checked for monopoly
 
+        Raises
+        --------------------
+        BoardError
+            When the position does not correspond to property or a utility
+
         Examples
         --------------------
         >>>board.is_monopoly(1)
@@ -441,7 +454,7 @@ class BoardInformation():
         True
 
         """
-        if position not in self._table.index:
+        if not (self.is_utility(position) or self.is_property(position)):
             raise BoardError("position does not exist in table")
         return self._table.at[position, "monopoly_owned"]
 
@@ -452,6 +465,11 @@ class BoardInformation():
 
         Examples
         --------------------
+
+        Raises
+        --------------------
+        BoardError
+
 
         """
         if name not in self._player_names:
@@ -506,6 +524,11 @@ class BoardInformation():
         position : int
             The position of the property on the board
 
+        Raises
+        --------------------
+        BoardError
+            When the position does not correspond to property or a utility
+
         Examples
         --------------------
         >>>board = BoardInformation(["red", "blue"])
@@ -518,22 +541,25 @@ class BoardInformation():
         False
 
         """
+        if not (self.is_utility(position) or self.is_property(position)):
+            raise BoardError("position does not exist in table")
+
         return self._table.at[position, name + ":owned"]
 
-    def is_actionfield(self, position):
+    def is_action(self, position):
         """Returns true if the given position is an action field"""
-        return position in self._fp_action
+        return position in self._table.loc[self._table["type"] == "action"].index
 
     def is_property(self, position):
-        """Returns true if the given position is an property field"""
-        return position in self._fp_normal
+        """Returns true if the given position is a property field"""
+        return position in self._table.loc[self._table["type"] == "property"].index
 
-    def is_special(self, position):
-        """Returns true if the given position is an special property field"""
-        return position in self._fp_special
+    def is_utility(self, position):
+        """Returns true if the given position is utility field"""
+        return position in self._table.loc[self._table["type"] == "utility"].index
 
-    def _update_special_field(self, name, color):
-        """Updates the special field data
+    def _update_utility(self, name, color):
+        """Updates the utility field data
 
         Updates the special field at the given position, which includes the
         changing the rent amount of the related fields of the same color.
@@ -585,12 +611,16 @@ class BoardInformation():
 
         Raises
         --------------------
-        BoardError : if property cannot be sold by the player
+        BoardError
+            if property cannot be sold by the player
 
         Examples
         --------------------
 
         """
+        if not (self.is_utility(position) or self.is_property(position)):
+            raise BoardError("position does not exist in table")
+
         if self.is_owned_by(name, position) == False:
             raise BoardError(name + " does not own the property at " + str(position))
 
@@ -622,7 +652,7 @@ class BoardInformation():
         self._table.at[position, "level"] = 0
 
         if position in self._fp_special:
-            self._update_special_field(name, color)
+            self._update_utility(name, color)
         else:
             #current_rent_amount
             self._table.at[position, "current_rent_amount"] = 0
@@ -642,6 +672,64 @@ class BoardInformation():
                     self._table["color"] == color,
                     [name + ":can_upgrade"]
                 ] = False
+
+    def roll_dice(self):
+        """Returns two random values between 1 and 6"""
+        return randrange(1,7), randrange(1,7)
+
+    def move_player(self, name, dice_roll=None, position=None):
+        """Moves the player on the board based on a dice roll or absolute position
+
+        The dice_roll parameter is used to move the player to the new field by
+        adding the dice_roll to the current position. The position parameter
+        is used to move the player to that position regardless of dice_roll number.
+
+        Givinig both dice_roll and position parameter or leaving both on None
+        will result in a ValueError.
+
+        The new position and cash (if going around the board once) are returned
+
+        Parameters
+        --------------------
+        name : str
+            the name of the player to be moved
+
+        dice_roll : int (default=None)
+            The sum of both dice rolled
+
+        position : int (default=None)
+            The absolute position to which the player should be moved to
+
+        Returns
+        --------------------
+        new_position : int
+            The new position of the player
+
+        cash : int
+            Money earned from going around the board
+
+        Raises
+        --------------------
+        ValueError
+            When dice_roll and position are either both given or both are None
+
+
+        """
+        if ((dice_roll is None and position is None) or
+            (dice_roll is not None and position is not None)):
+            raise ValueError("Wrong input")
+
+        old_position = self._table.loc[self._table[name + ":position"] == 1].index[0]
+        self._table.loc[old_position, name + ":position"] = 0
+
+        if dice_roll is not None:
+            new_position = (old_position + dice_roll) % 40
+        else:
+            new_position = position
+
+        self._table.loc[new_position, name + ":position"] = 1
+        cash = 200 if new_position < old_position else 0
+        return new_position, cash
 
     def purchase(self, name, position):
         """Sets property at the position to "purchased" by the player
@@ -678,7 +766,8 @@ class BoardInformation():
 
         Raises
         --------------------
-        BoardError : if property cannot be purchased by player
+        BoardError
+            if property cannot be purchased by player
 
         Examples
         --------------------
@@ -728,7 +817,7 @@ class BoardInformation():
         self._table.at[position, "level"] = 1
 
         if position in self._fp_special:
-            self._update_special_field(name, color)
+            self._update_utility(name, color)
         else:
             #current_rent_amount
             self._table.at[
@@ -779,7 +868,8 @@ class BoardInformation():
 
         Raises
         --------------------
-        BoardError : if property cannot be morgaged by player
+        BoardError
+            if property cannot be morgaged by player
 
         Examples
         --------------------
@@ -858,7 +948,8 @@ class BoardInformation():
 
         Raises
         --------------------
-        BoardError : if property cannot be unmortgaged by player
+        BoardError
+            if property cannot be unmortgaged by player
 
         Examples
         --------------------
@@ -902,7 +993,7 @@ class BoardInformation():
             self._table.at[position, name + ":can_upgrade"] = False
 
             #current_rent_amount
-            self._update_special_field(name, color)
+            self._update_utility(name, color)
         else:
             #can upgrade
             if self._is_color_monopoly(name, color):
@@ -950,7 +1041,8 @@ class BoardInformation():
 
         Raises
         --------------------
-        BoardError : if property cannot be upgraded by player
+        BoardError
+            if property cannot be upgraded by player
 
         Examples
         --------------------
@@ -1055,7 +1147,8 @@ class BoardInformation():
 
         Raises
         --------------------
-        BoardError : if property cannot be downgraded by player
+        BoardError
+            if property cannot be downgraded by player
 
         Examples
         --------------------
@@ -1208,7 +1301,15 @@ class BoardInformation():
         dice_roll : int
             The roll of the dice that got to the position
 
+        Raises
+        --------------------
+        BoardError
+            When the position does not correspond to property or a utility
+
         """
+        if not (self.is_utility(position) or self.is_property(position)):
+            raise BoardError("position does not exist in table")
+
         if position == 12 or position == 28:
             return (self._table.at[position, "current_rent_amount"] / 7) * dice_roll
         else:
@@ -1222,7 +1323,15 @@ class BoardInformation():
         position : int
             The position of the property
 
+        Raises
+        --------------------
+        BoardError
+            When the position does not correspond to property or a utility
+
         """
+        if not (self.is_utility(position) or self.is_property(position)):
+            raise BoardError("position does not exist in table")
+
         s = [a + ":owned" for a in self._player_names]
         own = self._table.loc[position, s]
         if own.any():
@@ -1238,7 +1347,15 @@ class BoardInformation():
         position : int
             The position of the property
 
+        Raises
+        --------------------
+        BoardError
+            When the position does not correspond to property or a utility
+
         """
+        if not (self.is_utility(position) or self.is_property(position)):
+            raise BoardError("position does not exist in table")
+
         return self._table.at[position, "purchase_amount"]
 
     def get_value(self, position):
@@ -1249,7 +1366,16 @@ class BoardInformation():
         position : int
             The position of the property
 
+        Raises
+        --------------------
+        BoardError
+            When the position does not correspond to property or a utility
+
         """
+
+        if not (self.is_utility(position) or self.is_property(position)):
+            raise BoardError("position does not exist in table")
+
         return self._table.at[position, "value"]
 
     def get_mortgage_amount(self, position):
@@ -1260,7 +1386,15 @@ class BoardInformation():
         position : int
             The position of the property
 
+        Raises
+        --------------------
+        BoardError
+            When the position does not correspond to property or a utility
+
         """
+        if not (self.is_utility(position) or self.is_property(position)):
+            raise BoardError("position does not exist in table")
+
         return self._table.at[position, "mortgage_amount"]
 
     def get_upgrade_amount(self, position):
@@ -1271,7 +1405,16 @@ class BoardInformation():
         position : int
             The position of the property
 
+        Raises
+        --------------------
+        BoardError
+            When the position does not correspond to property or a utility
+
         """
+
+        if not (self.is_utility(position) or self.is_property(position)):
+            raise BoardError("position does not exist in table")
+
         return self._table.at[position, "upgrade_amount"]
 
     def get_downgrade_amount(self, position):
@@ -1282,7 +1425,14 @@ class BoardInformation():
         position : int
             The position of the property
 
+        Raises
+        --------------------
+        BoardError
+            When the position does not correspond to property or a utility
+
         """
+        if not (self.is_utility(position) or self.is_property(position)):
+            raise BoardError("position does not exist in table")
 
         return self._table.at[position, "downgrade_amount"]
 
@@ -1294,7 +1444,14 @@ class BoardInformation():
         position : int
             The position of the property
 
+        Raises
+        --------------------
+        BoardError
+            When the position does not correspond to property or a utility
+
         """
+        if not (self.is_utility(position) or self.is_property(position)):
+            raise BoardError("position does not exist in table")
         return self._table.at[position, "level"]
 
     def get_property_name(self, position):
@@ -1305,9 +1462,16 @@ class BoardInformation():
         position : int
             The position of the property
 
+        Raises
+        --------------------
+        BoardError
+            When the position does not correspond to property or a utility or
+            action field
+
         """
-        if position in self._fp_action:
-            return "Action field"
+        if not (self.is_utility(position) or self.is_property(position) or
+            self.is_action(position)):
+            raise BoardError("position does not exist in table")
         return self._table.at[position, "name"]
 
     def get_property_color(self, position):
@@ -1318,9 +1482,16 @@ class BoardInformation():
         position : int
             The position of the property
 
+        Raises
+        --------------------
+        BoardError
+            When the position does not correspond to property or a utility or
+            action field
+
         """
-        if position in self._fp_action:
-            return "Action field"
+        if not (self.is_utility(position) or self.is_property(position) or
+            self.is_action(position)):
+            raise BoardError("position does not exist in table")
         return self._table.at[position, "color"]
 
     def get_action(self, position):
@@ -1329,29 +1500,35 @@ class BoardInformation():
         Parameters
         --------------------
         position : int
-            The position of the property
+            The position of the action
+
+        When the position does not correspond to an action field
 
         """
-        var = self._action_fields[position]
+
+        if not self.is_action(position):
+            raise BoardError("position does not cirrespond to an action")
+
+        var = self._table.loc[position, "action"]
         if type(var) == list:
             return var[randint(0, len(var)-1)]
         else:
             return var
 
-    def get_all_properties_owned(self, player_name):
+    def get_all_properties_owned(self, name, include_utility=True):
         """Returns all the properties that the given player owns
 
         Returns a list of property location that the given player owns.
 
         Parameters
         --------------------
-        player_name : str
+        name : str
             The name of the player for which the properties should be returned
 
         Returns
         --------------------
         properties : list
-            A list of the all the properties location that the given player owns
+            A list of the all the field locations that the given player owns
 
         Examples
         --------------------
@@ -1362,10 +1539,16 @@ class BoardInformation():
         >>>bi.get_all_properties_owned("red")
         [1]
         """
+        if include_utility:
+            prop = self._table.loc[self._table[name + ":owned"] == True]
+        else:
+            prop = self._table.loc[
+                (self._table[name + ":owned"] == True) &
+                (self._table["type"] == "property")
+            ]
+        return list(prop.index)
 
-        return list(self._table.loc[self._table["owned"] == True].index)
-
-    def get_amount_properties_owned(self, name, include_special=True):
+    def get_amount_properties_owned(self, name, include_utility=True):
         """Gets the total amount of properties owned by the given player
 
         Parameters
@@ -1373,8 +1556,8 @@ class BoardInformation():
         name : str
             The name of the player whose properties should be counted
 
-        include_special : boolean
-            Wether special properties should be included
+        include_utility : boolean
+            Wether utility fields should be included
 
         Examples
         --------------------
@@ -1385,7 +1568,11 @@ class BoardInformation():
         1
 
         """
-        return np.sum(self._table[name + ":owned"])
+        if include_utility:
+            prop = self._table
+        else:
+            prop = self._table.loc[self._table["type"] == "property"]
+        return np.sum(prop[name + ":owned"])
 
     def get_total_levels_owned(self, name):
         """Gets the total level of all owned properties by the given player
@@ -1481,7 +1668,8 @@ class BoardInformation():
         since the table is 28 rows deep this results in a table of 28 x 8
 
         """
-        return self._table[[
+        prop = self._table.loc[self._table["type"] != "action"]
+        return prop[[
             "monopoly_owned",
             "value:normal",
             "can_purchase",
@@ -1514,18 +1702,16 @@ class BoardInformation():
         """
         if name not in self._player_names:
             raise BoardError("That name is not in the player list")
-
-        return self._table[
-            [name + ":owned",
+        prop = self._table.loc[self._table["type"] != "action"]
+        return prop[
+            [name + ":position",
+             name + ":owned",
              name + ":can_upgrade",
              name + ":can_downgrade",
              name + ":can_mortgage",
              name + ":can_unmortgage"]].astype("float")
 
-
-
-
-
 class BoardError(Exception):
     """Base class for board specific errors"""
-    pass
+    def __init__(self, message):
+        super().__init__(message)
