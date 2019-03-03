@@ -256,7 +256,7 @@ class BoardInformation():
         table["upgrade_amount:normal"] = table["upgrade_amount"] / self._max_cash_limit
         table["downgrade_amount:normal"] = table["downgrade_amount"] / self._max_cash_limit
 
-        table.fillna(0)
+        table.fillna(0, inplace=True)
 
         table = table.astype(
             {'value':np.int,
