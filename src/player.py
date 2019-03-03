@@ -184,10 +184,10 @@ class OperationModel():
 
     """
 
-    def __init__(self, model, optimizer, metrics=['accuracy'], name, operation,
-        loss, true_threshold, single_label, max_cash_limit, running_reward=0, episode_nb=0,
-        gamma=1.0, epsilon=1.0, epsilon_min=0.01, epsilon_decay=0.99, alpha=0.001,
-        alpha_decay=0.001, can_learn=True):
+    def __init__(self, model, optimizer, name, operation, loss,
+        true_threshold, single_label, max_cash_limit, metrics=['accuracy'],
+        running_reward=0, episode_nb=0, gamma=1.0, epsilon=1.0, epsilon_min=0.01,
+        epsilon_decay=0.99, alpha=0.001, alpha_decay=0.001, can_learn=True):
 
         self.model = model
         self.model_output_dim = self.model.layers[-1].output_shape[1]
