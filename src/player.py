@@ -40,11 +40,12 @@ class Player():
         self.allowed_to_move = True
 
     def __repr__(self):
-        c_name = "Player"
-        name = self.name
-        models = list(self.models.values()
-        rep = (f"{c_name}, {name!r}, {models!r}")
-        return rep
+        s = (
+            f"{self.__class__.__name__}, "
+            f"{self.name!r}, "
+            f"{list(self.models.values())!r}"
+        )
+        return s
 
     def reset_player(self):
         self.cash = self._init_cash
