@@ -40,10 +40,13 @@ class Player():
         self.allowed_to_move = True
 
     def __repr__(self):
+        c_name = "Player"
+        name = self.name
+        models = list(self.models.values()
         s = (
-            f"{self.__class__.__name__}, "
-            f"{self.name!r}, "
-            f"{list(self.models.values()!r}"
+            f"{c_name}, "
+            f"{name!r}, "
+            f"{models!r}"
         )
         return s
 
