@@ -653,7 +653,7 @@ class BoardInformation():
         #level
         self._table.at[position, "level"] = 0
 
-        if position in self._fp_special:
+        if self.is_utility(position):
             self._update_utility(name, color)
         else:
             #current_rent_amount
@@ -818,7 +818,7 @@ class BoardInformation():
         #level
         self._table.at[position, "level"] = 1
 
-        if position in self._fp_special:
+        if self.is_utility(position):
             self._update_utility(name, color)
         else:
             #current_rent_amount
@@ -990,7 +990,7 @@ class BoardInformation():
         #level
         self._table.at[position, "level"] = 1
 
-        if position in self._fp_special:
+        if self.is_utility(position):
             #can upgrade
             self._table.at[position, name + ":can_upgrade"] = False
 
