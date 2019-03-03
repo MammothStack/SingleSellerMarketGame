@@ -43,12 +43,8 @@ class Player():
         c_name = "Player"
         name = self.name
         models = list(self.models.values()
-        s = (
-            f"{c_name}, "
-            f"{name!r}, "
-            f"{models!r}"
-        )
-        return s
+        rep = (f"{c_name}, {name!r}, {models!r}")
+        return rep
 
     def reset_player(self):
         self.cash = self._init_cash
