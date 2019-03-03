@@ -256,29 +256,31 @@ class BoardInformation():
         table["upgrade_amount:normal"] = table["upgrade_amount"] / self._max_cash_limit
         table["downgrade_amount:normal"] = table["downgrade_amount"] / self._max_cash_limit
 
+        table.fillna(0)
+
         table = table.astype(
-            {'value':np.int16,
+            {'value':np.int,
              'value:normal':np.float,
              'monopoly_owned':np.bool,
              'can_purchase':np.bool,
-             'purchase_amount':np.int16,
+             'purchase_amount':np.int,
              'purchase_amount:normal':np.float,
-             'mortgage_amount':np.int16,
+             'mortgage_amount':np.int,
              'mortgage_amount:normal':np.float,
-             'upgrade_amount':np.int16,
+             'upgrade_amount':np.int,
              'upgrade_amount:normal':np.float,
-             'downgrade_amount':np.int16,
+             'downgrade_amount':np.int,
              'downgrade_amount:normal':np.float,
-             'current_rent_amount':np.int16,
+             'current_rent_amount':np.int,
              'current_rent_amount:normal':np.float,
-             'level':np.int8,
-             'rent_level:0':np.int16,
-             'rent_level:1':np.int16,
-             'rent_level:2':np.int16,
-             'rent_level:3':np.int16,
-             'rent_level:4':np.int16,
-             'rent_level:5':np.int16,
-             'rent_level:6':np.int16}
+             'level':np.int,
+             'rent_level:0':np.int,
+             'rent_level:1':np.int,
+             'rent_level:2':np.int,
+             'rent_level:3':np.int,
+             'rent_level:4':np.int,
+             'rent_level:5':np.int,
+             'rent_level:6':np.int}
         )
 
         for p in players:
