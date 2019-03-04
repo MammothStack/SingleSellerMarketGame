@@ -314,8 +314,10 @@ class BoardController():
 
             #If player landed on action field
             if self.board.is_action(new_pos):
-                r = self._land_action_field(name, new_pos)
-                purchase = r is not None
+                r, action_pos = self._land_action_field(name, new_pos)
+                if r:
+                    purchase = True
+                    new_pos = action_pos
             else:
                 purchase = self._land_property(name, new_pos, d1 + d2)
 
@@ -399,7 +401,7 @@ class BoardController():
                 elif g == 20:
                     self.players[name].cash += self.board.get_free_parking(clear=True)
                 elif self.board.is_utility(g) or self.board.is_property(g):
-                    return self._land_property(name=name, position=g)
+                    return self._land_property(name=name, position=g), g
             elif "free parking" in act.keys():
                 self.players[name].cash += self.board.get_free_parking(clear=True)
         #If the action requires nothing
