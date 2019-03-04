@@ -595,7 +595,10 @@ class BoardController():
         deg = ((1.2 * c2 * rho - 1500) / (1000 + c2 * rho))
 
         if rho_type == "c":
-            return deg * ((c2-c1)/abs(c2-c1))
+            if c2 - c1 == 0:
+                return 0
+            else:
+                return deg * ((c2-c1)/abs(c2-c1))
         else:
             y1 = 0.005
             y2 = 0.01
