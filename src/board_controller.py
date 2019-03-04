@@ -587,6 +587,8 @@ class BoardController():
 
     def _get_reward(self, player, operation, ev_before, ev_after):
         rho, rho_type = self.players[player].get_reward_scalars(operation)
+        c1 = ev_before[0]
+        c1 = 0 if c1 < 0 else c1
         c2 = ev_after[0]
         c2 = 0 if c2 < 0 else c2
 
@@ -600,7 +602,6 @@ class BoardController():
             y3 = 0.005
             y4 = 1.0
 
-            c1 = ev_before[0]
             v1 = ev_before[1]
             r1 = ev_before[2]
             m1 = ev_before[3]
