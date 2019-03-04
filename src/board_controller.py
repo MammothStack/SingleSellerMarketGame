@@ -1,4 +1,4 @@
-from random import randrange
+    from random import randrange
 import numpy as np
 import pandas as pd
 import os
@@ -317,7 +317,7 @@ class BoardController():
                 r = self._land_action_field(name, new_pos)
                 purchase = r is not None
             else:
-                purchase = self._land_property(name, new_pos, d1, d2)
+                purchase = self._land_property(name, new_pos, d1 + d2)
 
             if (self.operation_config["purchase"] and
                 purchase and
@@ -399,7 +399,7 @@ class BoardController():
                 elif g == 20:
                     self.players[name].cash += self.board.get_free_parking(clear=True)
                 elif self.board.is_utility(g) or self.board.is_property(g):
-                    return self._land_property(name, g)
+                    return self._land_property(name=name, position=g)
             elif "free parking" in act.keys():
                 self.players[name].cash += self.board.get_free_parking(clear=True)
         #If the action requires nothing
