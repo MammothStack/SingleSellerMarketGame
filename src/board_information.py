@@ -157,32 +157,6 @@ class BoardInformation():
         self.available_houses = available_houses
         self.available_hotels = available_hotels
         self.free_parking_cash = 0
-
-        """
-        self._fp_normal = [1,3,6,8,9,11,13,14,16,18,19,21,23,
-                           24,26,27,29,31,32,34,37,39]
-        self._fp_special = [5,12,15,25,28,35]
-        self._fp_action = [0,2,4,7,10,17,20,22,30,33,36,38]
-        self._action_fields = {
-            0:None,
-            2:[20,20,20,30,30,40,50,100],
-            4:-200,
-            7:[-30,-40,-50,-50,-80,-100,-150, 20,
-               30,40,50,80,100, ("goto", 0),("goto", 10), ("goto", 20)],
-            10:None,
-            17:[20,20,20,30,30,40,50,100],
-            20:"free parking",
-            22:[-30,-40,-50,-50,-80,-100,-150, 20,
-                30,40,50,80,100, ("goto", 0),("goto", 10), ("goto", 20)],
-            30:("goto", 10),
-            33:[20,20,20,30,30,40,50,100],
-            36:[-30,-40,-50,-50,-80,-100,-150, 20,
-                30,40,50,80,100, ("goto", 0),("goto", 10), ("goto", 20)],
-            38:-100
-        }
-
-        """
-
         self._table = self._set_table(player_names)
         self.index = list(self._table.index)
 
@@ -1651,6 +1625,15 @@ class BoardInformation():
 
         """
         return list(self._table.loc[self._table["color"] == color].index)
+
+    def get_evaluation(self, name):
+        """Returns the sum of potential rent and value of properties"""
+        owned = self._table.loc[self._table[name + ":owned"] == True]
+        rent = np.sum(owned["current_rent_amount"])
+        value = np.sum(owned["value"])
+        mono_props = np.sum(owned["monopoly_owned"])
+
+        return value, rent, mono_props
 
     def get_levels(self, name=None):
         """Returns the levels of all the board properties

@@ -152,6 +152,9 @@ class Player():
         """
         return self.models[operation].get_action(gamestate)
 
+    def get_reward_scalars(self, operation):
+        return self.models[operation].rho, self.models[operation].rho_type
+
     def learn(self, batch_size=None):
         """Takes accumulated training data and fits it to the models
 
@@ -187,7 +190,8 @@ class OperationModel():
     def __init__(self, model, optimizer, name, operation, loss,
         true_threshold, single_label, max_cash_limit, metrics=['accuracy'],
         running_reward=0, episode_nb=0, gamma=1.0, epsilon=1.0, epsilon_min=0.01,
-        epsilon_decay=0.99, alpha=0.001, alpha_decay=0.001, can_learn=True):
+        epsilon_decay=0.99, alpha=0.001, alpha_decay=0.001, rho=3, rho_type="crvm",
+        can_learn=True):
 
         self.model = model
         self.model_output_dim = self.model.layers[-1].output_shape[1]
@@ -208,6 +212,8 @@ class OperationModel():
         self.epsilon_decay = epsilon_decay
         self.alpha = alpha
         self.alpha_decay = alpha_decay
+        self.rho = rho
+        self.rho_type = rho_type
         self.memory = deque(maxlen=100000)
 
     def remember(self, state, action, reward, next_state, done):
@@ -335,7 +341,9 @@ class OperationModel():
             "epsilon_min":self.epsilon_min,
             "epsilon_decay":self.epsilon_decay,
             "alpha": self.alpha,
-            "alpha_decay":self.alpha_decay
+            "alpha_decay":self.alpha_decay,
+            "rho": self.rho,
+            "rho_type": self.rho_type
         }
 
         self.model.save_weights(destination + config["h5_path"])
@@ -391,4 +399,6 @@ def load_operation_model(file_path, config_file_name):
         epsilon_decay=config["epsilon_decay"],
         alpha=config["alpha"],
         alpha_decay=config["alpha_decay"],
+        rho=config["rho"],
+        rho_type=config["rho_type"]
     )

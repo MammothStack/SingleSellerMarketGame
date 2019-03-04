@@ -424,35 +424,19 @@ class BoardController():
                 self.players[name].cash -= rent
                 return False
 
-    def _execute_purchase(self, name, position, y):
-        if y[0] == 1:
+    def _execute_purchase(self, name, position, action):
+
+        value, rent, mono_props = self.board.get_evaluation(name)
+        ev_before = (self.players[name].cash, rent, value, mono_props)
+
+        if action[0] == 1:
             self.board.purchase(name, position)
             self.players[name].cash -= self.board.get_purchase_amount(position)
 
-            self.alive = self.players[name].cash >= 0
-            self.players[name].alive = self.players[name].cash >= 0
+        value, rent, mono_props = self.board.get_evaluation(name)
+        ev_after = (self.players[name].cash, rent, value, mono_props)
 
-            if self.board.is_monopoly(position):
-                level = self.players[name].models["purchase"].reward_dict["monopoly"]["level"]
-                scalar = self.players[name].models["purchase"].reward_dict["monopoly"]["scalar"]
-            else:
-                level = self.players[name].models["purchase"].reward_dict["standard"]["level"]
-                scalar = self.players[name].models["purchase"].reward_dict["standard"]["scalar"]
-
-            reward = self.players[name].models["purchase"].get_dynamic_reward(
-                 self.players[name].cash, level, scalar
-            )
-        else:
-            level = self.players[name].models["purchase"].reward_dict["none"]["level"]
-            scalar = self.players[name].models["purchase"].reward_dict["none"]["scalar"]
-
-            reward = self.players[name].models["purchase"].get_dynamic_reward(
-                self.players[name].cash - self.board.get_purchase_amount(position),
-                level,
-                scalar
-            )
-
-        return reward
+        return self._get_reward(name, "purchase", ev_before, ev_after)
 
     def _execute_up_down_grade(self, name, y):
         """Executes the the given upgrade/downgrade move
@@ -495,6 +479,10 @@ class BoardController():
         split = int(len(y) / 2)
         upgrade = y[:split]
         downgrade = y[split:]
+        cont = True
+
+        value, rent, mono_props = self.board.get_evaluation(name)
+        ev_before = (self.players[name].cash, rent, value, mono_props)
 
         if upgrade.sum() == 1:
             ind = np.argmax(upgrade)
@@ -505,30 +493,12 @@ class BoardController():
                 self.players[name].cash -= self.board.get_upgrade_amount(pos)
                 self.board.upgrade(name, pos)
 
-                level = self.players[name].models["up_down_grade"].reward_dict["upgrade"]["level"]
-                scalar = self.players[name].models["up_down_grade"].reward_dict["upgrade"]["scalar"]
-
-                reward = self.players[name].models["up_down_grade"].get_dynamic_reward(
-                    self.players[name].cash, level, scalar
-                )
-                return reward, True
-
             #if position can be unmortgaged
             elif self.board.can_unmortgage(name, pos):
                 self.players[name].cash -= self.board.get_mortgage_amount(pos)
                 self.board.unmortgage(name, pos)
-
-                level = self.players[name].models["up_down_grade"].reward_dict["unmortgage"]["level"]
-                scalar = self.players[name].models["up_down_grade"].reward_dict["unmortgage"]["scalar"]
-
-                reward = self.players[name].models["up_down_grade"].get_dynamic_reward(
-                    self.players[name].cash, level, scalar
-                )
-                return reward, True
-
             else:
-                reward =  self.players[name].models["up_down_grade"].reward_dict["nonexecution"]
-                return reward, False
+                cont = False
 
         elif downgrade.sum() == 1:
             ind = np.argmax(downgrade)
@@ -537,33 +507,18 @@ class BoardController():
             if self.board.can_downgrade(name, pos):
                 self.players[name].cash += self.board.get_downgrade_amount(pos)
                 self.board.downgrade(name, pos)
-
-                level = self.players[name].models["up_down_grade"].reward_dict["downgrade"]["level"]
-                scalar = self.players[name].models["up_down_grade"].reward_dict["downgrade"]["scalar"]
-
-                reward = self.players[name].models["up_down_grade"].get_dynamic_reward(
-                    self.players[name].cash, level, scalar
-                )
-                return reward, True
-
             elif self.board.can_mortgage(name, pos):
                 self.players[name].cash += self.board.get_mortgage_amount(pos)
                 self.board.mortgage(name, pos)
-
-                level = self.players[name].models["up_down_grade"].reward_dict["mortgage"]["level"]
-                scalar = self.players[name].models["up_down_grade"].reward_dict["mortgage"]["scalar"]
-
-                reward = self.players[name].models["up_down_grade"].get_dynamic_reward(
-                    self.players[name].cash, level, scalar
-                )
-                return reward, True
-
             else:
-                reward = self.players[name].models["up_down_grade"].reward_dict["nonexecution"]
-                return reward, False
+                cont = False
         else:
-            reward =  self.players[name].models["up_down_grade"].reward_dict["none"]
-            return reward, False
+            cont = False
+
+        value, rent, mono_props = self.board.get_evaluation(name)
+        ev_after = (self.players[name].cash, rent, value, mono_props)
+
+        return self._get_reward(name, "up_down_grade", ev_before, ev_after), cont
 
     def _get_values_from_trade_offer(self, trade_offer):
         offer_cash = self._binary_to_cash(trade_offer[0:14], neg=False)
@@ -628,3 +583,30 @@ class BoardController():
             return cash_gained
         else:
             raise ValueError("Cannot transfer properties that are not owned")
+
+
+    def _get_reward(self, player, operation, ev_before, ev_after):
+        rho, rho_type = self.players[player].get_reward_scalars(operation)
+        c2 = ev_after[0]
+        c2 = 0 if c2 < 0 else c2
+
+        deg = ((1.2 * c2 * rho - 1500) / (1000 + c2 * rho))
+
+        if rho_type == "c":
+            return deg * ((c2-c1)/abs(c2-c1))
+        else:
+            y1 = 0.005
+            y2 = 0.01
+            y3 = 0.005
+            y4 = 1.0
+
+            c1 = ev_before[0]
+            v1 = ev_before[1]
+            r1 = ev_before[2]
+            m1 = ev_before[3]
+
+            v2 = ev_after[1]
+            r2 = ev_after[2]
+            m2 = ev_after[3]
+
+            return deg * (y1*(c2-c1) + y2*(v2-v1) + y3*(r2-r1) + y4*(m2-m1))
