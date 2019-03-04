@@ -383,9 +383,9 @@ class BoardController():
         act = self.board.get_action(position)
 
         if type(act) == int:
-            self.players[name].cash += cash
-            if cash < 0:
-                self.board.add_to_free_parking(-cash)
+            self.players[name].cash += act
+            if act < 0:
+                self.board.add_to_free_parking(-act)
         #If the action is money transfer
         elif type(act) == dict:
             if "goto" in act.keys():
