@@ -3,7 +3,7 @@ from src import BoardInformation, BoardError
 import unittest
 
 class TestFieldType(unittest.TestCase):
-    bi = BoardInformation(["red","blue"], 10000)
+    self.bi = BoardInformation(["red","blue"], 10000)
 
     def test_0(self):
         self.assertTrue(bi.is_action(0))
