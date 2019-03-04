@@ -3,204 +3,244 @@ from src import BoardInformation, BoardError
 import unittest
 
 class TestFieldType(unittest.TestCase):
-    self.bi = BoardInformation(["red","blue"], 10000)
+    bi = BoardInformation(["red","blue"], 10000)
 
     def test_0(self):
+        bi = BoardInformation(["red","blue"], 10000)
         self.assertTrue(bi.is_action(0))
         self.assertFalse(bi.is_utility(0))
         self.assertFalse(bi.is_property(0))
 
     def test_1(self):
+        bi = BoardInformation(["red","blue"], 10000)
         self.assertFalse(bi.is_action(1))
         self.assertFalse(bi.is_utility(1))
         self.assertTrue(bi.is_property(1))
 
     def test_2(self):
+        bi = BoardInformation(["red","blue"], 10000)
         self.assertTrue(bi.is_action(2))
         self.assertFalse(bi.is_utility(2))
         self.assertFalse(bi.is_property(2))
 
     def test_3(self):
+        bi = BoardInformation(["red","blue"], 10000)
         self.assertFalse(bi.is_action(3))
         self.assertFalse(bi.is_utility(3))
         self.assertTrue(bi.is_property(3))
 
     def test_4(self):
+        bi = BoardInformation(["red","blue"], 10000)
         self.assertTrue(bi.is_action(4))
         self.assertFalse(bi.is_utility(4))
         self.assertFalse(bi.is_property(4))
 
     def test_5(self):
+        bi = BoardInformation(["red","blue"], 10000)
         self.assertFalse(bi.is_action(5))
         self.assertTrue(bi.is_utility(5))
         self.assertFalse(bi.is_property(5))
 
     def test_6(self):
+        bi = BoardInformation(["red","blue"], 10000)
         self.assertFalse(bi.is_action(6))
         self.assertFalse(bi.is_utility(6))
         self.assertTrue(bi.is_property(6))
 
     def test_7(self):
+        bi = BoardInformation(["red","blue"], 10000)
         self.assertTrue(bi.is_action(7))
         self.assertFalse(bi.is_utility(7))
         self.assertFalse(bi.is_property(7))
 
     def test_8(self):
+        bi = BoardInformation(["red","blue"], 10000)
         self.assertFalse(bi.is_action(8))
         self.assertFalse(bi.is_utility(8))
         self.assertTrue(bi.is_property(8))
 
     def test_9(self):
+        bi = BoardInformation(["red","blue"], 10000)
         self.assertFalse(bi.is_action(9))
         self.assertFalse(bi.is_utility(9))
         self.assertTrue(bi.is_property(9))
 
     def test_10(self):
+        bi = BoardInformation(["red","blue"], 10000)
         self.assertTrue(bi.is_action(10))
         self.assertFalse(bi.is_utility(10))
         self.assertFalse(bi.is_property(10))
 
     def test_11(self):
+        bi = BoardInformation(["red","blue"], 10000)
         self.assertFalse(bi.is_action(11))
         self.assertFalse(bi.is_utility(11))
         self.assertTrue(bi.is_property(11))
 
     def test_12(self):
+        bi = BoardInformation(["red","blue"], 10000)
         self.assertFalse(bi.is_action(12))
         self.assertTrue(bi.is_utility(12))
         self.assertFalse(bi.is_property(12))
 
     def test_13(self):
+        bi = BoardInformation(["red","blue"], 10000)
         self.assertFalse(bi.is_action(13))
         self.assertFalse(bi.is_utility(13))
         self.assertTrue(bi.is_property(13))
 
     def test_14(self):
+        bi = BoardInformation(["red","blue"], 10000)
         self.assertFalse(bi.is_action(14))
         self.assertFalse(bi.is_utility(14))
         self.assertTrue(bi.is_property(14))
 
     def test_15(self):
+        bi = BoardInformation(["red","blue"], 10000)
         self.assertFalse(bi.is_action(15))
         self.assertTrue(bi.is_utility(15))
         self.assertFalse(bi.is_property(15))
 
     def test_16(self):
+        bi = BoardInformation(["red","blue"], 10000)
         self.assertFalse(bi.is_action(16))
         self.assertFalse(bi.is_utility(16))
         self.assertTrue(bi.is_property(16))
 
     def test_17(self):
+        bi = BoardInformation(["red","blue"], 10000)
         self.assertTrue(bi.is_action(17))
         self.assertFalse(bi.is_utility(17))
         self.assertFalse(bi.is_property(17))
 
     def test_18(self):
+        bi = BoardInformation(["red","blue"], 10000)
         self.assertFalse(bi.is_action(18))
         self.assertFalse(bi.is_utility(18))
         self.assertTrue(bi.is_property(18))
 
     def test_19(self):
+        bi = BoardInformation(["red","blue"], 10000)
         self.assertFalse(bi.is_action(19))
         self.assertFalse(bi.is_utility(19))
         self.assertTrue(bi.is_property(19))
 
     def test_20(self):
+        bi = BoardInformation(["red","blue"], 10000)
         self.assertTrue(bi.is_action(20))
         self.assertFalse(bi.is_utility(20))
         self.assertFalse(bi.is_property(20))
 
     def test_21(self):
+        bi = BoardInformation(["red","blue"], 10000)
         self.assertFalse(bi.is_action(21))
         self.assertFalse(bi.is_utility(21))
         self.assertTrue(bi.is_property(21))
 
     def test_22(self):
+        bi = BoardInformation(["red","blue"], 10000)
         self.assertTrue(bi.is_action(22))
         self.assertFalse(bi.is_utility(22))
         self.assertFalse(bi.is_property(22))
 
     def test_23(self):
+        bi = BoardInformation(["red","blue"], 10000)
         self.assertFalse(bi.is_action(23))
         self.assertFalse(bi.is_utility(23))
         self.assertTrue(bi.is_property(23))
 
     def test_24(self):
+        bi = BoardInformation(["red","blue"], 10000)
         self.assertFalse(bi.is_action(24))
         self.assertFalse(bi.is_utility(24))
         self.assertTrue(bi.is_property(24))
 
     def test_25(self):
+        bi = BoardInformation(["red","blue"], 10000)
         self.assertFalse(bi.is_action(25))
         self.assertTrue(bi.is_utility(25))
         self.assertFalse(bi.is_property(25))
 
     def test_26(self):
+        bi = BoardInformation(["red","blue"], 10000)
         self.assertFalse(bi.is_action(26))
         self.assertFalse(bi.is_utility(26))
         self.assertTrue(bi.is_property(26))
 
     def test_27(self):
+        bi = BoardInformation(["red","blue"], 10000)
         self.assertFalse(bi.is_action(27))
         self.assertFalse(bi.is_utility(27))
         self.assertTrue(bi.is_property(27))
 
     def test_28(self):
+        bi = BoardInformation(["red","blue"], 10000)
         self.assertFalse(bi.is_action(28))
         self.assertTrue(bi.is_utility(28))
         self.assertFalse(bi.is_property(28))
 
     def test_29(self):
+        bi = BoardInformation(["red","blue"], 10000)
         self.assertFalse(bi.is_action(29))
         self.assertFalse(bi.is_utility(29))
         self.assertTrue(bi.is_property(29))
 
     def test_30(self):
+        bi = BoardInformation(["red","blue"], 10000)
         self.assertTrue(bi.is_action(22))
         self.assertFalse(bi.is_utility(22))
         self.assertFalse(bi.is_property(22))
 
     def test_31(self):
+        bi = BoardInformation(["red","blue"], 10000)
         self.assertFalse(bi.is_action(31))
         self.assertFalse(bi.is_utility(31))
         self.assertTrue(bi.is_property(31))
 
     def test_32(self):
+        bi = BoardInformation(["red","blue"], 10000)
         self.assertFalse(bi.is_action(32))
         self.assertFalse(bi.is_utility(32))
         self.assertTrue(bi.is_property(32))
 
     def test_33(self):
+        bi = BoardInformation(["red","blue"], 10000)
         self.assertTrue(bi.is_action(22))
         self.assertFalse(bi.is_utility(22))
         self.assertFalse(bi.is_property(22))
 
     def test_34(self):
+        bi = BoardInformation(["red","blue"], 10000)
         self.assertFalse(bi.is_action(34))
         self.assertFalse(bi.is_utility(34))
         self.assertTrue(bi.is_property(34))
 
     def test_35(self):
+        bi = BoardInformation(["red","blue"], 10000)
         self.assertFalse(bi.is_action(35))
         self.assertTrue(bi.is_utility(35))
         self.assertFalse(bi.is_property(35))
 
     def test_36(self):
+        bi = BoardInformation(["red","blue"], 10000)
         self.assertTrue(bi.is_action(36))
         self.assertFalse(bi.is_utility(36))
         self.assertFalse(bi.is_property(36))
 
     def test_37(self):
+        bi = BoardInformation(["red","blue"], 10000)
         self.assertFalse(bi.is_action(37))
         self.assertFalse(bi.is_utility(37))
         self.assertTrue(bi.is_property(37))
 
     def test_38(self):
+        bi = BoardInformation(["red","blue"], 10000)
         self.assertTrue(bi.is_action(38))
         self.assertFalse(bi.is_utility(38))
         self.assertFalse(bi.is_property(38))
 
     def test_39(self):
+        bi = BoardInformation(["red","blue"], 10000)
         self.assertFalse(bi.is_action(39))
         self.assertFalse(bi.is_utility(39))
         self.assertTrue(bi.is_property(39))
