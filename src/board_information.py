@@ -285,7 +285,7 @@ class BoardInformation():
 
         """
         if not (self.is_utility(position) or self.is_property(position)):
-            raise BoardError("given position not is not a field that can be purchased")
+            raise BoardError(f"{position} is not a field that can be purchased")
         return self._table.at[position, "can_purchase"]
 
     def can_downgrade(self, name, position):
@@ -316,7 +316,7 @@ class BoardInformation():
         if name not in self._player_names:
             raise BoardError("Name does not exist in table")
         if not (self.is_utility(position) or self.is_property(position)):
-            raise BoardError("position does not exist in table")
+            raise BoardError(f"{position} cannot be downgraded")
 
         return self._table.at[position, name + ":can_downgrade"]
 
