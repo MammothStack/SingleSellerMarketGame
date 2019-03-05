@@ -318,6 +318,8 @@ class BoardController():
                 if r:
                     purchase = True
                     new_pos = action_pos
+                else:
+                    purchase = False
             else:
                 purchase = self._land_property(name, new_pos, d1 + d2)
 
