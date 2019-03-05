@@ -290,7 +290,7 @@ class OperationModel():
             The size of the batch that should be used for training
 
         """
-        if self.can_learn and memory:
+        if self.can_learn and self.memory:
             x_batch, y_batch = [], []
             minibatch = random.sample(
                 self.memory, min(len(self.memory), batch_size))
