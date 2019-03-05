@@ -301,8 +301,6 @@ class OperationModel():
                 x_batch.append(state[0])
                 y_batch.append(y_target[0])
 
-            print(np.array(x_batch).shape)
-            print(np.array(y_batch).shape)
             self.model.fit(np.array(x_batch), np.array(y_batch), batch_size=len(x_batch), verbose=0)
             if self.epsilon > self.epsilon_min:
                 self.epsilon *= self.epsilon_decay
