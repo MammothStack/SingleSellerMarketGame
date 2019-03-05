@@ -156,9 +156,12 @@ class BoardInformation():
         self._player_names = player_names
         self.available_houses = available_houses
         self.available_hotels = available_hotels
-        self.free_parking_cash = 0
+        #self.free_parking_cash = 0
         self._table = self._set_table(player_names)
-        self.index = list(self._table.index)
+        self.index = []
+        for i in range(0, len(self._table)):
+            if self.is_property(i) or self.is_utility(i):
+                self.index.append(i)
 
         l = list(self._table["color"].unique())
         l.remove("black")

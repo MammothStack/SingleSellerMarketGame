@@ -340,8 +340,9 @@ class BoardController():
 
     def _purchase_turn(self, name, new_position):
         state = self._get_state(name)
-        action = self.players[name].get_action(state, "purchase")
-        reward = self._execute_purchase(name, new_position, action)
+        y = self.players[name].get_action(state, "purchase")
+        action = np.argmax(y)
+        reward = self._execute_purchase(name, new_position, y)
         next_state = self._get_state(name)
         done = not self.board.is_any_purchaseable()
         self.players[name].add_training_data(
@@ -352,8 +353,9 @@ class BoardController():
         count = 0
         while cont and count < self.upgrade_limit:
             state = self._get_state(name)
-            action = self.players[name].get_action(state, "up_down_grade")
-            reward, cont = self._execute_up_down_grade(name, action)
+            y = self.players[name].get_action(state, "up_down_grade")
+            action = np.argmax(y)
+            reward, cont = self._execute_up_down_grade(name, y)
             next_state = self._get_state(name)
             self.players[name].add_training_data(
                 "up_down_grade", state, action, reward, next_state, False)
@@ -430,12 +432,12 @@ class BoardController():
                 self.players[name].cash -= rent
                 return False
 
-    def _execute_purchase(self, name, position, action):
+    def _execute_purchase(self, name, position, y):
 
         value, rent, mono_props = self.board.get_evaluation(name)
         ev_before = (self.players[name].cash, rent, value, mono_props)
 
-        if action[0] == 1:
+        if y[0] > y[1]:
             self.board.purchase(name, position)
             self.players[name].cash -= self.board.get_purchase_amount(position)
 
@@ -468,8 +470,8 @@ class BoardController():
 
         y : numpy.ndarray
             The decision array that should executed upon. The dimension should
-            be (56), where the first 28 entries should be upgrade and the latter
-            half should be downgrade
+            be (57), where the first 28 entries should be upgrade and the latter
+            half should be downgrade, and the last should be to do nothing
 
         Returns
         --------------------
@@ -482,16 +484,17 @@ class BoardController():
             selected to be changed
 
         """
-        split = int(len(y) / 2)
-        upgrade = y[:split]
-        downgrade = y[split:]
+        upgrade = y[:28]
+        downgrade = y[28:-1]
+        do_nothing =y[-1]
         cont = True
+
+        ind = np.argmax(y)
 
         value, rent, mono_props = self.board.get_evaluation(name)
         ev_before = (self.players[name].cash, rent, value, mono_props)
 
-        if upgrade.sum() == 1:
-            ind = np.argmax(upgrade)
+        if y[ind] in upgrade:
             pos = self.board.index[np.argmax(upgrade)]
 
             #if position can even be upgraded
@@ -506,8 +509,7 @@ class BoardController():
             else:
                 cont = False
 
-        elif downgrade.sum() == 1:
-            ind = np.argmax(downgrade)
+        elif y[ind] in downgrade:
             pos = self.board.index[np.argmax(downgrade)]
 
             if self.board.can_downgrade(name, pos):
@@ -518,8 +520,10 @@ class BoardController():
                 self.board.mortgage(name, pos)
             else:
                 cont = False
-        else:
+        elif y[ind] in do_nothing:
             cont = False
+        else:
+            raise ValueError("whoops")
 
         value, rent, mono_props = self.board.get_evaluation(name)
         ev_after = (self.players[name].cash, rent, value, mono_props)
