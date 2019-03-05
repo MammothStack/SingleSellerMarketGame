@@ -165,7 +165,7 @@ class Player():
 
         """
 
-        for o in self.models.keys():
+        for o in self.models.values():
             o.replay() if batch_size is None else o.replay(batch_size)
 
     def save_operation_models(self, destination):
