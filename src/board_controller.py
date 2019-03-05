@@ -408,6 +408,8 @@ class BoardController():
         elif act is None:
             pass
 
+        return False, None
+
 
     def _land_property(self, name, position, dice_roll=7):
         #If the property is purchaseable
