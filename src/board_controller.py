@@ -41,6 +41,11 @@ class BoardController():
         starting_order=None,
         max_turn=800,
         upgrade_limit=20,
+        reward_scalars={
+            "cash": 0.005,
+            "value": 0.01,
+            "rent": 0.005,
+            "monopoly": 1.0}
     ):
         for p1 in player_list:
             for p2 in player_list:
@@ -57,6 +62,7 @@ class BoardController():
         self.current_turn = 0
         self.num_players = len(player_list)
         self.upgrade_limit = upgrade_limit
+        self.reward_scalars = reward_scalars
 
         self.binary_pos = [8192, 4096, 2048, 1024, 512, 256,
             128, 64, 32, 16, 8, 4, 2, 1]
@@ -610,10 +616,10 @@ class BoardController():
             else:
                 return deg * ((c2-c1)/abs(c2-c1))
         else:
-            y1 = 0.005
-            y2 = 0.01
-            y3 = 0.005
-            y4 = 1.0
+            y1 = self.reward_scalars["cash"]
+            y2 = self.reward_scalars["value"]
+            y3 = self.reward_scalars["rent"]
+            y4 = self.reward_scalars["monopoly"]
 
             v1 = ev_before[1]
             r1 = ev_before[2]
