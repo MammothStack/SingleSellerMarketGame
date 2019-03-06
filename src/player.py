@@ -4,6 +4,7 @@ import random
 import json
 from tensorflow.keras.models import model_from_json
 from collections import deque
+import warnings
 
 class Player():
     """The player to that plays on the Board
@@ -365,7 +366,9 @@ def load_operation_model(file_path, config_file_name):
     model.load_weights(file_path + config["h5_path"])
     try:
         model.name = config["name"]
-        
+    except:
+        warnings.warn("Could not set name")
+
     model.compile(
         loss=config["loss"],
         optimizer=config["optimizer"],
