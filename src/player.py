@@ -306,16 +306,6 @@ class OperationModel():
                 self.epsilon *= self.epsilon_decay
             self.episode_nb += 1
 
-        """
-        if self.can_learn:
-            self.model.fit(x, y, sample_weight=sample_weight, verbose=verbose)
-            if reward_sum is None: reward_sum = np.sum(sample_weight)
-            self.running_reward = (self.running_reward * self.gamma +
-                reward_sum * (1-self.gamma))
-            self.episode_nb += 1
-
-        """
-
     def save(self, destination=None):
         if destination is None:
             destination = ""
