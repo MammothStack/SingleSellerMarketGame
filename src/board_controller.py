@@ -78,10 +78,7 @@ class BoardController():
             self.order = [player_list[i].name for i in num_order]
 
 
-    def start_game(self,
-        purchase=True,
-        up_down_grade=True,
-        trade=True,
+    def start_game(self, purchase=True, up_down_grade=True, trade=True,
         log_game=False):
         """Starts the game
 
@@ -408,6 +405,7 @@ class BoardController():
                     pass
                 elif g == 10:
                     self.players[name].allowed_to_move = False
+                    #self.board.
                 elif g == 20:
                     self.players[name].cash += self.board.get_free_parking(clear=True)
                 elif self.board.is_utility(g) or self.board.is_property(g):

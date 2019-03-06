@@ -9,8 +9,30 @@ import warnings
 class Player():
     """The player to that plays on the Board
 
+    The player class is a shell that houses the algorithms that make the
+    decisions on the board. The player object is also used by the
+    BoardController class to store cash, name, and status of the player.
+
     Parameters
     --------------------
+    max_cash_limit : int
+        The cash values are normalized to this maximum value.
+
+    name : str
+        The name of the player
+
+    models : dict
+        Individual models are stored here with their operation as the keys to
+        the dictionary
+
+    alive : boolean
+        If the player is alive and can play in the game
+
+    cash : int
+        The amount of cash that player has throughout the game
+
+    allowed_to_move : boolean
+        If a player is allowed to make a move
 
     Attributes
     --------------------
@@ -20,13 +42,7 @@ class Player():
 
 
     """
-    def __init__(
-        self,
-        name,
-        models,
-        alive=True,
-        cash=1500,
-    ):
+    def __init__(self, name, models, alive=True, cash=1500):
         for m1 in models:
             for m2 in models:
                 if m1.max_cash_limit != m2.max_cash_limit:
@@ -49,6 +65,7 @@ class Player():
         return s
 
     def reset_player(self):
+        """Resets the values of the player to the initialized values"""
         self.cash = self._init_cash
         self.allowed_to_move = True
         self.alive = True

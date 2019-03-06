@@ -44,9 +44,6 @@ class BoardInformation():
     available_hotels : int
         amount of the hotels that are available to purchase
 
-    free_parking_cash : int
-        amount of cash that is located on the free parking field
-
     index : list
         A list of the indices of the generated table
 
@@ -66,6 +63,9 @@ class BoardInformation():
 
     can_mortgage(name, position)
         Returns if the property at position can be mortgaged
+
+    can_unmortgage(name, position)
+        Returns if the property at position can be unmortgaged
 
     is_monopoly(name, position)
         Returns if the property at position is part of a monopoly
@@ -127,15 +127,17 @@ class BoardInformation():
     get_action(position):
         Returns the action of the action field at the position
 
-    get_normalized_state(name):
-        Returns the normalized state that is flattened for ML algorithms
+    get_normalized_general_state():
+        Returns the general state that is flattened for ML algorithms
+
+    get_normalized_player_state(name):
+        Returns the player state that is flattened for ML algorithms
+
+    roll_dice()
 
     """
-    def __init__(self,
-        player_names,
-        max_cash_limit=10000,
-        available_houses=40,
-        available_hotels=8):
+    def __init__(self, player_names, max_cash_limit=10000, available_houses=40,
+        available_hotels=8, starting_cash=1500):
 
         if type(player_names) != list:
             raise ValueError("Given value must be a list with names")
@@ -156,16 +158,22 @@ class BoardInformation():
         self._player_names = player_names
         self.available_houses = available_houses
         self.available_hotels = available_hotels
-        #self.free_parking_cash = 0
         self._table = self._set_table(player_names)
         self.index = []
         for i in range(0, len(self._table)):
             if self.is_property(i) or self.is_utility(i):
                 self.index.append(i)
 
-        l = list(self._table["color"].unique())
-        l.remove("black")
-        l.remove("white")
+        self._player_info = {
+            p: {"cash": starting_cash, "allowed_to_move": True, "alive":True}
+                for p in player_names}
+        # TODO: Add turn counter
+        # TODO: allowed to move
+        # TODO: Add order
+        # TODO: Cash
+        # TODO: Status
+
+        l = list(self._table.loc[self._table["can_purchase"] == True, "color"].unique())
         self.prop_colors = l
 
     def _set_table(self, players):
@@ -411,7 +419,7 @@ class BoardInformation():
             raise BoardError("position does not exist in table")
         return self._table.at[position, name + ":can_unmortgage"]
 
-    def is_monopoly(self, position):
+    def is_monopoly(self, position, color=None, name=None):
         """Returns if the property at position is part of a monopoly
 
         Parameters
@@ -419,10 +427,17 @@ class BoardInformation():
         position : int
             The position of the property that should be checked for monopoly
 
+        color : str (default=None)
+            The color of the monopoly that should be checked
+
+        name : str (default=None)
+            The name used to check if that player owns the monopoly
+
         Raises
         --------------------
         BoardError
-            When the position does not correspond to property or a utility
+            When the position does not correspond to property or a utility or
+            when the given name is not a player in the game.
 
         Examples
         --------------------
@@ -435,31 +450,18 @@ class BoardInformation():
         """
         if not (self.is_utility(position) or self.is_property(position)):
             raise BoardError("position does not exist in table")
-        return self._table.at[position, "monopoly_owned"]
 
-    def _is_color_monopoly(self, name, color):
-        """
-        Parameters
-        --------------------
+        if color is None:
+            color = self._table.loc[position, "color"]
 
-        Examples
-        --------------------
-
-        Raises
-        --------------------
-        BoardError
+        if name is not None:
+            if name not in self._player_names:
+                raise BoardError("Name does not exist in table")
+            return self._table.loc[self._table["color"] == color, name + ":owned"].all()
+        else:
+            return self._table.at[position, "monopoly_owned"]
 
 
-        """
-        if name not in self._player_names:
-            raise BoardError("Name does not exist in table")
-
-        owned = self._table.loc[
-            self._table["color"] == color,
-            name + ":owned"
-        ].all()
-
-        return owned
 
     def _is_any_in_color_mortgaged(self, color):
         """Returns true if any property in the given monopoly is mortgaged
@@ -639,7 +641,7 @@ class BoardInformation():
             self._table.at[position, "current_rent_amount:normal"] = 0
 
             #update monopoly status
-            if self._is_color_monopoly(name, color):
+            if self.is_monopoly(position=position, name=name):
                 #Set monopoly
                 self._table.loc[
                     self._table["color"] == color,
@@ -808,7 +810,7 @@ class BoardInformation():
             ] = self._table.at[position, "current_rent_amount"] / self._max_cash_limit
 
             #update monopoly status
-            if self._is_color_monopoly(name, color):
+            if self.is_monopoly(position, name=name):
                 #Set monopoly
                 self._table.loc[
                     self._table["color"] == color,
@@ -975,7 +977,7 @@ class BoardInformation():
             self._update_utility(name, color)
         else:
             #can upgrade
-            if self._is_color_monopoly(name, color):
+            if self.is_monopoly(position, name=name):
                 self._table.loc[
                     self._table["color"] == color,
                     [name + ":can_upgrade"]
@@ -1240,7 +1242,7 @@ class BoardInformation():
 
             #set false if any in the monopoly is mortgaged
             for color in self.prop_colors:
-                if self._is_color_monopoly(name, color):
+                if self.is_monopoly(position, name=name):
                     if self._is_any_in_color_mortgaged(color):
                         self._table.loc[
                             self._table["color"] == color,
@@ -1624,9 +1626,7 @@ class BoardInformation():
             return np.sum(temp.loc[temp[name + ":owned"] == True, value])
 
     def get_properties_from_color(self, color):
-        """Returns the list of properties from the given color
-
-        """
+        """Returns the list of properties from the given color"""
         return list(self._table.loc[self._table["color"] == color].index)
 
     def get_evaluation(self, name):
