@@ -5,30 +5,44 @@
   display: grid;
   grid-auto-rows: 1fr;
   grid-auto-columns: auto;
-  width: 160vmin;
-  height: 80vmin;
+  width: auto;
+  height: 100vmin;
+  width: 180vmin;
+  align-content: center;
+  padding: 50px;
   background: #eee;
   grid-gap: 0.3rem;
+  border-radius: 20px;
+
+}
+
+body .heading {
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  align-items: center;
+}
+
+body .container .heading * {
+  padding-left: 10px;
+  padding-right: 10px;
 }
 
 body .container .heading .game-control-container * {
-  padding-top: 5px;
-  padding-bottom: 5px;
+  padding: 5px 15px 5px 15px;
 }
 
-body .container .heading .game-control-container {
-  padding-bottom: 5px;
-}
 
 #ssmg .field {
   display: flex;
   flex-direction: column;
   background-color: white;
   justify-content: space-between;
-  border: 0.2vmin solid black;
+  border: 0.1vmin solid lightgray;
   padding: 0;
   width: auto;
   height: auto;
+  border-radius: 10px;
 }
 
 #ssmg .field * {
@@ -40,6 +54,7 @@ body .container .heading .game-control-container {
   font-family: sans-serif;
   color: white;
   font-size: 11px;
+  border-radius: 9px 9px 0px 0px;
 }
 
 #ssmg .field .occupation {
@@ -50,6 +65,7 @@ body .container .heading .game-control-container {
   display: flex;
   flex-direction: row;
   justify-content: space-around;
+  border-radius: 0px 0px 9px 9px;
 }
 
 /*

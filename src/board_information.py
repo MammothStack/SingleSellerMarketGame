@@ -1693,6 +1693,7 @@ class BoardInformation():
         It uses the given name to get player specific values from the table.
         This ensures no matter how many players are in the game.The method will
         fetch the following columns from the table:
+            position
             owned
             can upgrade
             can downgrade
