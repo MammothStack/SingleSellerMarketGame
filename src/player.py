@@ -363,7 +363,9 @@ def load_operation_model(file_path, config_file_name):
     json_file.close()
     model = model_from_json(loaded_model_json)
     model.load_weights(file_path + config["h5_path"])
-    #model.name = config["name"]
+    try:
+        model.name = config["name"]
+        
     model.compile(
         loss=config["loss"],
         optimizer=config["optimizer"],

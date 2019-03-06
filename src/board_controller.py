@@ -492,7 +492,7 @@ class BoardController():
         """
         upgrade = y[:28]
         downgrade = y[28:-1]
-        do_nothing =y[-1]
+        do_nothing =[y[-1]]
         cont = True
 
         ind = np.argmax(y)
