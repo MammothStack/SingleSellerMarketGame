@@ -57,9 +57,7 @@ class BoardController():
         self.board = BoardInformation([p.name for p in player_list], self.max_cash_limit)
 
         self.alive = True
-        #self.total_turn = 0
         self.max_turn = max_turn
-        #self.current_turn = 0
         self.num_players = len(player_list)
         self.upgrade_limit = upgrade_limit
         self.reward_scalars = reward_scalars
