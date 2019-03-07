@@ -31,9 +31,6 @@ class Player():
     cash : int
         The amount of cash that player has throughout the game
 
-    allowed_to_move : boolean
-        If a player is allowed to make a move
-
     Attributes
     --------------------
 
@@ -51,10 +48,10 @@ class Player():
         self.max_cash_limit = models[0].max_cash_limit
         self.name = name
         self.models = self.set_models(models)
-        self.alive = alive
+        #self.alive = alive
         self._init_cash = cash
         self.cash = self._init_cash
-        self.allowed_to_move = True
+        #self.allowed_to_move = True
 
     def __repr__(self):
         s = (
@@ -67,8 +64,8 @@ class Player():
     def reset_player(self):
         """Resets the values of the player to the initialized values"""
         self.cash = self._init_cash
-        self.allowed_to_move = True
-        self.alive = True
+        #self.allowed_to_move = True
+        #self.alive = True
 
     def set_models(self, models):
         """Sets the models of the player for the various operations

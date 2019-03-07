@@ -167,6 +167,13 @@ class BoardInformation():
         self._player_info = {
             p: {"cash": starting_cash, "allowed_to_move": True, "alive":True}
                 for p in player_names}
+
+        self.allowed_to_move = {p: True for p in player_names}
+        self.alive = {p: True for p in player_names}
+
+        self.current_turn = 0
+        self.current_player = [self._player_names[self.current_turn]]
+
         # TODO: Add turn counter
         # TODO: allowed to move
         # TODO: Add order
@@ -272,6 +279,10 @@ class BoardInformation():
             table = pd.concat([table, make(p, table.index)], axis=1)
 
         return table
+
+    def increment_turn(self):
+        self.current_turn += 1
+        self.current_player = self._player_names[self.current_turn % len(self._player_names)]
 
     def can_purchase(self, position):
         """Returns if the property at position can be purchaseable

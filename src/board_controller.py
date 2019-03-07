@@ -57,9 +57,9 @@ class BoardController():
         self.board = BoardInformation([p.name for p in player_list], self.max_cash_limit)
 
         self.alive = True
-        self.total_turn = 0
+        #self.total_turn = 0
         self.max_turn = max_turn
-        self.current_turn = 0
+        #self.current_turn = 0
         self.num_players = len(player_list)
         self.upgrade_limit = upgrade_limit
         self.reward_scalars = reward_scalars
@@ -128,12 +128,12 @@ class BoardController():
 
         while self.alive:
             #Runs through all three actions
-            current_player = self.order[self.current_turn]
-            self._full_turn(current_player)
+            current_player = self.board.current_player
+            self._full_turn(self.board.current_player)
             if log_game:
-                log[current_player] = log[current_player].append(
+                log[self.board.current_player] = log[self.board.current_player].append(
                     self.board.get_levels(
-                        current_player).to_frame().T, ignore_index=True)
+                        self.board.current_player).to_frame().T, ignore_index=True)
 
             #Checks if any properties can still be bought. quit if none
             if up_down_grade == False and trade == False:
@@ -142,18 +142,18 @@ class BoardController():
 
             #Checks that the game has not exceeded the turn limit
             if self.alive:
-                self.alive = self.total_turn < self.max_turn
+                self.alive = self.board.current_turn < self.max_turn
 
             #Sets the current turn
             if self.alive:
-                self.current_turn = (self.current_turn + 1) % self.num_players
+                self.board.increment_turn()
             else:
                 #If the game is over then all AIs learn from the game
                 for p in self.players.values():
                     p.learn()
 
             #Turn is incremented
-            self.total_turn += 1
+            #self.total_turn += 1
 
         for p in self.players:
             o = self.board.get_amount_properties_owned(p)
@@ -164,7 +164,7 @@ class BoardController():
                     self.players[p].cash,
                     o,
                     l/o,
-                    self.total_turn,
+                    self.board.current_turn,
                     self.players[p].get_training_data("purchase"),
                     self.players[p].get_training_data("up_down_grade"),
                     self.players[p].get_training_data("trade_offer"),
@@ -194,8 +194,8 @@ class BoardController():
 
         self.board = BoardInformation([p for p in self.players.keys()])
         self.alive = True
-        self.current_turn = 0
-        self.total_turn = 0
+        #self.current_turn = 0
+        #self.total_turn = 0
 
     def _cash_to_binary(self, cash, neg=False):
         if cash > 16383:
@@ -307,7 +307,7 @@ class BoardController():
         return np.array((concatenated,))
 
     def _full_turn(self, name):
-        if self.players[name].allowed_to_move:
+        if self.board.allowed_to_move[name]:
             #Roll the dice
             d1, d2 = self.board.roll_dice()
 
@@ -331,7 +331,7 @@ class BoardController():
                 self.players[name].can_purchase):
                 self._purchase_turn(name, new_pos)
         else:
-            self.players[name].allowed_to_move = True
+            self.board.allowed_to_move[name] = True
 
         if (self.operation_config["up_down_grade"] and
             self.players[name].can_up_down_grade):
@@ -404,7 +404,7 @@ class BoardController():
                 if g == 0:
                     pass
                 elif g == 10:
-                    self.players[name].allowed_to_move = False
+                    self.board.allowed_to_move[name] = False
                     #self.board.
                 elif g == 20:
                     self.players[name].cash += self.board.get_free_parking(clear=True)
