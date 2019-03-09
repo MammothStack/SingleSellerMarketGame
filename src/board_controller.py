@@ -35,17 +35,8 @@ class BoardController():
     --------------------
 
     """
-    def __init__(
-        self,
-        player_list,
-        max_turn=800,
-        upgrade_limit=20,
-        reward_scalars={
-            "cash": 0.005,
-            "value": 0.01,
-            "rent": 0.005,
-            "monopoly": 1.0}
-    ):
+    def __init__(self, player_list, max_turn=800, upgrade_limit=20,
+        reward_scalars={"cash": 0.005, "value": 0.01, "rent": 0.005, "monopoly": 1.0}):
         for p1 in player_list:
             for p2 in player_list:
                 if p1.max_cash_limit != p2.max_cash_limit:
@@ -54,7 +45,6 @@ class BoardController():
         self.max_cash_limit = player_list[0].max_cash_limit
         self.players = {p.name: p for p in player_list}
         self.board = BoardInformation([p.name for p in player_list], self.max_cash_limit)
-
         self.max_turn = max_turn
         self.num_players = len(player_list)
         self.upgrade_limit = upgrade_limit
@@ -126,10 +116,7 @@ class BoardController():
         as well as the turn counter and "alive" state of the board
 
         """
-        for p in self.players.values():
-            p.reset_player()
-
-        self.board = BoardInformation([p for p in self.players.keys()])
+        self.board = BoardInformation([p for p in self.players.keys()], self.max_cash_limit)
 
     def _cash_to_binary(self, cash, neg=False):
         if cash > 16383:
