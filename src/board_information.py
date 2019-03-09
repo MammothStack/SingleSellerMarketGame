@@ -136,8 +136,15 @@ class BoardInformation():
     roll_dice()
 
     """
-    def __init__(self, player_names, max_cash_limit=10000, available_houses=40,
-        available_hotels=8, starting_cash=1500):
+    class Player():
+        def __init__(self, name, cash):
+            self.name = name
+            self.cash = cash
+            self.allowed_to_move = True
+            self.alive = True
+
+    def __init__(self, player_names, max_cash_limit=10000, max_turn=500,
+        available_houses=40, available_hotels=8, starting_cash=1500):
 
         if type(player_names) != list:
             raise ValueError("Given value must be a list with names")
@@ -155,33 +162,17 @@ class BoardInformation():
             raise BoardError("Cannot have a cash_limit below the maximum value of the board")
 
         self._max_cash_limit = max_cash_limit
+        self.max_turn = max_turn
+        self.alive = True
         self._player_names = player_names
         self.available_houses = available_houses
         self.available_hotels = available_hotels
         self._table = self._set_table(player_names)
-        self.index = []
-        for i in range(0, len(self._table)):
-            if self.is_property(i) or self.is_utility(i):
-                self.index.append(i)
-
-        self._player_info = {
-            p: {"cash": starting_cash, "allowed_to_move": True, "alive":True}
-                for p in player_names}
-
-        self.allowed_to_move = {p: True for p in player_names}
-        self.alive = {p: True for p in player_names}
-
+        self.index = self._table.loc[(self._table["type"] == "utility") | (self._table["type"] == "property")].index
+        self.players = {n: Player(n, starting_cash) for n in player_names}
         self.current_turn = 0
         self.current_player = [self._player_names[self.current_turn]]
-
-        # TODO: Add turn counter
-        # TODO: allowed to move
-        # TODO: Add order
-        # TODO: Cash
-        # TODO: Status
-
-        l = list(self._table.loc[self._table["can_purchase"] == True, "color"].unique())
-        self.prop_colors = l
+        self.prop_colors = list(self._table.loc[self._table["can_purchase"] == True, "color"].unique())
 
     def _set_table(self, players):
         """Creates the board information table
@@ -198,9 +189,6 @@ class BoardInformation():
         max_cash_limit : int
             A limit to which all values are capped and normalized
 
-        Examples
-        --------------------
-
         """
 
         def make(name, index):
@@ -213,9 +201,6 @@ class BoardInformation():
 
             index : array, list
                 The index of the board
-
-            Examples
-            --------------------
 
             """
             categories = [
@@ -281,8 +266,16 @@ class BoardInformation():
         return table
 
     def increment_turn(self):
+        """Increments the current turn and sets the current player property"""
+        self.players[self.current_player].alive = self.players[self.current_player].cash > 0
         self.current_turn += 1
-        self.current_player = self._player_names[self.current_turn % len(self._player_names)]
+        self.alive = self.current_turn <= self.max_turn
+        if self.alive:
+            self.current_player = self._player_names[self.current_turn % len(self._player_names)]
+            if len(self.players) == 1:
+                self.alive = self.players.values()[0].alive
+            else:
+                self.alive = np.sum([p.alive for p in self.players.values()]) >= 2
 
     def can_purchase(self, position):
         """Returns if the property at position can be purchaseable
@@ -720,8 +713,11 @@ class BoardInformation():
             new_position = position
 
         self._table.loc[new_position, name + ":position"] = 1
-        cash = 200 if new_position < old_position else 0
-        return new_position, cash
+
+        if new_position < old_position:
+            self.add_player_cash(name, 200)
+
+        return new_position
 
     def purchase(self, name, position):
         """Sets property at the position to "purchased" by the player
@@ -821,7 +817,7 @@ class BoardInformation():
             ] = self._table.at[position, "current_rent_amount"] / self._max_cash_limit
 
             #update monopoly status
-            if self.is_monopoly(position, name=name):
+            if self.is_monopoly(position=position, name=name):
                 #Set monopoly
                 self._table.loc[
                     self._table["color"] == color,
@@ -988,7 +984,7 @@ class BoardInformation():
             self._update_utility(name, color)
         else:
             #can upgrade
-            if self.is_monopoly(position, name=name):
+            if self.is_monopoly(position=position, name=name):
                 self._table.loc[
                     self._table["color"] == color,
                     [name + ":can_upgrade"]
@@ -1221,6 +1217,59 @@ class BoardInformation():
         if n_hotel > 0 and self.available_hotels == 0:
             self._hotels_to_unavailable()
 
+    def transfer_cash(self, from_player, to_player, amount):
+        """Transfers the given amount from one player to another
+
+        Parameters
+        --------------------
+        from_player : str
+            the name of the player from which the amount should be deducted
+
+        to_player : str
+            the name of the player for which the amount should be added
+
+        amount : int
+            the amount of cash that should be transferred from one player to the
+            other
+
+        Raises
+        --------------------
+        ValueError
+            If the given amount is a negative value
+
+        Examples
+        --------------------
+
+        """
+        if amount < 0:
+            raise ValueError("Amount cannot be less than 0")
+        self.players[from_player].cash -= amount
+        self.players[to_player].cash += amount
+
+    def transfer_properties(self, from_player, to_player, properties):
+        """
+
+        """
+        if set(properties).issubset(set(self.get_all_properties_owned(from_player))):
+            cash_gained = 0
+            #Get the colors for the properties list
+            colors = set([self.get_property_color(p) for p in properties])
+            properties_to_downgrade = [self.get_properties_from_color(c) for c in colors]
+            #Downgrade all properties to level 1
+            for property in properties_to_downgrade:
+                while self.get_level(property) > 1:
+                    cash_gained += self.get_downgrade_amount(property)
+                    self.downgrade(from_player, property)
+
+            for property in properties:
+                self.remove_ownership(from_player, property)
+                self.purchase(to_player, property)
+
+            self.add_player_cash(from_player, cash_gained)
+
+        else:
+            raise ValueError("Cannot transfer properties that are not owned")
+
     def _houses_to_unavailable(self):
         for name in self._player_names:
             self._table.loc[
@@ -1253,7 +1302,7 @@ class BoardInformation():
 
             #set false if any in the monopoly is mortgaged
             for color in self.prop_colors:
-                if self.is_monopoly(position, name=name):
+                if self.is_monopoly(position=position, name=name):
                     if self._is_any_in_color_mortgaged(color):
                         self._table.loc[
                             self._table["color"] == color,
@@ -1282,9 +1331,27 @@ class BoardInformation():
                 [name + ":can_downgrade"]
             ] = True
 
+    def jail_player(self, name):
+        """Sets the player to immobilel"""
+        self.players[name].allowed_to_move = False
+
+    def is_player_jaileld(self, name):
+        """Returns if the given player is immobile"""
+        return self.players[name].allowed_to_move
+
+    def set_player_out_of_jail(self, name):
+        """Lets the given player out of jail"""
+        self.players[name].allowed_to_move = True
+
     def add_to_free_parking(self, amount):
         """Adds the given amount to free parking"""
         self._table.loc[20, "action"]["free parking"] += amount
+
+    def add_player_cash(self, name, amount):
+        self.players[name].cash += amount
+
+    def get_player_cash(self, name):
+        return self.players[name].cash
 
     def get_free_parking(self, clear=False):
         """Returns the current cash thats on free parking
@@ -1722,14 +1789,21 @@ class BoardInformation():
         """
         if name not in self._player_names:
             raise BoardError("That name is not in the player list")
+
         prop = self._table.loc[self._table["type"] != "action"]
-        return prop[
+        v = prop[
             [name + ":position",
              name + ":owned",
              name + ":can_upgrade",
              name + ":can_downgrade",
              name + ":can_mortgage",
              name + ":can_unmortgage"]].astype("float")
+
+         if self.players[name].cash >= self._max_cash_limit:
+             cash = np.full(len(v.index), 1.0)
+         else:
+             cash = np.full(len(v.index), self.players[name].cash / self._max_cash_limit)
+         return np.concatenate((cash,v.values.flatten("F")))
 
 class BoardError(Exception):
     """Base class for board specific errors"""

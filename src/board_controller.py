@@ -38,7 +38,6 @@ class BoardController():
     def __init__(
         self,
         player_list,
-        starting_order=None,
         max_turn=800,
         upgrade_limit=20,
         reward_scalars={
@@ -56,7 +55,6 @@ class BoardController():
         self.players = {p.name: p for p in player_list}
         self.board = BoardInformation([p.name for p in player_list], self.max_cash_limit)
 
-        self.alive = True
         self.max_turn = max_turn
         self.num_players = len(player_list)
         self.upgrade_limit = upgrade_limit
@@ -68,16 +66,7 @@ class BoardController():
             -256, -512, -1024, -2048, -4096, -8192]
         self.binary = self.binary_pos + self.binary_neg
 
-        if starting_order is None:
-            self.order = [p.name for p in player_list]
-        else:
-            num_order = random.sample(
-                range(self.num_players), self.num_players)
-            self.order = [player_list[i].name for i in num_order]
-
-
-    def start_game(self, purchase=True, up_down_grade=True, trade=True,
-        log_game=False):
+    def start_game(self, purchase=True, up_down_grade=True, trade=True):
         """Starts the game
 
         Starts the game with the current configuration. The parameters that can
@@ -95,9 +84,6 @@ class BoardController():
         trade : boolean (default=True)
             If the game should have the trade actions
 
-        log_game : boolean (default=False)
-            If the game levels should be logged
-
         Returns
         --------------------
         result_dict : dict
@@ -105,80 +91,33 @@ class BoardController():
             and the values are a Pandas.Series object containing game
             information
 
-        log : dict
-            A dictionary where the player names are the keys and the values
-            consist of their level aquisition throughout the game
-
         """
 
-        self.operation_config = {
-            "purchase" : purchase,
-            "up_down_grade" : up_down_grade,
-            "trade" : trade
-        }
+        self.operation_config = {"purchase" : purchase, "up_down_grade" : up_down_grade, "trade" : trade}
 
         result_dict = {}
-        log = {}
-
-        if log_game:
-            log = {p: pd.DataFrame([], columns=self.board.index) for p in self.players.keys()}
-
-
-        while self.alive:
+        while self.board.alive:
             #Runs through all three actions
-            current_player = self.board.current_player
             self._full_turn(self.board.current_player)
-            if log_game:
-                log[self.board.current_player] = log[self.board.current_player].append(
-                    self.board.get_levels(
-                        self.board.current_player).to_frame().T, ignore_index=True)
 
             #Checks if any properties can still be bought. quit if none
             if up_down_grade == False and trade == False:
-                if self.alive:
-                    self.alive = self.board.is_any_purchaseable()
+                if self.board.alive:
+                    self.board.alive = self.board.is_any_purchaseable()
 
-            #Checks that the game has not exceeded the turn limit
-            if self.alive:
-                self.alive = self.board.current_turn < self.max_turn
+            self.board.increment_turn()
 
-            #Sets the current turn
-            if self.alive:
-                self.board.increment_turn()
-            else:
-                #If the game is over then all AIs learn from the game
-                for p in self.players.values():
-                    p.learn()
-
-            #Turn is incremented
-            #self.total_turn += 1
-
-        for p in self.players:
+        for p in self.players.keys():
+            self.players[p].learn()
             o = self.board.get_amount_properties_owned(p)
             l = self.board.get_total_levels_owned(p)
 
             result_dict[p] = pd.Series(
-                data=[p,
-                    self.players[p].cash,
-                    o,
-                    l/o,
-                    self.board.current_turn,
-                    self.players[p].get_training_data("purchase"),
-                    self.players[p].get_training_data("up_down_grade"),
-                    self.players[p].get_training_data("trade_offer"),
-                    self.players[p].get_training_data("trade_decision")],
-                index=["name",
-                    "cash",
-                    "prop_owned",
-                    "prop_average_level",
-                    "turn_count",
-                    "train_purchase",
-                    "train_up_down_grade",
-                    "train_trade_offer",
-                    "train_trade_decision"],
+                data=[p, self.board.get_player_cash(p), o, l/o,  self.board.current_turn],
+                index=["name","cash","prop_owned","prop_average_level","turn_count"],
                 name=p)
 
-        return result_dict, log
+        return result_dict
 
     def reset_game(self):
         """Resets all the game parameters so their default values
@@ -191,9 +130,6 @@ class BoardController():
             p.reset_player()
 
         self.board = BoardInformation([p for p in self.players.keys()])
-        self.alive = True
-        #self.current_turn = 0
-        #self.total_turn = 0
 
     def _cash_to_binary(self, cash, neg=False):
         if cash > 16383:
@@ -280,16 +216,7 @@ class BoardController():
              A one-dimensional array (420,)/(616,)
 
         """
-        def get_state_for_player(name):
-            v = self.board.get_normalized_player_state(name)
-            if self.players[name].cash >= self.max_cash_limit:
-                cash = np.full(len(v.index), 1.0)
-            else:
-                cash = np.full(len(v.index), self.players[name].cash / self.max_cash_limit)
-            return np.concatenate((cash,v.values.flatten("F")))
-
         gen_state = self.board.get_normalized_general_state().values.flatten("F")
-
         pla_state = get_state_for_player(name)
 
         opp_state = []
@@ -305,13 +232,12 @@ class BoardController():
         return np.array((concatenated,))
 
     def _full_turn(self, name):
-        if self.board.allowed_to_move[name]:
+        if not self.board.is_player_jaileld(name):
             #Roll the dice
             d1, d2 = self.board.roll_dice()
 
             #Move the player to the new position
-            new_pos, cash = self.board.move_player(name, dice_roll=d1 + d2)
-            self.players[name].cash += cash
+            new_pos = self.board.move_player(name, dice_roll=d1 + d2)
 
             #If player landed on action field
             if self.board.is_action(new_pos):
@@ -329,7 +255,7 @@ class BoardController():
                 self.players[name].can_purchase):
                 self._purchase_turn(name, new_pos)
         else:
-            self.board.allowed_to_move[name] = True
+            self.board.set_player_out_of_jail(name)
 
         if (self.operation_config["up_down_grade"] and
             self.players[name].can_up_down_grade):
@@ -390,26 +316,24 @@ class BoardController():
         act = self.board.get_action(position)
 
         if type(act) == int:
-            self.players[name].cash += act
+            self.board.add_player_cash(name, act)
             if act < 0:
                 self.board.add_to_free_parking(-act)
         #If the action is money transfer
         elif type(act) == dict:
             if "goto" in act.keys():
                 g = act["goto"]
-                new_pos, cash = self.board.move_player(name, position=g)
-                self.players[name].cash += cash
+                new_pos = self.board.move_player(name, position=g)
                 if g == 0:
                     pass
                 elif g == 10:
-                    self.board.allowed_to_move[name] = False
-                    #self.board.
+                    self.board.jail_player(name)
                 elif g == 20:
-                    self.players[name].cash += self.board.get_free_parking(clear=True)
+                    self.board.add_player_cash(name, self.board.get_free_parking(clear=True))
                 elif self.board.is_utility(g) or self.board.is_property(g):
                     return self._land_property(name=name, position=g), g
             elif "free parking" in act.keys():
-                self.players[name].cash += self.board.get_free_parking(clear=True)
+                self.board.add_player_cash(name, self.board.get_free_parking(clear=True))
         #If the action requires nothing
         elif act is None:
             pass
@@ -430,21 +354,20 @@ class BoardController():
             else:
                 opponent_name = self.board.get_owner_name(position)
                 rent = self.board.get_rent(position, dice_roll)
-                self.players[opponent_name].cash += rent
-                self.players[name].cash -= rent
+                self.board.add_player_cash(opponent, rent)
+                self.board.add_player_cash(name, -rent)
                 return False
 
     def _execute_purchase(self, name, position, y):
-
         value, rent, mono_props = self.board.get_evaluation(name)
-        ev_before = (self.players[name].cash, rent, value, mono_props)
+        ev_before = (self.board.get_player_cash(name), rent, value, mono_props)
 
         if y[0] > y[1]:
             self.board.purchase(name, position)
-            self.players[name].cash -= self.board.get_purchase_amount(position)
+            self.board.add_player_cash(name, -self.board.get_purchase_amount(position))
 
         value, rent, mono_props = self.board.get_evaluation(name)
-        ev_after = (self.players[name].cash, rent, value, mono_props)
+        ev_after = (self.board.get_player_cash(name), rent, value, mono_props)
 
         return self._get_reward(name, "purchase", ev_before, ev_after)
 
@@ -494,19 +417,19 @@ class BoardController():
         ind = np.argmax(y)
 
         value, rent, mono_props = self.board.get_evaluation(name)
-        ev_before = (self.players[name].cash, rent, value, mono_props)
+        ev_before = (self.board.get_player_cash(name), rent, value, mono_props)
 
         if y[ind] in upgrade:
             pos = self.board.index[np.argmax(upgrade)]
 
             #if position can even be upgraded
             if self.board.can_upgrade(name, pos):
-                self.players[name].cash -= self.board.get_upgrade_amount(pos)
+                self.board.add_player_cash(name, -self.board.get_upgrade_amount(pos))
                 self.board.upgrade(name, pos)
 
             #if position can be unmortgaged
             elif self.board.can_unmortgage(name, pos):
-                self.players[name].cash -= self.board.get_mortgage_amount(pos)
+                self.board.add_player_cash(name, -self.board.get_mortgage_amount(pos))
                 self.board.unmortgage(name, pos)
             else:
                 cont = False
@@ -515,10 +438,10 @@ class BoardController():
             pos = self.board.index[np.argmax(downgrade)]
 
             if self.board.can_downgrade(name, pos):
-                self.players[name].cash += self.board.get_downgrade_amount(pos)
+                self.board.add_player_cash(name, self.board.get_downgrade_amount(pos))
                 self.board.downgrade(name, pos)
             elif self.board.can_mortgage(name, pos):
-                self.players[name].cash += self.board.get_mortgage_amount(pos)
+                self.board.add_player_cash(name, self.board.get_mortgage_amount(pos))
                 self.board.mortgage(name, pos)
             else:
                 cont = False
@@ -528,7 +451,7 @@ class BoardController():
             raise ValueError("whoops")
 
         value, rent, mono_props = self.board.get_evaluation(name)
-        ev_after = (self.players[name].cash, rent, value, mono_props)
+        ev_after = (self.board.get_player_cash(name), rent, value, mono_props)
 
         return self._get_reward(name, "up_down_grade", ev_before, ev_after), cont
 
@@ -561,41 +484,6 @@ class BoardController():
         self._transfer_cash(opponent, name, take_cash)
         self._transfer_properties(name, opponent, offer_prop)
         self._transfer_properties(opponent, name, take_prop)
-
-    def _transfer_cash(self, from_player, to_player, amount):
-        if amount < 0:
-            raise ValueError("Amount cannot be less than 0")
-
-        self.players[from_player].cash -= amount
-        self.players[to_player].cash += amounts
-
-    def _transfer_properties(self, from_player, to_player, properties):
-        """Transfers properties between two players
-
-        """
-
-        if set(properties).issubset(
-            set(self.board.get_all_properties_owned(from_player))):
-            cash_gained = 0
-            #Get the colors for the properties list
-            colors = set([self.board.get_property_color(p) for p in properties])
-            properties_to_downgrade = [
-                self.board.get_properties_from_color(c) for c in colors
-            ]
-            #Downgrade all properties to level 1
-            for property in properties_to_downgrade:
-                while self.board.get_level(property) > 1:
-                    cash_gained += self.board.get_downgrade_amount(property)
-                    self.board.downgrade(from_player, property)
-
-            for property in properties:
-                self.board.remove_ownership(from_player, property)
-                self.board.purchase(to_player, property)
-
-            return cash_gained
-        else:
-            raise ValueError("Cannot transfer properties that are not owned")
-
 
     def _get_reward(self, player, operation, ev_before, ev_after):
         rho, rho_type = self.players[player].get_reward_scalars(operation)

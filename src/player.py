@@ -6,7 +6,7 @@ from tensorflow.keras.models import model_from_json
 from collections import deque
 import warnings
 
-class Player():
+class Agent():
     """The player to that plays on the Board
 
     The player class is a shell that houses the algorithms that make the
@@ -64,8 +64,6 @@ class Player():
     def reset_player(self):
         """Resets the values of the player to the initialized values"""
         self.cash = self._init_cash
-        #self.allowed_to_move = True
-        #self.alive = True
 
     def set_models(self, models):
         """Sets the models of the player for the various operations
@@ -389,25 +387,4 @@ def load_operation_model(file_path, config_file_name):
         metrics=config["metrics"]
     )
 
-    return OperationModel(
-        model=model,
-        name=config["name"],
-        operation=config["operation"],
-        loss=config["loss"],
-        single_label = config["single_label"],
-        true_threshold=config["true_threshold"],
-        max_cash_limit=config["max_cash_limit"],
-        running_reward=config["running_reward"],
-        episode_nb=config["episode_nb"],
-        can_learn=config["can_learn"],
-        optimizer = config["optimizer"],
-        metrics = config["metrics"],
-        gamma = config["gamma"],
-        epsilon=config["epsilon"],
-        epsilon_min=config["epsilon_min"],
-        epsilon_decay=config["epsilon_decay"],
-        alpha=config["alpha"],
-        alpha_decay=config["alpha_decay"],
-        rho=config["rho"],
-        rho_type=config["rho_type"]
-    )
+    return OperationModel(model=model, **config)
