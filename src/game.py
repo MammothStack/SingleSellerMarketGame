@@ -144,7 +144,7 @@ class Board():
             self.alive = True
 
     def __init__(self, player_names, max_cash_limit=10000, max_turn=500,
-        available_houses=40, available_hotels=8, starting_cash=1500):
+        available_houses=32, available_hotels=12, starting_cash=1500):
 
         if type(player_names) != list:
             raise ValueError("Given value must be a list with names")

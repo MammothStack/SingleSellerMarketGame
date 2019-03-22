@@ -460,7 +460,7 @@ class TestCanUpgrade(unittest.TestCase):
         self.assertFalse(bi.can_upgrade("red", 3))
 
     def test_can_upgrade_no_hotels(self):
-        bi = Board(["red","blue"], 10000, 20, 0)
+        bi = Board(["red","blue"], 10000, available_houses=20, available_hotels=0)
 
         bi.purchase("red", 1)
         bi.purchase("red", 3)
@@ -658,7 +658,7 @@ class TestUpgrade(unittest.TestCase):
         self.assertEquals(bi.get_rent(1, 7), 250)
 
     def test_houses_decline(self):
-        bi = Board(["red","blue"], 10000, 20, 4)
+        bi = Board(["red","blue"], 10000, available_houses=20, available_hotels=4)
 
         bi.purchase("red", 1)
         bi.purchase("red", 3)
@@ -672,7 +672,7 @@ class TestUpgrade(unittest.TestCase):
         self.assertEquals(17, bi.available_houses)
 
     def test_houses_return_when_hotel_upgrade(self):
-        bi = Board(["red","blue"], 10000, 20, 4)
+        bi = Board(["red","blue"], 10000, available_houses=20, available_hotels=4)
 
         bi.purchase("red", 1)
         bi.purchase("red", 3)
@@ -918,7 +918,7 @@ class TestDowngrade(unittest.TestCase):
         self.assertEquals(bi.get_rent(1, 7), 2)
 
     def test_houses_increase(self):
-        bi = Board(["red","blue"], 10000, 20, 4)
+        bi = Board(["red","blue"], 10000, available_houses=20, available_hotels=4)
 
         bi.purchase("red", 1)
         bi.purchase("red", 3)
@@ -938,7 +938,7 @@ class TestDowngrade(unittest.TestCase):
         self.assertEquals(20, bi.available_houses)
 
     def test_houses_return_when_hotel_upgrade(self):
-        bi = Board(["red","blue"], 10000, 20, 4)
+        bi = Board(["red","blue"], 10000, available_houses=20, available_hotels=4)
 
         bi.purchase("red", 1)
         bi.purchase("red", 3)
