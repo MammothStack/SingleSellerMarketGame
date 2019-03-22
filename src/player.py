@@ -7,11 +7,10 @@ from collections import deque
 import warnings
 
 class Agent():
-    """The player to that plays on the Board
+    """The Agent that is capable of all the functions required by the Board
 
-    The player class is a shell that houses the algorithms that make the
-    decisions on the board. The player object is also used by the
-    BoardController class to store cash, name, and status of the player.
+    The Agent class is a container that houses the OperationModels that make the
+    decisions on the board.
 
     Parameters
     --------------------
@@ -49,8 +48,8 @@ class Agent():
         self.name = name
         self.models = self.set_models(models)
         #self.alive = alive
-        self._init_cash = cash
-        self.cash = self._init_cash
+        #self._init_cash = cash
+        #self.cash = self._init_cash
         #self.allowed_to_move = True
 
     def __repr__(self):
@@ -61,9 +60,10 @@ class Agent():
         )
         return s
 
-    def reset_player(self):
-        """Resets the values of the player to the initialized values"""
-        self.cash = self._init_cash
+
+    #def reset_player(self):
+    #    """Resets the values of the player to the initialized values"""
+    #    self.cash = self._init_cash
 
     def set_models(self, models):
         """Sets the models of the player for the various operations
@@ -186,7 +186,7 @@ class Agent():
             model.save(destination)
 
 class OperationModel():
-    """The Agent that carry out a specific operation of the board
+    """The Model that carry out a specific operation of the board
 
     Parameters
     --------------------

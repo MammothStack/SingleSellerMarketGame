@@ -1,3 +1,3 @@
-from .board_information import BoardInformation, BoardError
-from .player import Player, OperationModel
-from .board_controller import BoardController
+from .game import Board, BoardError
+from .player import Agent, OperationModel
+from .controller import GameController

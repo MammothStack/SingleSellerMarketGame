@@ -3,10 +3,10 @@ import numpy as np
 import pandas as pd
 import os
 import configparser
-from .player import Player
-from .board_information import BoardInformation, BoardError
+from .player import Agent
+from .board_information import Board, BoardError
 
-class BoardController():
+class GameController():
     """Controls the sequence of the game from start to finish
 
     The BoardController sets the game up by inializing the BoardInformation
@@ -76,7 +76,7 @@ class BoardController():
 
         Returns
         --------------------
-        result_dict : dict
+        results : dict
             A dictionary of results where the keys are the players of the game
             and the values are a Pandas.Series object containing game
             information
@@ -85,7 +85,7 @@ class BoardController():
 
         self.operation_config = {"purchase" : purchase, "up_down_grade" : up_down_grade, "trade" : trade}
 
-        result_dict = {}
+        results = {}
         while self.board.alive:
             #Runs through all three actions
             self._full_turn(self.board.current_player)
@@ -102,12 +102,12 @@ class BoardController():
             o = self.board.get_amount_properties_owned(p)
             l = self.board.get_total_levels_owned(p)
 
-            result_dict[p] = pd.Series(
+            results[p] = pd.Series(
                 data=[p, self.board.get_player_cash(p), o, l/o,  self.board.current_turn],
                 index=["name","cash","prop_owned","prop_average_level","turn_count"],
                 name=p)
 
-        return result_dict
+        return results
 
     def reset_game(self):
         """Resets all the game parameters so their default values
@@ -118,6 +118,7 @@ class BoardController():
         """
         self.board = BoardInformation([p for p in self.players.keys()], self.max_cash_limit)
 
+    """
     def _cash_to_binary(self, cash, neg=False):
         if cash > 16383:
             cash = 16383
@@ -150,7 +151,7 @@ class BoardController():
             return np.sum(arr * self.binary_pos)
         else:
             return np.sum(arr * self.binary)
-
+    """
 
     def _get_state(self, name, opponent=None, offer=None):
         """Returns the processed state for the given name
@@ -204,13 +205,13 @@ class BoardController():
 
         """
         gen_state = self.board.get_normalized_general_state().values.flatten("F")
-        pla_state = get_state_for_player(name)
+        pla_state = self.board.get_normalized_player_state(name)
 
         opp_state = []
         offer_state = []
 
         if opponent is not None:
-            opp_state = get_state_for_player(opponent)
+            opp_state = self.board.get_normalized_player_state(opponent)
 
         if offer is not None:
             offer_state = offer
@@ -219,7 +220,7 @@ class BoardController():
         return np.array((concatenated,))
 
     def _full_turn(self, name):
-        if not self.board.is_player_jaileld(name):
+        if not self.board.is_player_jailed(name):
             #Roll the dice
             d1, d2 = self.board.roll_dice()
 

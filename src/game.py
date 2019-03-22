@@ -5,7 +5,7 @@ import os
 from random import randrange, randint
 
 
-class BoardInformation():
+class Board():
     """Stores and handles all information of the board and game
 
     This class is responsible for initializing a pandas Dataframe that
@@ -192,7 +192,7 @@ class BoardInformation():
         """
 
         def make(name, index):
-            """Makes a DataFrame pertaining to player specific information
+            """Makes a DataFrame related to player specific information
 
             Parameters
             --------------------
@@ -1335,7 +1335,7 @@ class BoardInformation():
         """Sets the player to immobilel"""
         self.players[name].allowed_to_move = False
 
-    def is_player_jaileld(self, name):
+    def is_player_jailed(self, name):
         """Returns if the given player is immobile"""
         return self.players[name].allowed_to_move
 
