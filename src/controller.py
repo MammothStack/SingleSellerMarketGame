@@ -4,7 +4,7 @@ import pandas as pd
 import os
 import configparser
 from .player import Agent
-from .board_information import Board, BoardError
+from .game import Board, BoardError
 
 class GameController():
     """Controls the sequence of the game from start to finish
