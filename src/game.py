@@ -1302,7 +1302,7 @@ class Board():
 
             #set false if any in the monopoly is mortgaged
             for color in self.prop_colors:
-                if self.is_monopoly(position=position, name=name):
+                if self.is_monopoly(position=position, name=name, color=color):
                     if self._is_any_in_color_mortgaged(color):
                         self._table.loc[
                             self._table["color"] == color,
