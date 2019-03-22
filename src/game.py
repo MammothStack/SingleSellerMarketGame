@@ -67,7 +67,7 @@ class Board():
     can_unmortgage(name, position)
         Returns if the property at position can be unmortgaged
 
-    is_monopoly(name, position)
+    is_monopoly(position, color, name)
         Returns if the property at position is part of a monopoly
 
     is_any_purchaseable()
@@ -423,7 +423,7 @@ class Board():
             raise BoardError("position does not exist in table")
         return self._table.at[position, name + ":can_unmortgage"]
 
-    def is_monopoly(self, position, color=None, name=None):
+    def is_monopoly(self, position=None, color=None, name=None):
         """Returns if the property at position is part of a monopoly
 
         Parameters
@@ -452,11 +452,18 @@ class Board():
         True
 
         """
-        if not (self.is_utility(position) or self.is_property(position)):
-            raise BoardError("position does not exist in table")
 
-        if color is None:
+        if position is None and color is None:
+            raise BoardError("Both parameters cannot be None")
+
+        if color is None and position is not None:
+            if not (self.is_utility(position) or self.is_property(position)):
+                raise BoardError("position does not exist in table")
             color = self._table.loc[position, "color"]
+        else:
+            if color not in self.prop_colors:
+                raise BoardError("Color not present on the Board")
+
 
         if name is not None:
             if name not in self._player_names:
@@ -1302,7 +1309,7 @@ class Board():
 
             #set false if any in the monopoly is mortgaged
             for color in self.prop_colors:
-                if self.is_monopoly(position=position, name=name, color=color):
+                if self.is_monopoly(name=name, color=color):
                     if self._is_any_in_color_mortgaged(color):
                         self._table.loc[
                             self._table["color"] == color,
