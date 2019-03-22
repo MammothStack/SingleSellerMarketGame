@@ -136,7 +136,7 @@ class Board():
     roll_dice()
 
     """
-    class Player():
+    class _Player():
         def __init__(self, name, cash):
             self.name = name
             self.cash = cash
@@ -169,7 +169,7 @@ class Board():
         self.available_hotels = available_hotels
         self._table = self._set_table(player_names)
         self.index = self._table.loc[(self._table["type"] == "utility") | (self._table["type"] == "property")].index
-        self.players = {n: Player(n, starting_cash) for n in player_names}
+        self.players = {n: self._Player(n, starting_cash) for n in player_names}
         self.current_turn = 0
         self.current_player = [self._player_names[self.current_turn]]
         self.prop_colors = list(self._table.loc[self._table["can_purchase"] == True, "color"].unique())
