@@ -1799,11 +1799,11 @@ class Board():
              name + ":can_mortgage",
              name + ":can_unmortgage"]].astype("float")
 
-         if self.players[name].cash >= self._max_cash_limit:
-             cash = np.full(len(v.index), 1.0)
-         else:
-             cash = np.full(len(v.index), self.players[name].cash / self._max_cash_limit)
-         return np.concatenate((cash,v.values.flatten("F")))
+        if self.players[name].cash >= self._max_cash_limit:
+            cash = np.full(len(v.index), 1.0)
+        else:
+            cash = np.full(len(v.index), self.players[name].cash / self._max_cash_limit)
+        return np.concatenate((cash,v.values.flatten("F")))
 
 class BoardError(Exception):
     """Base class for board specific errors"""
