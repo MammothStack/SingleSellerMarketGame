@@ -1,5 +1,4 @@
-from random import randrange
-from random import sample
+from random import randrange, sample
 import numpy as np
 import pandas as pd
 import os
@@ -7,7 +6,8 @@ import configparser
 from .player import Agent
 from .game import Board, BoardError
 
-class GameController():
+
+class GameController:
     """Controls the sequence of the game from start to finish
 
     The BoardController sets the game up by inializing the BoardInformation
@@ -36,22 +36,39 @@ class GameController():
     --------------------
 
     """
-    def __init__(self, player_list, max_turn=800, upgrade_limit=20,
-        reward_scalars={"cash": 0.005, "value": 0.01, "rent": 0.005, "monopoly": 1.0}):
+
+    def __init__(
+        self,
+        player_list,
+        max_turn=800,
+        upgrade_limit=20,
+        reward_scalars={
+            "cash": 0.005,
+            "value": 0.01,
+            "rent": 0.005,
+            "monopoly": 1.0,
+        },
+    ):
         for p1 in player_list:
             for p2 in player_list:
                 if p1.max_cash_limit != p2.max_cash_limit:
-                    raise ValueError("Incompatible max cash limits")
-
+                    raise ValueError(
+                        "Incompatible max cash limits"
+                    )
         self.max_cash_limit = player_list[0].max_cash_limit
         self.players = {p.name: p for p in player_list}
-        self.board = Board([p.name for p in player_list], self.max_cash_limit)
+        self.board = Board(
+            [p.name for p in player_list],
+            self.max_cash_limit,
+        )
         self.max_turn = max_turn
         self.num_players = len(player_list)
         self.upgrade_limit = upgrade_limit
         self.reward_scalars = reward_scalars
 
-    def start_game(self, purchase=True, up_down_grade=True, trade=True):
+    def start_game(
+        self, purchase=True, up_down_grade=True, trade=True
+    ):
         """Starts the game
 
         Starts the game with the current configuration. The parameters that can
@@ -78,30 +95,50 @@ class GameController():
 
         """
 
-        self.operation_config = {"purchase" : purchase, "up_down_grade" : up_down_grade, "trade" : trade}
+        self.operation_config = {
+            "purchase": purchase,
+            "up_down_grade": up_down_grade,
+            "trade": trade,
+        }
 
         results = {}
         while self.board.alive:
-            #Runs through all three actions
+            # Runs through all three actions
             self._full_turn(self.board.current_player)
 
-            #Checks if any properties can still be bought. quit if none
-            if up_down_grade == False and trade == False:
+            # Checks if any properties can still be bought. quit if none
+            if (
+                up_down_grade == False
+                and trade == False
+                and len(self.players) == 1
+            ):
                 if self.board.alive:
-                    self.board.alive = self.board.is_any_purchaseable()
-
+                    self.board.alive = (
+                        self.board.is_any_purchaseable()
+                    )
             self.board.increment_turn()
-
         for p in self.players.keys():
             self.players[p].learn()
             o = self.board.get_amount_properties_owned(p)
             l = self.board.get_total_levels_owned(p)
 
             results[p] = pd.Series(
-                data=[p, self.board.get_player_cash(p), o, l/o,  self.board.current_turn],
-                index=["name","cash","prop_owned","prop_average_level","turn_count"],
-                name=p)
-
+                data=[
+                    p,
+                    self.board.get_player_cash(p),
+                    o,
+                    l / o,
+                    self.board.current_turn,
+                ],
+                index=[
+                    "name",
+                    "cash",
+                    "prop_owned",
+                    "prop_average_level",
+                    "turn_count",
+                ],
+                name=p,
+            )
         return results
 
     def reset_game(self):
@@ -111,7 +148,10 @@ class GameController():
         as well as the turn counter and "alive" state of the board
 
         """
-        self.board = Board([p for p in self.players.keys()], self.max_cash_limit)
+        self.board = Board(
+            [p for p in self.players.keys()],
+            self.max_cash_limit,
+        )
 
     def _get_state(self, name, opponent=None, offer=None):
         """Returns the processed state for the given name
@@ -164,159 +204,260 @@ class GameController():
              A one-dimensional array (420,)/(616,)
 
         """
-        gen_state = self.board.get_normalized_general_state().values.flatten("F")
-        pla_state = self.board.get_normalized_player_state(name)
+        gen_state = self.board.get_general_state()
+        pla_state = self.board.get_player_state(name)
 
         opp_state = []
         offer_state = []
 
         if opponent is not None:
-            opp_state = self.board.get_normalized_player_state(opponent)
-
+            opp_state = self.board.get_normalized_player_state(
+                opponent
+            )
         if offer is not None:
             offer_state = offer
-
-        concatenated = np.concatenate((offer_state, opp_state, pla_state, gen_state))
+        concatenated = np.concatenate(
+            (offer_state, opp_state, pla_state, gen_state)
+        )
         return np.array((concatenated,))
 
     def _full_turn(self, name):
         if not self.board.is_player_jailed(name):
-            #Roll the dice
+            # Roll the dice
             d1, d2 = self.board.roll_dice()
 
-            #Move the player to the new position
-            new_pos = self.board.move_player(name, dice_roll=d1 + d2)
+            # Move the player to the new position
+            new_pos = self.board.move_player(
+                name, dice_roll=d1 + d2
+            )
 
-            #If player landed on action field
+            # If player landed on action field
             if self.board.is_action(new_pos):
-                r, action_pos = self._land_action_field(name, new_pos)
+                r, action_pos = self._land_action_field(
+                    name, new_pos
+                )
                 if r:
                     purchase = True
                     new_pos = action_pos
                 else:
                     purchase = False
             else:
-                purchase = self._land_property(name, new_pos, d1 + d2)
-
-            if (self.operation_config["purchase"] and
-                purchase and
-                self.players[name].can_purchase):
+                purchase = self._land_property(
+                    name, new_pos, d1 + d2
+                )
+            if (
+                self.operation_config["purchase"]
+                and purchase
+                and self.players[name].can_purchase
+            ):
                 self._purchase_turn(name, new_pos)
         else:
             self.board.set_player_out_of_jail(name)
-
-        if (self.operation_config["up_down_grade"] and
-            self.players[name].can_up_down_grade):
+        if (
+            self.operation_config["up_down_grade"]
+            and self.players[name].can_up_down_grade
+        ):
             self._up_down_grade_turn(name)
-
-        #trade
-        if self.operation_config["trade"] and self.players[name].can_trade_offer:
+        # trade
+        if (
+            self.operation_config["trade"]
+            and self.players[name].can_trade_offer
+        ):
             self._trade_turn(name)
 
     def _purchase_turn(self, name, new_position):
         state = self._get_state(name)
         y = self.players[name].get_action(state, "purchase")
         action = np.argmax(y)
-        reward = self._execute_purchase(name, new_position, y)
+        reward = self._execute_purchase(
+            name, new_position, y
+        )
         next_state = self._get_state(name)
         done = not self.board.is_any_purchaseable()
         self.players[name].add_training_data(
-            "purchase", state, action, reward, next_state, done)
+            "purchase",
+            state,
+            action,
+            reward,
+            next_state,
+            done,
+        )
 
     def _up_down_grade_turn(self, name):
         cont = True
         count = 0
         while cont and count < self.upgrade_limit:
             state = self._get_state(name)
-            y = self.players[name].get_action(state, "up_down_grade")
+            y = self.players[name].get_action(
+                state, "up_down_grade"
+            )
             action = np.argmax(y)
-            reward, cont = self._execute_up_down_grade(name, y)
+            reward, cont = self._execute_up_down_grade(
+                name, y
+            )
             next_state = self._get_state(name)
             self.players[name].add_training_data(
-                "up_down_grade", state, action, reward, next_state, False)
+                "up_down_grade",
+                state,
+                action,
+                reward,
+                next_state,
+                False,
+            )
             count += 1
 
     def _trade_turn(self, name):
         for opponent in self.players.keys():
-            if name != opponent and self.players[opponent].can_trade_decision:
+            if (
+                name != opponent
+                and self.players[
+                    opponent
+                ].can_trade_decision
+            ):
                 state = self._get_state(name, opponent)
-                action = self.players[name].get_action(state, "trade_offer")
-                reward = self._evaluate_trade_offer(action, name, opponent)
+                action = self.players[name].get_action(
+                    state, "trade_offer"
+                )
+                reward = self._evaluate_trade_offer(
+                    action, name, opponent
+                )
 
                 state_opp = np.concatenate((state, action))
-                action_opp = self.players[name].get_action(state_opp, "trade_decision")
+                action_opp = self.players[name].get_action(
+                    state_opp, "trade_decision"
+                )
                 reward_opp = -reward
 
                 if action_opp[0] == 1:
-                    self._execute_trade(action, name, opponent)
+                    self._execute_trade(
+                        action, name, opponent
+                    )
 
-                    next_state = self._get_state(name, opponent)
-                    potential_action = self.players[name].get_action(next_state, "trade_offer")
-                    next_state_opp = np.concatenate((next_state, potential_action))
+                    next_state = self._get_state(
+                        name, opponent
+                    )
+                    potential_action = self.players[
+                        name
+                    ].get_action(next_state, "trade_offer")
+                    next_state_opp = np.concatenate(
+                        (next_state, potential_action)
+                    )
 
                     self.players[name].add_training_data(
-                        "trade_offer", state, action, reward, next_state, False)
-                    self.players[opponent].add_training_data(
-                        "trade_decision", state_opp, action_opp, reward_opp, next_state_opp, False)
+                        "trade_offer",
+                        state,
+                        action,
+                        reward,
+                        next_state,
+                        False,
+                    )
+                    self.players[
+                        opponent
+                    ].add_training_data(
+                        "trade_decision",
+                        state_opp,
+                        action_opp,
+                        reward_opp,
+                        next_state_opp,
+                        False,
+                    )
 
     def _land_action_field(self, name, position):
-        #get the action from the position
+        # get the action from the position
         act = self.board.get_action(position)
 
         if type(act) == int:
             self.board.add_player_cash(name, act)
             if act < 0:
                 self.board.add_to_free_parking(-act)
-        #If the action is money transfer
+        # If the action is money transfer
         elif type(act) == dict:
             if "goto" in act.keys():
                 g = act["goto"]
-                new_pos = self.board.move_player(name, position=g)
+                new_pos = self.board.move_player(
+                    name, position=g
+                )
                 if g == 0:
                     pass
                 elif g == 10:
                     self.board.jail_player(name)
                 elif g == 20:
-                    self.board.add_player_cash(name, self.board.get_free_parking(clear=True))
-                elif self.board.is_utility(g) or self.board.is_property(g):
-                    return self._land_property(name=name, position=g), g
+                    self.board.add_player_cash(
+                        name,
+                        self.board.get_free_parking(
+                            clear=True
+                        ),
+                    )
+                elif self.board.is_utility(
+                    g
+                ) or self.board.is_property(g):
+                    return (
+                        self._land_property(
+                            name=name, position=g
+                        ),
+                        g,
+                    )
             elif "free parking" in act.keys():
-                self.board.add_player_cash(name, self.board.get_free_parking(clear=True))
-        #If the action requires nothing
+                self.board.add_player_cash(
+                    name,
+                    self.board.get_free_parking(clear=True),
+                )
+        # If the action requires nothing
         elif act is None:
             pass
-
         return False, None
 
     def _land_property(self, name, position, dice_roll=7):
-        #If the property is purchaseable
+        # If the property is purchaseable
         if self.board.can_purchase(position):
             return True
-        #is owned
+        # is owned
         else:
-            #is owned by player already
+            # is owned by player already
             if self.board.is_owned_by(name, position):
                 return False
-            #is owned by opponent
+            # is owned by opponent
             else:
-                opponent_name = self.board.get_owner_name(position)
-                rent = self.board.get_rent(position, dice_roll)
+                opponent_name = self.board.get_owner_name(
+                    position
+                )
+                rent = self.board.get_rent(
+                    position, dice_roll
+                )
                 self.board.add_player_cash(opponent, rent)
                 self.board.add_player_cash(name, -rent)
                 return False
 
     def _execute_purchase(self, name, position, y):
-        value, rent, mono_props = self.board.get_evaluation(name)
-        ev_before = (self.board.get_player_cash(name), rent, value, mono_props)
+        value, rent, mono_props = self.board.get_evaluation(
+            name
+        )
+        ev_before = (
+            self.board.get_player_cash(name),
+            rent,
+            value,
+            mono_props,
+        )
 
         if y[0] > y[1]:
             self.board.purchase(name, position)
-            self.board.add_player_cash(name, -self.board.get_purchase_amount(position))
+            self.board.add_player_cash(
+                name,
+                -self.board.get_purchase_amount(position),
+            )
+        value, rent, mono_props = self.board.get_evaluation(
+            name
+        )
+        ev_after = (
+            self.board.get_player_cash(name),
+            rent,
+            value,
+            mono_props,
+        )
 
-        value, rent, mono_props = self.board.get_evaluation(name)
-        ev_after = (self.board.get_player_cash(name), rent, value, mono_props)
-
-        return self._get_reward(name, "purchase", ev_before, ev_after)
+        return self._get_reward(
+            name, "purchase", ev_before, ev_after
+        )
 
     def _execute_up_down_grade(self, name, y):
         """Executes the the given upgrade/downgrade move
@@ -358,37 +499,54 @@ class GameController():
         """
         upgrade = y[:28]
         downgrade = y[28:-1]
-        do_nothing =[y[-1]]
+        do_nothing = [y[-1]]
         cont = True
 
         ind = np.argmax(y)
 
-        value, rent, mono_props = self.board.get_evaluation(name)
-        ev_before = (self.board.get_player_cash(name), rent, value, mono_props)
+        value, rent, mono_props = self.board.get_evaluation(
+            name
+        )
+        ev_before = (
+            self.board.get_player_cash(name),
+            rent,
+            value,
+            mono_props,
+        )
 
         if y[ind] in upgrade:
             pos = self.board.index[np.argmax(upgrade)]
 
-            #if position can even be upgraded
+            # if position can even be upgraded
             if self.board.can_upgrade(name, pos):
-                self.board.add_player_cash(name, -self.board.get_upgrade_amount(pos))
+                self.board.add_player_cash(
+                    name,
+                    -self.board.get_upgrade_amount(pos),
+                )
                 self.board.upgrade(name, pos)
-
-            #if position can be unmortgaged
+            # if position can be unmortgaged
             elif self.board.can_unmortgage(name, pos):
-                self.board.add_player_cash(name, -self.board.get_mortgage_amount(pos))
+                self.board.add_player_cash(
+                    name,
+                    -self.board.get_mortgage_amount(pos),
+                )
                 self.board.unmortgage(name, pos)
             else:
                 cont = False
-
         elif y[ind] in downgrade:
             pos = self.board.index[np.argmax(downgrade)]
 
             if self.board.can_downgrade(name, pos):
-                self.board.add_player_cash(name, self.board.get_downgrade_amount(pos))
+                self.board.add_player_cash(
+                    name,
+                    self.board.get_downgrade_amount(pos),
+                )
                 self.board.downgrade(name, pos)
             elif self.board.can_mortgage(name, pos):
-                self.board.add_player_cash(name, self.board.get_mortgage_amount(pos))
+                self.board.add_player_cash(
+                    name,
+                    self.board.get_mortgage_amount(pos),
+                )
                 self.board.mortgage(name, pos)
             else:
                 cont = False
@@ -396,15 +554,30 @@ class GameController():
             cont = False
         else:
             raise ValueError("whoops")
+        value, rent, mono_props = self.board.get_evaluation(
+            name
+        )
+        ev_after = (
+            self.board.get_player_cash(name),
+            rent,
+            value,
+            mono_props,
+        )
 
-        value, rent, mono_props = self.board.get_evaluation(name)
-        ev_after = (self.board.get_player_cash(name), rent, value, mono_props)
-
-        return self._get_reward(name, "up_down_grade", ev_before, ev_after), cont
+        return (
+            self._get_reward(
+                name, "up_down_grade", ev_before, ev_after
+            ),
+            cont,
+        )
 
     def _get_values_from_trade_offer(self, trade_offer):
-        offer_cash = self._binary_to_cash(trade_offer[0:14], neg=False)
-        take_cash = self._binary_to_cash(trade_offer[14:28], neg=False)
+        offer_cash = self._binary_to_cash(
+            trade_offer[0:14], neg=False
+        )
+        take_cash = self._binary_to_cash(
+            trade_offer[14:28], neg=False
+        )
         offer_prop = trade_offer[28:56]
         take_prop = trade_offer[56:84]
 
@@ -412,12 +585,24 @@ class GameController():
 
     def _evaluate_trade_offer(self, offer, name, opponent):
 
-        offer_cash, take_cash, offer_prop, take_prop = self._get_values_from_trade_offer(offer)
-        offer_prop_value = self.board.get_total_value_owned(name, offer_prop)
-        take_prop_value = self.board.get_total_value_owned(opponent, take_prop)
+        offer_cash, take_cash, offer_prop, take_prop = self._get_values_from_trade_offer(
+            offer
+        )
+        offer_prop_value = self.board.get_total_value_owned(
+            name, offer_prop
+        )
+        take_prop_value = self.board.get_total_value_owned(
+            opponent, take_prop
+        )
 
-        limit = max(offer_cash + offer_prop_value, take_cash + take_prop_value)
-        reward = ((take_cash + take_prop_value) - (offer_cash + offer_prop_value)) / limit
+        limit = max(
+            offer_cash + offer_prop_value,
+            take_cash + take_prop_value,
+        )
+        reward = (
+            (take_cash + take_prop_value)
+            - (offer_cash + offer_prop_value)
+        ) / limit
 
         return reward
 
@@ -426,20 +611,28 @@ class GameController():
         pass
 
     def _execute_trade(self, offer, name, opponent):
-        offer_cash, take_cash, offer_prop, take_prop = self._get_values_from_trade_offer(offer)
+        offer_cash, take_cash, offer_prop, take_prop = self._get_values_from_trade_offer(
+            offer
+        )
         self._transfer_cash(name, opponent, offer_cash)
         self._transfer_cash(opponent, name, take_cash)
-        self._transfer_properties(name, opponent, offer_prop)
+        self._transfer_properties(
+            name, opponent, offer_prop
+        )
         self._transfer_properties(opponent, name, take_prop)
 
-    def _get_reward(self, player, operation, ev_before, ev_after):
-        rho, rho_mode = self.players[player].get_reward_scalars(operation)
+    def _get_reward(
+        self, player, operation, ev_before, ev_after
+    ):
+        rho, rho_mode = self.players[
+            player
+        ].get_reward_scalars(operation)
         c1 = ev_before[0]
         c1 = 0 if c1 < 0 else c1
         c2 = ev_after[0]
         c2 = 0 if c2 < 0 else c2
 
-        deg = ((1.2 * c2 * rho - 1500) / (1000 + c2 * rho))
+        deg = (1.2 * c2 * rho - 1500) / (1000 + c2 * rho)
 
         if rho_mode == 1:
             y1 = self.reward_scalars["cash"]
@@ -455,25 +648,42 @@ class GameController():
             r2 = ev_after[2]
             m2 = ev_after[3]
 
-            return deg * (y1*(c2-c1) + y2*(v2-v1) + y3*(r2-r1) + y4*(m2-m1))
+            return deg * (
+                y1 * (c2 - c1)
+                + y2 * (v2 - v1)
+                + y3 * (r2 - r1)
+                + y4 * (m2 - m1)
+            )
         elif rho_mode == 2:
             if c2 - c1 == 0:
                 return 0
             else:
-                return deg * ((c2-c1)/abs(c2-c1))
+                return deg * ((c2 - c1) / abs(c2 - c1))
         else:
-            raise ValueError(f'mode {rho_mode} does not exist')
+            raise ValueError(
+                f'mode {rho_mode} does not exist'
+            )
 
 
 def get_game_controllers(pool, n_players, config=None):
     if pool % n_players != 0:
-        raise ValueError("Pool cannot be split into these traunches")
-
-    plan = np.array(random.sample(range(len(pool)), len(pool))).reshape(-1, n_players)
+        raise ValueError(
+            "Pool cannot be split into these traunches"
+        )
+    plan = np.array(
+        random.sample(range(len(pool)), len(pool))
+    ).reshape(-1, n_players)
     bcs = []
 
     for game_ind in plan:
         if config is None:
-        bcs.append(GameController([pool[player_ind] for player_ind in game_ind], **config))
-
+            bcs.append(
+                GameController(
+                    [
+                        pool[player_ind]
+                        for player_ind in game_ind
+                    ],
+                    **config,
+                )
+            )
     return bcs

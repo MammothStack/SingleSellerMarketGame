@@ -1768,7 +1768,7 @@ class Board():
             "mortgage_amount:normal",
             "upgrade_amount:normal",
             "downgrade_amount:normal",
-            "current_rent_amount:normal"]].astype("float")
+            "current_rent_amount:normal"]].astype("float").values.flatten("F")
 
     def get_general_state(self):
         """Returns the normalized state of the board
@@ -1789,7 +1789,7 @@ class Board():
 
         """
         prop = self._table.loc[self._table["type"] != "action"]
-        return prop[["monopoly_owned", "value", "can_purchase", "purchase_amount", "mortgage_amount", "upgrade_amount", "downgrade_amount", "current_rent_amount"]].astype("float")
+        return prop[["monopoly_owned", "value", "can_purchase", "purchase_amount", "mortgage_amount", "upgrade_amount", "downgrade_amount", "current_rent_amount"]].astype("float").values.flatten("F")
 
     def get_normalized_player_state(self, name):
         """Returns the normalized state of the board
@@ -1817,13 +1817,13 @@ class Board():
             raise BoardError("That name is not in the player list")
 
         prop = self._table.loc[self._table["type"] != "action"]
-        v = prop[[name + ":position", name + ":owned", name + ":can_upgrade", name + ":can_downgrade", name + ":can_mortgage", name + ":can_unmortgage"]].astype("float")
+        v = prop[[name + ":position", name + ":owned", name + ":can_upgrade", name + ":can_downgrade", name + ":can_mortgage", name + ":can_unmortgage"]].astype("float").values.flatten("F")
 
         if self.players[name].cash >= self._max_cash_limit:
             cash = np.full(len(v.index), 1.0)
         else:
             cash = np.full(len(v.index), self.players[name].cash / self._max_cash_limit)
-        return np.concatenate((cash, v.values.flatten("F")))
+        return np.concatenate((cash, v))
 
     def get_player_state(self, name):
         """Returns the normalized state of the board
@@ -1852,9 +1852,9 @@ class Board():
             raise BoardError("That name is not in the player list")
 
         prop = self._table.loc[self._table["type"] != "action"]
-        v = prop[[name + ":position", name + ":owned", name + ":can_upgrade", name + ":can_downgrade", name + ":can_mortgage", name + ":can_unmortgage"]].astype("float")
+        v = prop[[name + ":position", name + ":owned", name + ":can_upgrade", name + ":can_downgrade", name + ":can_mortgage", name + ":can_unmortgage"]].astype("float").values.flatten("F")
 
-        return np.concatenate((self.players[name].cash, v.values.flatten("F")))
+        return np.concatenate((self.players[name].cash, v))
 
 class BoardError(Exception):
     """Base class for board specific errors"""
