@@ -1823,7 +1823,7 @@ class Board():
             cash = np.full(len(v.index), 1.0)
         else:
             cash = np.full(len(v.index), self.players[name].cash / self._max_cash_limit)
-        return np.concatenate((cash,v.values.flatten("F")))
+        return np.concatenate((cash, v.values.flatten("F")))
 
     def get_player_state(self, name):
         """Returns the normalized state of the board
