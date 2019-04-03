@@ -30,8 +30,7 @@ class Agent():
 
     Attributes
     --------------------
-    max_cash_limit : int
-        The cash values are normalized to this maximum value.
+
 
     Methods
     --------------------
@@ -39,12 +38,6 @@ class Agent():
 
     """
     def __init__(self, name, *models, alive=True, cash=1500):
-        for m1 in models:
-            for m2 in models:
-                if m1.max_cash_limit != m2.max_cash_limit:
-                    raise ValueError("Max Cash Limit of the models is incompatible")
-
-        self.max_cash_limit = models[0].max_cash_limit
         self.name = name
         self.can_purchase = False
         self.can_up_down_grade = False
@@ -220,9 +213,6 @@ class OperationModel():
     single_label : boolean
         If the model predicts a single label
 
-    max_cash_limit : int
-        The max cash to which to normalize the data
-
     optimizer : str
         the keras.optimizer as string value used to optimize the model
 
@@ -286,7 +276,7 @@ class OperationModel():
 
     """
 
-    def __init__(self, model, name, operation, true_threshold, single_label, max_cash_limit, optimizer, loss, metrics=['accuracy'],
+    def __init__(self, model, name, operation, true_threshold, single_label, optimizer, loss, metrics=['accuracy'],
         running_reward=0, episode_nb=0, gamma=1.0, epsilon=1.0, epsilon_min=0.01,
         epsilon_decay=0.99, alpha=0.001, alpha_decay=0.001, rho=3, rho_mode=1,
         can_learn=True):
@@ -300,7 +290,6 @@ class OperationModel():
         self.metrics = metrics
         self.true_threshold = true_threshold
         self.single_label = single_label
-        self.max_cash_limit = max_cash_limit
         self.running_reward = running_reward
         self.episode_nb = episode_nb
         self.can_learn = can_learn
@@ -408,7 +397,6 @@ class OperationModel():
             "name": self.name,
             "operation": self.operation,
             "true_threshold": self.true_threshold,
-            "max_cash_limit": self.max_cash_limit,
             "running_reward": self.running_reward,
             "episode_nb": self.episode_nb,
             "h5_path": self.name + "_" + self.operation + ".h5",

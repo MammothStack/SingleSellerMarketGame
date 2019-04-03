@@ -27,9 +27,6 @@ class Board:
     player_names : list
         A list of the players as str that are playing on the board
 
-    max_cash_limit : int
-        The maximum cash value for unto which other amounts will be normalized
-
     available_houses : int
         The starting amount of houses for the game
 
@@ -127,10 +124,10 @@ class Board:
     get_action(position):
         Returns the action of the action field at the position
 
-    get_normalized_general_state():
+    get_general_state():
         Returns the general state that is flattened for ML algorithms
 
-    get_normalized_player_state(name):
+    get_player_state(name):
         Returns the player state that is flattened for ML algorithms
 
     roll_dice()
@@ -147,7 +144,6 @@ class Board:
     def __init__(
         self,
         player_names,
-        max_cash_limit=10000,
         max_turn=500,
         available_houses=32,
         available_hotels=12,
@@ -168,11 +164,7 @@ class Board:
             raise BoardError(
                 "Cannot have the same player twice"
             )
-        if max_cash_limit < 2000:
-            raise BoardError(
-                "Cannot have a cash_limit below the maximum value of the board"
-            )
-        self._max_cash_limit = max_cash_limit
+
         self.max_turn = max_turn
         self.alive = True
         self._player_names = player_names
@@ -208,10 +200,6 @@ class Board:
         --------------------
         players : list
             A list of the players as str that are playing on the board
-
-        max_cash_limit : int
-            A limit to which all values are capped and normalized
-
         """
 
         def make(name, index):
@@ -258,37 +246,19 @@ class Board:
         table["action"] = table["action"].map(
             lambda x: x if pd.isna(x) else eval(x)
         )
-        table["purchase_amount:normal"] = (
-            table["purchase_amount"] / self._max_cash_limit
-        )
-        table["mortgage_amount:normal"] = (
-            table["mortgage_amount"] / self._max_cash_limit
-        )
-        table["upgrade_amount:normal"] = (
-            table["upgrade_amount"] / self._max_cash_limit
-        )
-        table["downgrade_amount:normal"] = (
-            table["downgrade_amount"] / self._max_cash_limit
-        )
 
         table.fillna(0, inplace=True)
 
         table = table.astype(
             {
                 'value': np.int,
-                'value:normal': np.float,
                 'monopoly_owned': np.bool,
                 'can_purchase': np.bool,
                 'purchase_amount': np.int,
-                'purchase_amount:normal': np.float,
                 'mortgage_amount': np.int,
-                'mortgage_amount:normal': np.float,
                 'upgrade_amount': np.int,
-                'upgrade_amount:normal': np.float,
                 'downgrade_amount': np.int,
-                'downgrade_amount:normal': np.float,
                 'current_rent_amount': np.int,
-                'current_rent_amount:normal': np.float,
                 'level': np.int,
                 'rent_level:0': np.int,
                 'rent_level:1': np.int,
@@ -701,24 +671,17 @@ class Board:
             self._table.loc[
                 bool_arr, "current_rent_amount"
             ] = rent
-            self._table.loc[
-                bool_arr, "current_rent_amount:normal"
-            ] = (rent / self._max_cash_limit)
+
         elif color == "white":
             if amount_owned == 1:
                 self._table.loc[
                     bool_arr, "current_rent_amount"
                 ] = (4 * 7)
-                self._table.loc[
-                    bool_arr, "current_rent_amount:normal"
-                ] = (4 * 7) / self._max_cash_limit
+
             elif amount_owned == 2:
                 self._table.loc[
                     bool_arr, "current_rent_amount"
                 ] = (10 * 7)
-                self._table.loc[
-                    bool_arr, "current_rent_amount:normal"
-                ] = (10 * 7) / self._max_cash_limit
 
     def remove_ownership(self, name, position):
         """Removes the ownership of the given player at the given position
@@ -780,9 +743,6 @@ class Board:
         # value
         self._table.at[position, "value"] = 0
 
-        # Value normalized
-        self._table.at[position, "value:normal"] = 0
-
         # level
         self._table.at[position, "level"] = 0
 
@@ -792,10 +752,6 @@ class Board:
             # current_rent_amount
             self._table.at[
                 position, "current_rent_amount"
-            ] = 0
-
-            self._table.at[
-                position, "current_rent_amount:normal"
             ] = 0
 
             # update monopoly status
@@ -903,8 +859,7 @@ class Board:
         The ownership needs to be indicated to show which player owns the
         property. This goes in conjunction with setting the purchasability
         for a given property. This is to ensure that only one person can
-        purchase a given property. At the end the normalized values are
-        also updated.
+        purchase a given property.
 
         Parameters
         --------------------
@@ -968,11 +923,6 @@ class Board:
             position, "purchase_amount"
         ]
 
-        self._table.at[position, "value:normal"] = (
-            self._table.at[position, "value"]
-            / self._max_cash_limit
-        )
-
         # level
         self._table.at[position, "level"] = 1
 
@@ -983,15 +933,6 @@ class Board:
             self._table.at[
                 position, "current_rent_amount"
             ] = self._table.at[position, "rent_level:1"]
-
-            self._table.at[
-                position, "current_rent_amount:normal"
-            ] = (
-                self._table.at[
-                    position, "current_rent_amount"
-                ]
-                / self._max_cash_limit
-            )
 
             # update monopoly status
             if self.is_monopoly(
@@ -1056,11 +997,6 @@ class Board:
             position, "mortgage_amount"
         ]
 
-        self._table.at[position, "value:normal"] = (
-            self._table.at[position, "value"]
-            / self._max_cash_limit
-        )
-
         # can downgrade
         self._table.at[
             position, name + ":can_downgrade"
@@ -1084,10 +1020,6 @@ class Board:
 
         # current_rent_amount
         self._table.at[position, "current_rent_amount"] = 0
-
-        self._table.at[
-            position, "current_rent_amount:normal"
-        ] = 0
 
         # level
         self._table.at[position, "level"] = 0
@@ -1140,11 +1072,6 @@ class Board:
             position, "purchase_amount"
         ]
 
-        self._table.at[position, "value:normal"] = (
-            self._table.at[position, "value"]
-            / self._max_cash_limit
-        )
-
         # can downgrade
         self._table.at[
             position, name + ":can_downgrade"
@@ -1184,12 +1111,6 @@ class Board:
             self._table.at[
                 position, "current_rent_amount"
             ] = self._table.at[position, "rent_level:1"]
-
-            self._table.at[
-                position, "current_rent_amount:normal"
-            ] = self._table.at[
-                position, "current_rent_amount"
-            ]
 
     def upgrade(self, name, position):
         """Upgrades the property at the position by the player by name
@@ -1239,11 +1160,6 @@ class Board:
             + self._table.at[position, "upgrade_amount"]
         )
 
-        self._table.at[position, "value:normal"] = (
-            self._table.at[position, "value"]
-            / self._max_cash_limit
-        )
-
         # level
         new_level = self._table.at[position, "level"] + 1
         self._table.at[position, "level"] = new_level
@@ -1275,13 +1191,6 @@ class Board:
         ] = self._table.at[
             position, "rent_level:" + str(new_level)
         ]
-
-        self._table.at[
-            position, "current_rent_amount:normal"
-        ] = (
-            self._table.at[position, "current_rent_amount"]
-            / self._max_cash_limit
-        )
 
         n_house = self.available_houses
         n_hotel = self.available_hotels
@@ -1349,11 +1258,6 @@ class Board:
             - self._table.at[position, "upgrade_amount"]
         )
 
-        self._table.at[position, "value:normal"] = (
-            self._table.at[position, "value"]
-            / self._max_cash_limit
-        )
-
         # level
         new_level = self._table.at[position, "level"] - 1
         self._table.at[position, "level"] = new_level
@@ -1401,13 +1305,6 @@ class Board:
         ] = self._table.at[
             position, "rent_level:" + str(new_level)
         ]
-
-        self._table.at[
-            position, "current_rent_amount:normal"
-        ] = (
-            self._table.at[position, "current_rent_amount"]
-            / self._max_cash_limit
-        )
 
         if n_house == 0 and self.available_houses > 0:
             self._houses_to_available()
@@ -2035,47 +1932,8 @@ class Board:
                 axis=1,
             )
 
-    # Information getting
-    def get_normalized_general_state(self):
-        """Returns the normalized state of the board
-
-        Returns general values of the board that do not pertain to specific
-        players. This information includes:
-
-            monpoly owned
-            value
-            can purchase
-            purchase amount
-            mortgage amount
-            upgrade amount
-            downgrade amount
-            current rent amount
-
-        since the table is 28 rows deep this results in a table of 28 x 8
-
-        """
-        prop = self._table.loc[
-            self._table["type"] != "action"
-        ]
-        return (
-            prop[
-                [
-                    "monopoly_owned",
-                    "value:normal",
-                    "can_purchase",
-                    "purchase_amount:normal",
-                    "mortgage_amount:normal",
-                    "upgrade_amount:normal",
-                    "downgrade_amount:normal",
-                    "current_rent_amount:normal",
-                ]
-            ]
-            .astype("float")
-            .values.flatten("F")
-        )
-
     def get_general_state(self):
-        """Returns the normalized state of the board
+        """Returns the state of the board
 
         Returns general values of the board that do not pertain to specific
         players. This information includes:
@@ -2112,62 +1970,8 @@ class Board:
             .values.flatten("F")
         )
 
-    def get_normalized_player_state(self, name):
-        """Returns the normalized state of the board
-
-        It uses the given name to get player specific values from the table.
-        This ensures no matter how many players are in the game.The method will
-        fetch the following columns from the table:
-            position
-            owned
-            can upgrade
-            can downgrade
-            can mortgage
-            can unmortgage
-
-        since the table is 28 rows deep this results in a table of 28 x 5
-
-        Parameters
-        --------------------
-        name : str
-            The name(s) of the player(s) for whom the normalized state should
-            be fetched
-
-        """
-        if name not in self._player_names:
-            raise BoardError(
-                "That name is not in the player list"
-            )
-        prop = self._table.loc[
-            self._table["type"] != "action"
-        ]
-        v = (
-            prop[
-                [
-                    name + ":position",
-                    name + ":owned",
-                    name + ":can_upgrade",
-                    name + ":can_downgrade",
-                    name + ":can_mortgage",
-                    name + ":can_unmortgage",
-                ]
-            ]
-            .astype("float")
-            .values.flatten("F")
-        )
-
-        if self.players[name].cash >= self._max_cash_limit:
-            cash = np.full(len(v.index), 1.0)
-        else:
-            cash = np.full(
-                len(v.index),
-                self.players[name].cash
-                / self._max_cash_limit,
-            )
-        return np.concatenate((cash, v))
-
     def get_player_state(self, name):
-        """Returns the normalized state of the board
+        """Returns the player state of the board
 
         It uses the given name to get player specific values from the table.
         This ensures no matter how many players are in the game.The method will
@@ -2184,7 +1988,7 @@ class Board:
         Parameters
         --------------------
         name : str
-            The name(s) of the player(s) for whom the normalized state should
+            The name(s) of the player(s) for whom the state should
             be fetched
 
         """

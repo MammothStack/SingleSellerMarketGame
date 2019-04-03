@@ -49,18 +49,9 @@ class GameController:
             "monopoly": 1.0,
         },
     ):
-        for p1 in player_list:
-            for p2 in player_list:
-                if p1.max_cash_limit != p2.max_cash_limit:
-                    raise ValueError(
-                        "Incompatible max cash limits"
-                    )
-        self.max_cash_limit = player_list[0].max_cash_limit
+
         self.players = {p.name: p for p in player_list}
-        self.board = Board(
-            [p.name for p in player_list],
-            self.max_cash_limit,
-        )
+        self.board = Board([p.name for p in player_list])
         self.max_turn = max_turn
         self.num_players = len(player_list)
         self.upgrade_limit = upgrade_limit
@@ -148,10 +139,7 @@ class GameController:
         as well as the turn counter and "alive" state of the board
 
         """
-        self.board = Board(
-            [p for p in self.players.keys()],
-            self.max_cash_limit,
-        )
+        self.board = Board([p for p in self.players.keys()])
 
     def _get_state(self, name, opponent=None, offer=None):
         """Returns the processed state for the given name
