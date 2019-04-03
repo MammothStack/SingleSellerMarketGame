@@ -472,8 +472,6 @@ class Board():
         else:
             return self._table.at[position, "monopoly_owned"]
 
-
-
     def _is_any_in_color_mortgaged(self, color):
         """Returns true if any property in the given monopoly is mortgaged
 
@@ -1772,6 +1770,27 @@ class Board():
             "downgrade_amount:normal",
             "current_rent_amount:normal"]].astype("float")
 
+    def get_general_state(self):
+        """Returns the normalized state of the board
+
+        Returns general values of the board that do not pertain to specific
+        players. This information includes:
+
+            monpoly owned
+            value
+            can purchase
+            purchase amount
+            mortgage amount
+            upgrade amount
+            downgrade amount
+            current rent amount
+
+        since the table is 28 rows deep this results in a table of 28 x 8
+
+        """
+        prop = self._table.loc[self._table["type"] != "action"]
+        return prop[["monopoly_owned", "value", "can_purchase", "purchase_amount", "mortgage_amount", "upgrade_amount", "downgrade_amount", "current_rent_amount"]].astype("float")
+
     def get_normalized_player_state(self, name):
         """Returns the normalized state of the board
 
@@ -1798,19 +1817,44 @@ class Board():
             raise BoardError("That name is not in the player list")
 
         prop = self._table.loc[self._table["type"] != "action"]
-        v = prop[
-            [name + ":position",
-             name + ":owned",
-             name + ":can_upgrade",
-             name + ":can_downgrade",
-             name + ":can_mortgage",
-             name + ":can_unmortgage"]].astype("float")
+        v = prop[[name + ":position", name + ":owned", name + ":can_upgrade", name + ":can_downgrade", name + ":can_mortgage", name + ":can_unmortgage"]].astype("float")
 
         if self.players[name].cash >= self._max_cash_limit:
             cash = np.full(len(v.index), 1.0)
         else:
             cash = np.full(len(v.index), self.players[name].cash / self._max_cash_limit)
         return np.concatenate((cash,v.values.flatten("F")))
+
+    def get_player_state(self, name):
+        """Returns the normalized state of the board
+
+        It uses the given name to get player specific values from the table.
+        This ensures no matter how many players are in the game.The method will
+        fetch the following columns from the table:
+            position
+            owned
+            can upgrade
+            can downgrade
+            can mortgage
+            can unmortgage
+
+        since the table is 28 rows deep this results in a table of 28 x 5
+
+        Parameters
+        --------------------
+        name : str
+            The name(s) of the player(s) for whom the normalized state should
+            be fetched
+
+        """
+
+        if name not in self._player_names:
+            raise BoardError("That name is not in the player list")
+
+        prop = self._table.loc[self._table["type"] != "action"]
+        v = prop[[name + ":position", name + ":owned", name + ":can_upgrade", name + ":can_downgrade", name + ":can_mortgage", name + ":can_unmortgage"]].astype("float")
+
+        return np.concatenate((self.players[name].cash, v.values.flatten("F")))
 
 class BoardError(Exception):
     """Base class for board specific errors"""

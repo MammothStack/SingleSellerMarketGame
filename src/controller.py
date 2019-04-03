@@ -1,4 +1,5 @@
 from random import randrange
+from random import sample
 import numpy as np
 import pandas as pd
 import os
@@ -44,17 +45,11 @@ class GameController():
 
         self.max_cash_limit = player_list[0].max_cash_limit
         self.players = {p.name: p for p in player_list}
-        self.board = BoardInformation([p.name for p in player_list], self.max_cash_limit)
+        self.board = Board([p.name for p in player_list], self.max_cash_limit)
         self.max_turn = max_turn
         self.num_players = len(player_list)
         self.upgrade_limit = upgrade_limit
         self.reward_scalars = reward_scalars
-
-        self.binary_pos = [8192, 4096, 2048, 1024, 512, 256,
-            128, 64, 32, 16, 8, 4, 2, 1]
-        self.binary_neg = [-1, -2, -4, -8, -16, -32, -64, -128,
-            -256, -512, -1024, -2048, -4096, -8192]
-        self.binary = self.binary_pos + self.binary_neg
 
     def start_game(self, purchase=True, up_down_grade=True, trade=True):
         """Starts the game
@@ -117,41 +112,6 @@ class GameController():
 
         """
         self.board = BoardInformation([p for p in self.players.keys()], self.max_cash_limit)
-
-    """
-    def _cash_to_binary(self, cash, neg=False):
-        if cash > 16383:
-            cash = 16383
-        elif cash < -16383:
-            cash = -16383
-
-        if neg:
-            if cash > 0:
-                p = np.array([int(a) for a in list(np.binary_repr(cash, width=14))])
-                n = np.zeros(14, dtype=int)
-                return np.append(p,n).reshape(-1,1)
-
-            elif cash < 0:
-                p = np.zeros(14, dtype=int)
-                n = np.array([int(a) for a in list(np.binary_repr(-1 * cash, width=14))])
-                return np.append(p,list(reversed(n))).reshape(-1,1)
-            else:
-                return np.zeros(28, dtype=int).reshape(-1,1)
-        else:
-            if cash < 0:
-                raise ValueError("Must select true for parameter neg")
-            else:
-                return np.array([int(a) for a in list(np.binary_repr(cash, width=14))])
-
-
-    def _binary_to_cash(self, arr, neg=False):
-        if len(arr.shape) == 2:
-            arr = arr.reshape(-1)
-        if neg:
-            return np.sum(arr * self.binary_pos)
-        else:
-            return np.sum(arr * self.binary)
-    """
 
     def _get_state(self, name, opponent=None, offer=None):
         """Returns the processed state for the given name
@@ -502,3 +462,17 @@ class GameController():
             m2 = ev_after[3]
 
             return deg * (y1*(c2-c1) + y2*(v2-v1) + y3*(r2-r1) + y4*(m2-m1))
+
+
+def get_game_controllers(pool, n_players, config=None):
+    if pool % n_players != 0:
+        raise ValueError("Pool cannot be split into these traunches")
+
+    plan = np.array(random.sample(range(len(pool)), len(pool))).reshape(-1, n_players)
+    bcs = []
+
+    for game_ind in plan:
+        if config is None:
+        bcs.append(GameController([pool[player_ind] for player_ind in game_ind], **config))
+
+    return bcs
