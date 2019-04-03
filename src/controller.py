@@ -111,7 +111,7 @@ class GameController():
         as well as the turn counter and "alive" state of the board
 
         """
-        self.board = BoardInformation([p for p in self.players.keys()], self.max_cash_limit)
+        self.board = Board([p for p in self.players.keys()], self.max_cash_limit)
 
     def _get_state(self, name, opponent=None, offer=None):
         """Returns the processed state for the given name
@@ -288,7 +288,6 @@ class GameController():
 
         return False, None
 
-
     def _land_property(self, name, position, dice_roll=7):
         #If the property is purchaseable
         if self.board.can_purchase(position):
@@ -434,7 +433,7 @@ class GameController():
         self._transfer_properties(opponent, name, take_prop)
 
     def _get_reward(self, player, operation, ev_before, ev_after):
-        rho, rho_type = self.players[player].get_reward_scalars(operation)
+        rho, rho_mode = self.players[player].get_reward_scalars(operation)
         c1 = ev_before[0]
         c1 = 0 if c1 < 0 else c1
         c2 = ev_after[0]
@@ -442,12 +441,7 @@ class GameController():
 
         deg = ((1.2 * c2 * rho - 1500) / (1000 + c2 * rho))
 
-        if rho_type == "c":
-            if c2 - c1 == 0:
-                return 0
-            else:
-                return deg * ((c2-c1)/abs(c2-c1))
-        else:
+        if rho_mode == 1:
             y1 = self.reward_scalars["cash"]
             y2 = self.reward_scalars["value"]
             y3 = self.reward_scalars["rent"]
@@ -462,6 +456,13 @@ class GameController():
             m2 = ev_after[3]
 
             return deg * (y1*(c2-c1) + y2*(v2-v1) + y3*(r2-r1) + y4*(m2-m1))
+        elif rho_mode == 2:
+            if c2 - c1 == 0:
+                return 0
+            else:
+                return deg * ((c2-c1)/abs(c2-c1))
+        else:
+            raise ValueError(f'mode {rho_mode} does not exist')
 
 
 def get_game_controllers(pool, n_players, config=None):

@@ -3,6 +3,7 @@ import pandas as pd
 import random
 import json
 from tensorflow.keras.models import model_from_json
+from tensorflow.keras.optimizers import Adam
 from collections import deque
 import warnings
 
@@ -14,31 +15,30 @@ class Agent():
 
     Parameters
     --------------------
-    max_cash_limit : int
-        The cash values are normalized to this maximum value.
-
     name : str
-        The name of the player
+        The name of the agent
 
-    models : dict
+    models : args
         Individual models are stored here with their operation as the keys to
         the dictionary
 
-    alive : boolean
+    alive : boolean (default=True)
         If the player is alive and can play in the game
 
-    cash : int
+    cash : int (default=1500)
         The amount of cash that player has throughout the game
 
     Attributes
     --------------------
+    max_cash_limit : int
+        The cash values are normalized to this maximum value.
 
     Methods
     --------------------
 
 
     """
-    def __init__(self, name, models, alive=True, cash=1500):
+    def __init__(self, name, *models, alive=True, cash=1500):
         for m1 in models:
             for m2 in models:
                 if m1.max_cash_limit != m2.max_cash_limit:
@@ -46,11 +46,12 @@ class Agent():
 
         self.max_cash_limit = models[0].max_cash_limit
         self.name = name
+        self.can_purchase = False
+        self.can_up_down_grade = False
+        self.can_trade_offer = False
+        self.can_trade_decision = False
+        self.models = {}
         self.models = self.set_models(models)
-        #self.alive = alive
-        #self._init_cash = cash
-        #self.cash = self._init_cash
-        #self.allowed_to_move = True
 
     def __repr__(self):
         s = (
@@ -60,37 +61,47 @@ class Agent():
         )
         return s
 
-
-    #def reset_player(self):
-    #    """Resets the values of the player to the initialized values"""
-    #    self.cash = self._init_cash
-
-    def set_models(self, models):
+    def set_models(self, *models):
         """Sets the models of the player for the various operations
-
-        Sets the flag that this player can perform a certain operation
-        based on the presence of a model within the list.
 
         Parameters
         --------------------
-        models : list
-            A list of all the operation models that should be set as the models.
+        *models : args
+            All the operation models that should be set as the models.
 
         """
-        if type(models) != list:
-            raise ValueError("The given models must be in a list")
-
         for model in models:
-            if model.operation == "purchase":
-                self.can_purchase = True
-            if model.operation == "up_down_grade":
-                self.can_up_down_grade = True
-            if model.operation == "trade_offer":
-                self.can_trade_offer = True
-            if model.operation == "trade_decision":
-                self.can_trade_decision = True
+            self.set_model(model)
 
-        return {m.operation: m for m in models}
+    def set_model(self, model):
+        """Sets a model of the player for the specific model operation
+
+        Sets the flag that this player can perform a certain operation
+        based on the operation attribute of the model
+
+        Parameters
+        --------------------
+        model : OperationModel
+            The operation model that should be set
+
+        Raises
+        --------------------
+        ValueError
+            When the given OperationModel is not correct
+
+        """
+        if model.operation == "purchase":
+            self.can_purchase = True
+        elif model.operation == "up_down_grade":
+            self.can_up_down_grade = True
+        elif model.operation == "trade_offer":
+            self.can_trade_offer = True
+        elif model.operation == "trade_decision":
+            self.can_trade_decision = True
+        else
+            raise ValueError("Model could not be set")
+
+        self.models.update({model.operation: model})
 
     def add_training_data(self, operation, state, action, reward, next_state, done):
         """Stores data for later learning to the appropriate model
@@ -166,6 +177,7 @@ class Agent():
         return self.models[operation].get_action(gamestate)
 
     def get_reward_scalars(self, operation):
+        """Returns the reward scalars of the Operation model"""
         return self.models[operation].rho, self.models[operation].rho_type
 
     def learn(self, batch_size=None):
@@ -188,22 +200,95 @@ class Agent():
 class OperationModel():
     """The Model that carry out a specific operation of the board
 
+    The Operation Model is the Agent that makes the decisions and controls what
+    and how the Keras model learns.
+
     Parameters
     --------------------
+    model : keras.model
+        Keras model that is used to train and predict
+
+    name : str
+        The name of the Operation model
+
+    operation : str
+        The operation that the operation model predicts and trains on
+
+    true_threshold : float
+        float between 0 and 1 to determine when a value constitutes a true value
+
+    single_label : boolean
+        If the model predicts a single label
+
+    max_cash_limit : int
+        The max cash to which to normalize the data
+
+    optimizer : str
+        the keras.optimizer as string value used to optimize the model
+
+    loss : str
+        the keras.losses as string value used to train the model
+
+    metrics : list (default=['accuracy'])
+        the keras.metrics as list of strings used to train the model
+
+    running_reward : int (default=0)
+        The total reward aquired throughout its training cycles
+
+    episode_nb : int (default=0)
+        The total number of trainings that the model underwent
+
+    gamma : float (default=1.0)
+        The scalar used to weigh the next decision
+
+    epsilon : float (default=1.0)
+        The probability of the decision take being a random choice
+
+    epsilon_min : float (default=0.01)
+        The minimum epsilon value that at which it wont decay
+
+    epsilon_decay : float (default=0.99)
+        The rate at which the epsilon decays
+
+    alpha : float (default=0.001)
+        The learning rate of the model
+
+    alpha_decay : float(default=0.001)
+        The rate at which the learning rate decays
+
+    rho : int (default=3)
+        The risk level on a scale of (1-5) for the calculated reward
+
+    rho_mode : int(default=1)
+        The mode of calculating risk level (1-2)
+
+    can_learn : boolean(default=True)
+        If the model can learn or not
 
     Attributes
     --------------------
+    memory : deque
+        The store of the agents memories
 
     Methods
     --------------------
+    remember(state, action, reward, next_state, done)
+        Store the data in the Agents memory
 
+    get_action(state)
+        Returns the decision of the Operation Model based on the given state
+
+    replay(batch_size)
+        Uses the Agent's memory to fit the model
+
+    save(destination)
+        Saves the the Operation Model and all of its configurations at the given destination
 
     """
 
-    def __init__(self, model, optimizer, name, operation, loss,
-        true_threshold, single_label, max_cash_limit, metrics=['accuracy'],
+    def __init__(self, model, name, operation, true_threshold, single_label, max_cash_limit, optimizer, loss, metrics=['accuracy'],
         running_reward=0, episode_nb=0, gamma=1.0, epsilon=1.0, epsilon_min=0.01,
-        epsilon_decay=0.99, alpha=0.001, alpha_decay=0.001, rho=3, rho_type="crvm",
+        epsilon_decay=0.99, alpha=0.001, alpha_decay=0.001, rho=3, rho_mode=1,
         can_learn=True):
 
         self.model = model
@@ -226,11 +311,11 @@ class OperationModel():
         self.alpha = alpha
         self.alpha_decay = alpha_decay
         self.rho = rho
-        self.rho_type = rho_type
+        self.rho_mode = rho_mode
         self.memory = deque(maxlen=100000)
 
     def remember(self, state, action, reward, next_state, done):
-        """Stores data for later learning
+        """Stores the data in the Agents Memory
 
         Parameters
         --------------------
@@ -252,15 +337,8 @@ class OperationModel():
         """
         self.memory.append((state, action, reward, next_state, done))
 
-    """
-    def get_dynamic_reward(self, cash, level, scalar):
-        cash = 0 if cash <= 0 else cash
-        return self.reward_equation(cash, level, self.max_cash_limit, scalar)
-
-    """
-
     def get_action(self, state):
-        """Returns the decision of the Operation Model
+        """Returns the decision of the Operation Model based on the given state
 
         Takes the x data and produces an output
 
@@ -281,7 +359,7 @@ class OperationModel():
             action_raw = np.random.rand(self.model_output_dim)
         else:
             action_raw = self.model.predict(state)[0]
-            #return self.model.predict(state)[0]
+
         action = np.zeros(self.model_output_dim)
 
         if self.single_label:
@@ -295,7 +373,7 @@ class OperationModel():
         return action
 
     def replay(self, batch_size=32):
-        """Uses the given data to fit the model
+        """Uses the Agent's memory to fit the model
 
         Parameters
         --------------------
@@ -320,6 +398,7 @@ class OperationModel():
             self.episode_nb += 1
 
     def save(self, destination=None):
+        """Saves the the Operation Model and all of its configurations at the given destination"""
         if destination is None:
             destination = ""
         else:
@@ -346,7 +425,7 @@ class OperationModel():
             "alpha": self.alpha,
             "alpha_decay":self.alpha_decay,
             "rho": self.rho,
-            "rho_type": self.rho_type
+            "rho_mode": self.rho_mode
         }
 
         self.model.save_weights(destination + config["h5_path"])
@@ -362,7 +441,7 @@ class OperationModel():
 
     def __repr__(self):
         return (f'{self.__class__.__name__}('
-            f'{self.name!r}, {self.operation!r},{self.episode_nb!r}, {self.epsilon!r})')
+            f'{self.name!r}, {self.operation!r}, {self.episode_nb!r}, {self.epsilon!r}, {self.running_reward!r})')
 
 def load_operation_model(file_path, config_file_name):
     if file_path[-1:] != "/":
@@ -381,10 +460,11 @@ def load_operation_model(file_path, config_file_name):
     except:
         warnings.warn("Could not set name")
 
-    model.compile(
-        loss=config["loss"],
-        optimizer=config["optimizer"],
-        metrics=config["metrics"]
-    )
+    if config["optimizer"] == "adam":
+        opt = Adam(lr=config["alpha"], decay=config["alpha_decay"])
+    else:
+        ValueError("cannot resolve Optimizer")
+
+    model.compile(loss=config["loss"], optimizer=opt, metrics=config["metrics"])
 
     return OperationModel(model=model, **config)
