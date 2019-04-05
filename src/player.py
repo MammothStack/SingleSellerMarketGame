@@ -2,6 +2,7 @@ import numpy as np
 import pandas as pd
 import random
 import json
+from random import shuffle
 from tensorflow.keras.models import model_from_json
 from tensorflow.keras.optimizers import Adam
 from collections import deque
@@ -212,7 +213,7 @@ class Agent:
                 batch_size
             )
 
-    def save_operation_models(self, destination):
+    def save(self, destination):
         for model in self.models.values():
             model.save(destination)
 
@@ -461,11 +462,15 @@ class OperationModel:
 
     def save(self, destination=None):
         """Saves the the Operation Model and all of its configurations at the given destination"""
+
         if destination is None:
-            destination = ""
-        else:
-            if destination[-1:] != "/":
-                destination += "/"
+            destination = "/"
+
+        if destination[-1:] != "/":
+            destination += "/"
+
+        destination = destination + self.operation + "/"
+
         config = {
             "name": self.name,
             "operation": self.operation,
@@ -524,7 +529,16 @@ class OperationModel:
         )
 
 
-def load_operation_model(file_path, config_file_name):
+def load_operation_model(file_path):
+    config_file_name = None
+    for file in os.listdir(file_path):
+        if "config.json" in file:
+            config_file_name = file
+            break
+
+    if config_file_name is None:
+        raise ValueError(f"No config file found in {filepath}")
+
     if file_path[-1:] != "/":
         file_path += "/"
     with open(file_path + config_file_name) as config_file:
@@ -540,16 +554,38 @@ def load_operation_model(file_path, config_file_name):
         model.name = config["name"]
     except:
         warnings.warn("Could not set name")
+
     if config["optimizer"] == "adam":
-        opt = Adam(
-            lr=config["alpha"], decay=config["alpha_decay"]
-        )
+        opt = Adam(lr=config["alpha"], decay=config["alpha_decay"])
     else:
         ValueError("cannot resolve Optimizer")
-    model.compile(
-        loss=config["loss"],
-        optimizer=opt,
-        metrics=config["metrics"],
-    )
+
+    model.compile(loss=config["loss"], optimizer=opt, metrics=config["metrics"])
 
     return OperationModel(model=model, **config)
+
+def load_agent(file_path):
+    if file_path[-1:] != "/":
+        file_path += "/"
+    operation_model_directories = [dI for dI in os.listdir(file_path) if os.path.isdir(os.path.join(file_path, dI))]
+
+    operation_models = [load_operation_model(file_path + fp) for fp in operation_model_directories]
+    if len(operation_models) == 0:
+        raise ValueError(f"No models could be found at {file_path}")
+
+    return Agent(name=operation_models[0].name, *operation_models)
+
+
+
+def load_pool(file_path="SingleSellerMarketGame/models/py/", limit=None):
+    if file_path[-1:] != "/":
+        file_path += "/"
+
+    agent_directories = [dI for dI in os.listdir(file_path) if os.path.isdir(os.path.join(file_path, dI))]
+
+    if limit is not None and limit < len(agent_directories):
+        shuffle(agent_directories)
+        agent_directories = agent_directories[:limit]
+
+    pool = [load_agent(file_path + fp) for fp in agent_directories]
+    return pool
