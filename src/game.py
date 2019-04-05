@@ -143,17 +143,13 @@ class Board:
 
     def __init__(
         self,
-        player_names,
+        *player_names,
         max_turn=500,
         available_houses=32,
         available_hotels=12,
         starting_cash=1500,
     ):
 
-        if type(player_names) != list:
-            raise ValueError(
-                "Given value must be a list with names"
-            )
         if not player_names:
             raise ValueError("List cannot be empty")
         if len(player_names) > 8:
@@ -171,10 +167,14 @@ class Board:
         self.available_houses = available_houses
         self.available_hotels = available_hotels
         self._table = self._set_table(player_names)
+
+        """
         self.index = self._table.loc[
             (self._table["type"] == "utility")
             | (self._table["type"] == "property")
         ].index
+
+        """
         self.players = {
             n: self._Player(n, starting_cash)
             for n in player_names

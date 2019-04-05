@@ -40,7 +40,7 @@ class Agent:
     """
 
     def __init__(
-        self, name, *models, alive=True, cash=1500
+        self, name, *models
     ):
         self.name = name
         self.can_purchase = False
