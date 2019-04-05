@@ -246,11 +246,8 @@ class TestFieldType(unittest.TestCase):
         self.assertTrue(bi.is_property(39))
 
 class TestInit(unittest.TestCase):
-    def test_list(self):
-        self.failUnlessRaises(ValueError, Board, "red")
-
     def test_empty_list(self):
-        self.failUnlessRaises(ValueError, Board, [])
+        self.failUnlessRaises(ValueError, Board)
 
     def test_maximum_players(self):
         self.failUnlessRaises(BoardError, Board, *[str(i) for i in range(10)])
@@ -342,7 +339,7 @@ class TestCanDowngrade(unittest.TestCase):
         self.assertFalse(bi.can_downgrade("blue", 1))
 
     def test_can_downgrade_max_no_houses(self):
-        bi = Board(*["red","blue"], available_hotels=4, available_housess=4)
+        bi = Board(*["red","blue"], available_hotels=4, available_houses=4)
 
         bi.purchase("red", 1)
         bi.purchase("red", 3)
