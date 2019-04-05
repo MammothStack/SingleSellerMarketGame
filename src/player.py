@@ -91,7 +91,7 @@ class Agent():
             self.can_trade_offer = True
         elif model.operation == "trade_decision":
             self.can_trade_decision = True
-        else
+        else:
             raise ValueError("Model could not be set")
 
         self.models.update({model.operation: model})
