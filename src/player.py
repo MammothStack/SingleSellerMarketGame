@@ -5,6 +5,7 @@ import json
 from random import shuffle
 from tensorflow.keras.models import model_from_json
 from tensorflow.keras.optimizers import Adam
+import tensorflowjs as tfjs
 from collections import deque
 import warnings
 
@@ -213,9 +214,9 @@ class Agent:
                 batch_size
             )
 
-    def save(self, destination):
+    def save(self, destination, type="py"):
         for model in self.models.values():
-            model.save(destination)
+            model.save(destination, type)
 
 
 class OperationModel:
@@ -460,8 +461,9 @@ class OperationModel:
                 self.epsilon *= self.epsilon_decay
             self.episode_nb += 1
 
-    def save(self, destination=None):
+    def save(self, destination=None, type="py"):
         """Saves the the Operation Model and all of its configurations at the given destination"""
+
 
         if destination is None:
             destination = "/"
@@ -471,56 +473,60 @@ class OperationModel:
 
         destination = destination + self.operation + "/"
 
-        config = {
-            "name": self.name,
-            "operation": self.operation,
-            "true_threshold": self.true_threshold,
-            "running_reward": self.running_reward,
-            "episode_nb": self.episode_nb,
-            "h5_path": self.name
-            + "_"
-            + self.operation
-            + ".h5",
-            "json_path": self.name
-            + "_"
-            + self.operation
-            + ".json",
-            "loss": self.loss,
-            "optimizer": self.optimizer,
-            "metrics": self.metrics,
-            "single_label": self.single_label,
-            "can_learn": self.can_learn,
-            "gamma": self.gamma,
-            "epsilon": self.epsilon,
-            "epsilon_min": self.epsilon_min,
-            "epsilon_decay": self.epsilon_decay,
-            "alpha": self.alpha,
-            "alpha_decay": self.alpha_decay,
-            "rho": self.rho,
-            "rho_mode": self.rho_mode,
-        }
+        if type == "py":
 
-        self.model.save_weights(
-            destination + config["h5_path"]
-        )
-        model_json = self.model.to_json()
+            config = {
+                "name": self.name,
+                "operation": self.operation,
+                "true_threshold": self.true_threshold,
+                "running_reward": self.running_reward,
+                "episode_nb": self.episode_nb,
+                "h5_path": self.name
+                + "_"
+                + self.operation
+                + ".h5",
+                "json_path": self.name
+                + "_"
+                + self.operation
+                + ".json",
+                "loss": self.loss,
+                "optimizer": self.optimizer,
+                "metrics": self.metrics,
+                "single_label": self.single_label,
+                "can_learn": self.can_learn,
+                "gamma": self.gamma,
+                "epsilon": self.epsilon,
+                "epsilon_min": self.epsilon_min,
+                "epsilon_decay": self.epsilon_decay,
+                "alpha": self.alpha,
+                "alpha_decay": self.alpha_decay,
+                "rho": self.rho,
+                "rho_mode": self.rho_mode,
+            }
 
-        with open(
-            destination + config["json_path"], "w"
-        ) as json_file:
-            json_file.write(model_json)
-        json_file.close()
+            self.model.save_weights(
+                destination + config["h5_path"]
+            )
+            model_json = self.model.to_json()
 
-        with open(
-            destination
-            + self.name
-            + "_"
-            + self.operation
-            + "_config.json",
-            'w',
-        ) as config_file:
-            json.dump(config, config_file, indent=4)
-        config_file.close()
+            with open(
+                destination + config["json_path"], "w"
+            ) as json_file:
+                json_file.write(model_json)
+            json_file.close()
+
+            with open(
+                destination
+                + self.name
+                + "_"
+                + self.operation
+                + "_config.json",
+                'w',
+            ) as config_file:
+                json.dump(config, config_file, indent=4)
+            config_file.close()
+        elif type == "js":
+            tfjs.converters.save_keras_model(self.model, destination)
 
     def __repr__(self):
         return (
