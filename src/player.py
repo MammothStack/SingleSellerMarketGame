@@ -7,7 +7,8 @@ from tensorflow.keras.optimizers import Adam
 from collections import deque
 import warnings
 
-class Agent():
+
+class Agent:
     """The Agent that is capable of all the functions required by the Board
 
     The Agent class is a container that houses the OperationModels that make the
@@ -37,7 +38,10 @@ class Agent():
 
 
     """
-    def __init__(self, name, *models, alive=True, cash=1500):
+
+    def __init__(
+        self, name, *models, alive=True, cash=1500
+    ):
         self.name = name
         self.can_purchase = False
         self.can_up_down_grade = False
@@ -93,10 +97,17 @@ class Agent():
             self.can_trade_decision = True
         else:
             raise ValueError("Model could not be set")
-
         self.models.update({model.operation: model})
 
-    def add_training_data(self, operation, state, action, reward, next_state, done):
+    def add_training_data(
+        self,
+        operation,
+        state,
+        action,
+        reward,
+        next_state,
+        done,
+    ):
         """Stores data for later learning to the appropriate model
 
         Parameters
@@ -121,7 +132,9 @@ class Agent():
             if the game is finished
 
         """
-        self.models[operation].remember(state, action, reward, next_state, done)
+        self.models[operation].remember(
+            state, action, reward, next_state, done
+        )
 
     def get_training_data(self, operation):
         """Returns all the training data that was appended during the game
@@ -142,8 +155,16 @@ class Agent():
 
 
         """
-        return pd.DataFrame(list(self.models[operation].memory),
-            columns=["state","action","reward","next_state","done"])
+        return pd.DataFrame(
+            list(self.models[operation].memory),
+            columns=[
+                "state",
+                "action",
+                "reward",
+                "next_state",
+                "done",
+            ],
+        )
 
     def get_action(self, gamestate, operation):
         """Returns the decision of the player for the given operation
@@ -171,7 +192,10 @@ class Agent():
 
     def get_reward_scalars(self, operation):
         """Returns the reward scalars of the Operation model"""
-        return self.models[operation].rho, self.models[operation].rho_type
+        return (
+            self.models[operation].rho,
+            self.models[operation].rho_type,
+        )
 
     def learn(self, batch_size=None):
         """Takes accumulated training data and fits it to the models
@@ -184,13 +208,16 @@ class Agent():
         """
 
         for o in self.models.values():
-            o.replay() if batch_size is None else o.replay(batch_size)
+            o.replay() if batch_size is None else o.replay(
+                batch_size
+            )
 
     def save_operation_models(self, destination):
         for model in self.models.values():
             model.save(destination)
 
-class OperationModel():
+
+class OperationModel:
     """The Model that carry out a specific operation of the board
 
     The Operation Model is the Agent that makes the decisions and controls what
@@ -276,13 +303,33 @@ class OperationModel():
 
     """
 
-    def __init__(self, model, name, operation, true_threshold, single_label, optimizer, loss, metrics=['accuracy'],
-        running_reward=0, episode_nb=0, gamma=1.0, epsilon=1.0, epsilon_min=0.01,
-        epsilon_decay=0.99, alpha=0.001, alpha_decay=0.001, rho=3, rho_mode=1,
-        can_learn=True):
+    def __init__(
+        self,
+        model,
+        name,
+        operation,
+        true_threshold,
+        single_label,
+        optimizer,
+        loss,
+        metrics=['accuracy'],
+        running_reward=0,
+        episode_nb=0,
+        gamma=1.0,
+        epsilon=1.0,
+        epsilon_min=0.01,
+        epsilon_decay=0.99,
+        alpha=0.001,
+        alpha_decay=0.001,
+        rho=3,
+        rho_mode=1,
+        can_learn=True,
+    ):
 
         self.model = model
-        self.model_output_dim = self.model.layers[-1].output_shape[1]
+        self.model_output_dim = self.model.layers[
+            -1
+        ].output_shape[1]
         self.name = name
         self.operation = operation
         self.loss = loss
@@ -303,7 +350,9 @@ class OperationModel():
         self.rho_mode = rho_mode
         self.memory = deque(maxlen=100000)
 
-    def remember(self, state, action, reward, next_state, done):
+    def remember(
+        self, state, action, reward, next_state, done
+    ):
         """Stores the data in the Agents Memory
 
         Parameters
@@ -324,7 +373,9 @@ class OperationModel():
             if the game is finished
 
         """
-        self.memory.append((state, action, reward, next_state, done))
+        self.memory.append(
+            (state, action, reward, next_state, done)
+        )
 
     def get_action(self, state):
         """Returns the decision of the Operation Model based on the given state
@@ -344,11 +395,12 @@ class OperationModel():
             interpreted
 
         """
-        if (np.random.random() <= self.epsilon):
-            action_raw = np.random.rand(self.model_output_dim)
+        if np.random.random() <= self.epsilon:
+            action_raw = np.random.rand(
+                self.model_output_dim
+            )
         else:
             action_raw = self.model.predict(state)[0]
-
         action = np.zeros(self.model_output_dim)
 
         if self.single_label:
@@ -356,9 +408,10 @@ class OperationModel():
             if action_raw[ind] >= self.true_threshold:
                 action[ind] = 1
         else:
-            ind = np.argwhere(action_raw >= self.true_threshold).flatten()
+            ind = np.argwhere(
+                action_raw >= self.true_threshold
+            ).flatten()
             np.put(action, ind, 1)
-
         return action
 
     def replay(self, batch_size=32):
@@ -373,15 +426,35 @@ class OperationModel():
         if self.can_learn and self.memory:
             x_batch, y_batch = [], []
             minibatch = random.sample(
-                self.memory, min(len(self.memory), batch_size))
+                self.memory,
+                min(len(self.memory), batch_size),
+            )
 
-            for state, action, reward, next_state, done in minibatch:
+            for (
+                state,
+                action,
+                reward,
+                next_state,
+                done,
+            ) in minibatch:
                 y_target = self.model.predict(state)
-                y_target[0][action] = reward if done else reward + self.gamma * np.max(self.model.predict(next_state)[0])
+                y_target[0][action] = (
+                    reward
+                    if done
+                    else reward
+                    + self.gamma
+                    * np.max(
+                        self.model.predict(next_state)[0]
+                    )
+                )
                 x_batch.append(state[0])
                 y_batch.append(y_target[0])
-
-            self.model.fit(np.array(x_batch), np.array(y_batch), batch_size=len(x_batch), verbose=0)
+            self.model.fit(
+                np.array(x_batch),
+                np.array(y_batch),
+                batch_size=len(x_batch),
+                verbose=0,
+            )
             if self.epsilon > self.epsilon_min:
                 self.epsilon *= self.epsilon_decay
             self.episode_nb += 1
@@ -391,45 +464,65 @@ class OperationModel():
         if destination is None:
             destination = ""
         else:
-            if destination[-1:] != "/": destination += "/"
-
+            if destination[-1:] != "/":
+                destination += "/"
         config = {
             "name": self.name,
             "operation": self.operation,
             "true_threshold": self.true_threshold,
             "running_reward": self.running_reward,
             "episode_nb": self.episode_nb,
-            "h5_path": self.name + "_" + self.operation + ".h5",
-            "json_path": self.name + "_" + self.operation + ".json",
+            "h5_path": self.name
+            + "_"
+            + self.operation
+            + ".h5",
+            "json_path": self.name
+            + "_"
+            + self.operation
+            + ".json",
             "loss": self.loss,
             "optimizer": self.optimizer,
             "metrics": self.metrics,
             "single_label": self.single_label,
             "can_learn": self.can_learn,
             "gamma": self.gamma,
-            "epsilon":self.epsilon,
-            "epsilon_min":self.epsilon_min,
-            "epsilon_decay":self.epsilon_decay,
+            "epsilon": self.epsilon,
+            "epsilon_min": self.epsilon_min,
+            "epsilon_decay": self.epsilon_decay,
             "alpha": self.alpha,
-            "alpha_decay":self.alpha_decay,
+            "alpha_decay": self.alpha_decay,
             "rho": self.rho,
-            "rho_mode": self.rho_mode
+            "rho_mode": self.rho_mode,
         }
 
-        self.model.save_weights(destination + config["h5_path"])
+        self.model.save_weights(
+            destination + config["h5_path"]
+        )
         model_json = self.model.to_json()
 
-        with open(destination + config["json_path"], "w") as json_file:
+        with open(
+            destination + config["json_path"], "w"
+        ) as json_file:
             json_file.write(model_json)
         json_file.close()
 
-        with open(destination + self.name + "_" +  self.operation + "_config.json", 'w') as config_file:
+        with open(
+            destination
+            + self.name
+            + "_"
+            + self.operation
+            + "_config.json",
+            'w',
+        ) as config_file:
             json.dump(config, config_file, indent=4)
         config_file.close()
 
     def __repr__(self):
-        return (f'{self.__class__.__name__}('
-            f'{self.name!r}, {self.operation!r}, {self.episode_nb!r}, {self.epsilon!r}, {self.running_reward!r})')
+        return (
+            f'{self.__class__.__name__}('
+            f'{self.name!r}, {self.operation!r}, {self.episode_nb!r}, {self.epsilon!r}, {self.running_reward!r})'
+        )
+
 
 def load_operation_model(file_path, config_file_name):
     if file_path[-1:] != "/":
@@ -447,12 +540,16 @@ def load_operation_model(file_path, config_file_name):
         model.name = config["name"]
     except:
         warnings.warn("Could not set name")
-
     if config["optimizer"] == "adam":
-        opt = Adam(lr=config["alpha"], decay=config["alpha_decay"])
+        opt = Adam(
+            lr=config["alpha"], decay=config["alpha_decay"]
+        )
     else:
         ValueError("cannot resolve Optimizer")
-
-    model.compile(loss=config["loss"], optimizer=opt, metrics=config["metrics"])
+    model.compile(
+        loss=config["loss"],
+        optimizer=opt,
+        metrics=config["metrics"],
+    )
 
     return OperationModel(model=model, **config)
