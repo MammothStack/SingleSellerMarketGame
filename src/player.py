@@ -60,7 +60,7 @@ class Agent:
         )
         return s
 
-    def set_models(self, *models):
+    def set_models(self, models):
         """Sets the models of the player for the various operations
 
         Parameters
