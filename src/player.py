@@ -50,7 +50,7 @@ class Agent:
         self.can_trade_offer = False
         self.can_trade_decision = False
         self.models = {}
-        self.models = self.set_models(models)
+        self.set_models(models)
 
     def __repr__(self):
         s = (
