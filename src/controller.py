@@ -656,7 +656,7 @@ class GameController:
 def get_game_controllers(pool, n_players, config=None):
     if pool % n_players != 0:
         raise ValueError(
-            "Pool cannot be split into these traunches"
+            "Pool cannot be split into these segments"
         )
     plan = np.array(
         random.sample(range(len(pool)), len(pool))
@@ -664,7 +664,7 @@ def get_game_controllers(pool, n_players, config=None):
     bcs = []
 
     for game_ind in plan:
-        if config is None:
+        if config is not None:
             bcs.append(
                 GameController(
                     [
@@ -672,6 +672,15 @@ def get_game_controllers(pool, n_players, config=None):
                         for player_ind in game_ind
                     ],
                     **config,
+                )
+            )
+        else:
+            bcs.append(
+                GameController(
+                    [
+                        pool[player_ind]
+                        for player_ind in game_ind
+                    ]
                 )
             )
     return bcs
