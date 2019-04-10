@@ -41,9 +41,7 @@ class Agent:
 
     """
 
-    def __init__(
-        self, name, *models
-    ):
+    def __init__(self, name, *models):
         self.name = name
         self.can_purchase = False
         self.can_up_down_grade = False
@@ -65,7 +63,7 @@ class Agent:
 
         Parameters
         --------------------
-        *models : args
+        models : args
             All the operation models that should be set as the models.
 
         """
@@ -101,15 +99,7 @@ class Agent:
             raise ValueError("Model could not be set")
         self.models.update({model.operation: model})
 
-    def add_training_data(
-        self,
-        operation,
-        state,
-        action,
-        reward,
-        next_state,
-        done,
-    ):
+    def add_training_data(self, operation, state, action, reward, next_state, done):
         """Stores data for later learning to the appropriate model
 
         Parameters
@@ -134,9 +124,7 @@ class Agent:
             if the game is finished
 
         """
-        self.models[operation].remember(
-            state, action, reward, next_state, done
-        )
+        self.models[operation].remember(state, action, reward, next_state, done)
 
     def get_training_data(self, operation):
         """Returns all the training data that was appended during the game
@@ -159,13 +147,7 @@ class Agent:
         """
         return pd.DataFrame(
             list(self.models[operation].memory),
-            columns=[
-                "state",
-                "action",
-                "reward",
-                "next_state",
-                "done",
-            ],
+            columns=["state", "action", "reward", "next_state", "done"],
         )
 
     def get_action(self, gamestate, operation):
@@ -194,10 +176,7 @@ class Agent:
 
     def get_reward_scalars(self, operation):
         """Returns the reward scalars of the Operation model"""
-        return (
-            self.models[operation].rho,
-            self.models[operation].rho_type,
-        )
+        return (self.models[operation].rho, self.models[operation].rho_mode)
 
     def learn(self, batch_size=None):
         """Takes accumulated training data and fits it to the models
@@ -210,9 +189,7 @@ class Agent:
         """
 
         for o in self.models.values():
-            o.replay() if batch_size is None else o.replay(
-                batch_size
-            )
+            o.replay() if batch_size is None else o.replay(batch_size)
 
     def save(self, destination, type="py"):
         for model in self.models.values():
@@ -314,7 +291,7 @@ class OperationModel:
         single_label,
         optimizer,
         loss,
-        metrics=['accuracy'],
+        metrics=["accuracy"],
         running_reward=0,
         episode_nb=0,
         gamma=1.0,
@@ -329,9 +306,7 @@ class OperationModel:
     ):
 
         self.model = model
-        self.model_output_dim = self.model.layers[
-            -1
-        ].output_shape[1]
+        self.model_output_dim = self.model.layers[-1].output_shape[1]
         self.name = name
         self.operation = operation
         self.loss = loss
@@ -352,9 +327,7 @@ class OperationModel:
         self.rho_mode = rho_mode
         self.memory = deque(maxlen=100000)
 
-    def remember(
-        self, state, action, reward, next_state, done
-    ):
+    def remember(self, state, action, reward, next_state, done):
         """Stores the data in the Agents Memory
 
         Parameters
@@ -375,9 +348,7 @@ class OperationModel:
             if the game is finished
 
         """
-        self.memory.append(
-            (state, action, reward, next_state, done)
-        )
+        self.memory.append((state, action, reward, next_state, done))
 
     def get_action(self, state):
         """Returns the decision of the Operation Model based on the given state
@@ -398,9 +369,7 @@ class OperationModel:
 
         """
         if np.random.random() <= self.epsilon:
-            action_raw = np.random.rand(
-                self.model_output_dim
-            )
+            action_raw = np.random.rand(self.model_output_dim)
         else:
             action_raw = self.model.predict(state)[0]
         action = np.zeros(self.model_output_dim)
@@ -410,9 +379,7 @@ class OperationModel:
             if action_raw[ind] >= self.true_threshold:
                 action[ind] = 1
         else:
-            ind = np.argwhere(
-                action_raw >= self.true_threshold
-            ).flatten()
+            ind = np.argwhere(action_raw >= self.true_threshold).flatten()
             np.put(action, ind, 1)
         return action
 
@@ -427,35 +394,19 @@ class OperationModel:
         """
         if self.can_learn and self.memory:
             x_batch, y_batch = [], []
-            minibatch = random.sample(
-                self.memory,
-                min(len(self.memory), batch_size),
-            )
+            minibatch = random.sample(self.memory, min(len(self.memory), batch_size))
 
-            for (
-                state,
-                action,
-                reward,
-                next_state,
-                done,
-            ) in minibatch:
+            for (state, action, reward, next_state, done) in minibatch:
                 y_target = self.model.predict(state)
                 y_target[0][action] = (
                     reward
                     if done
-                    else reward
-                    + self.gamma
-                    * np.max(
-                        self.model.predict(next_state)[0]
-                    )
+                    else reward + self.gamma * np.max(self.model.predict(next_state)[0])
                 )
                 x_batch.append(state[0])
                 y_batch.append(y_target[0])
             self.model.fit(
-                np.array(x_batch),
-                np.array(y_batch),
-                batch_size=len(x_batch),
-                verbose=0,
+                np.array(x_batch), np.array(y_batch), batch_size=len(x_batch), verbose=0
             )
             if self.epsilon > self.epsilon_min:
                 self.epsilon *= self.epsilon_decay
@@ -463,7 +414,6 @@ class OperationModel:
 
     def save(self, destination=None, type="py"):
         """Saves the the Operation Model and all of its configurations at the given destination"""
-
 
         if destination is None:
             destination = "/"
@@ -481,14 +431,8 @@ class OperationModel:
                 "true_threshold": self.true_threshold,
                 "running_reward": self.running_reward,
                 "episode_nb": self.episode_nb,
-                "h5_path": self.name
-                + "_"
-                + self.operation
-                + ".h5",
-                "json_path": self.name
-                + "_"
-                + self.operation
-                + ".json",
+                "h5_path": self.name + "_" + self.operation + ".h5",
+                "json_path": self.name + "_" + self.operation + ".json",
                 "loss": self.loss,
                 "optimizer": self.optimizer,
                 "metrics": self.metrics,
@@ -504,24 +448,15 @@ class OperationModel:
                 "rho_mode": self.rho_mode,
             }
 
-            self.model.save_weights(
-                destination + config["h5_path"]
-            )
+            self.model.save_weights(destination + config["h5_path"])
             model_json = self.model.to_json()
 
-            with open(
-                destination + config["json_path"], "w"
-            ) as json_file:
+            with open(destination + config["json_path"], "w") as json_file:
                 json_file.write(model_json)
             json_file.close()
 
             with open(
-                destination
-                + self.name
-                + "_"
-                + self.operation
-                + "_config.json",
-                'w',
+                destination + self.name + "_" + self.operation + "_config.json", "w"
             ) as config_file:
                 json.dump(config, config_file, indent=4)
             config_file.close()
@@ -530,8 +465,8 @@ class OperationModel:
 
     def __repr__(self):
         return (
-            f'{self.__class__.__name__}('
-            f'{self.name!r}, {self.operation!r}, {self.episode_nb!r}, {self.epsilon!r}, {self.running_reward!r})'
+            f"{self.__class__.__name__}("
+            f"{self.name!r}, {self.operation!r}, {self.episode_nb!r}, {self.epsilon!r}, {self.running_reward!r})"
         )
 
 
@@ -551,7 +486,7 @@ def load_operation_model(file_path):
         config = json.load(config_file)
     config_file.close()
 
-    json_file = open(file_path + config["json_path"], 'r')
+    json_file = open(file_path + config["json_path"], "r")
     loaded_model_json = json_file.read()
     json_file.close()
     model = model_from_json(loaded_model_json)
@@ -570,24 +505,30 @@ def load_operation_model(file_path):
 
     return OperationModel(model=model, **config)
 
+
 def load_agent(file_path):
     if file_path[-1:] != "/":
         file_path += "/"
-    operation_model_directories = [dI for dI in os.listdir(file_path) if os.path.isdir(os.path.join(file_path, dI))]
+    operation_model_directories = [
+        dI for dI in os.listdir(file_path) if os.path.isdir(os.path.join(file_path, dI))
+    ]
 
-    operation_models = [load_operation_model(file_path + fp) for fp in operation_model_directories]
+    operation_models = [
+        load_operation_model(file_path + fp) for fp in operation_model_directories
+    ]
     if len(operation_models) == 0:
         raise ValueError(f"No models could be found at {file_path}")
 
     return Agent(name=operation_models[0].name, *operation_models)
 
 
-
 def load_pool(file_path="SingleSellerMarketGame/models/py/", limit=None):
     if file_path[-1:] != "/":
         file_path += "/"
 
-    agent_directories = [dI for dI in os.listdir(file_path) if os.path.isdir(os.path.join(file_path, dI))]
+    agent_directories = [
+        dI for dI in os.listdir(file_path) if os.path.isdir(os.path.join(file_path, dI))
+    ]
 
     if limit is not None and limit < len(agent_directories):
         shuffle(agent_directories)

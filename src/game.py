@@ -153,13 +153,9 @@ class Board:
         if not player_names:
             raise ValueError("List cannot be empty")
         if len(player_names) > 8:
-            raise BoardError(
-                "Cannot be more than 8 players"
-            )
+            raise BoardError("Cannot be more than 8 players")
         if len(player_names) != len(set(player_names)):
-            raise BoardError(
-                "Cannot have the same player twice"
-            )
+            raise BoardError("Cannot have the same player twice")
 
         self.max_turn = max_turn
         self.alive = True
@@ -167,26 +163,16 @@ class Board:
         self.available_houses = available_houses
         self.available_hotels = available_hotels
         self._table = self._set_table(player_names)
-
-        """
-        self.index = self._table.loc[
-            (self._table["type"] == "utility")
-            | (self._table["type"] == "property")
-        ].index
-
-        """
-        self.players = {
-            n: self._Player(n, starting_cash)
-            for n in player_names
-        }
+        self.players = {n: self._Player(n, starting_cash) for n in player_names}
         self.current_turn = 0
-        self.current_player = [
-            self._player_names[self.current_turn]
-        ]
+        self.current_player = self._player_names[self.current_turn]
         self.prop_colors = list(
+            self._table.loc[self._table["can_purchase"] == True, "color"].unique()
+        )
+        self.index = list(
             self._table.loc[
-                self._table["can_purchase"] == True, "color"
-            ].unique()
+                (self._table["type"] == "property") | (self._table["type"] == "utility")
+            ].index
         )
 
     def _set_table(self, players):
@@ -237,43 +223,37 @@ class Board:
 
             return conc
 
-        path = os.path.join(
-            os.path.dirname(__file__), 'fields.csv'
-        )
+        path = os.path.join(os.path.dirname(__file__), "fields.csv")
         table = pd.read_csv(path)
         table.set_index("position", inplace=True)
 
-        table["action"] = table["action"].map(
-            lambda x: x if pd.isna(x) else eval(x)
-        )
+        table["action"] = table["action"].map(lambda x: x if pd.isna(x) else eval(x))
 
         table.fillna(0, inplace=True)
 
         table = table.astype(
             {
-                'value': np.int,
-                'monopoly_owned': np.bool,
-                'can_purchase': np.bool,
-                'purchase_amount': np.int,
-                'mortgage_amount': np.int,
-                'upgrade_amount': np.int,
-                'downgrade_amount': np.int,
-                'current_rent_amount': np.int,
-                'level': np.int,
-                'rent_level:0': np.int,
-                'rent_level:1': np.int,
-                'rent_level:2': np.int,
-                'rent_level:3': np.int,
-                'rent_level:4': np.int,
-                'rent_level:5': np.int,
-                'rent_level:6': np.int,
+                "value": np.int,
+                "monopoly_owned": np.bool,
+                "can_purchase": np.bool,
+                "purchase_amount": np.int,
+                "mortgage_amount": np.int,
+                "upgrade_amount": np.int,
+                "downgrade_amount": np.int,
+                "current_rent_amount": np.int,
+                "level": np.int,
+                "rent_level:0": np.int,
+                "rent_level:1": np.int,
+                "rent_level:2": np.int,
+                "rent_level:3": np.int,
+                "rent_level:4": np.int,
+                "rent_level:5": np.int,
+                "rent_level:6": np.int,
             }
         )
 
         for p in players:
-            table = pd.concat(
-                [table, make(p, table.index)], axis=1
-            )
+            table = pd.concat([table, make(p, table.index)], axis=1)
         return table
 
     def increment_turn(self):
@@ -290,15 +270,7 @@ class Board:
             if len(self.players) == 1:
                 self.alive = self.players.values()[0].alive
             else:
-                self.alive = (
-                    np.sum(
-                        [
-                            p.alive
-                            for p in self.players.values()
-                        ]
-                    )
-                    >= 2
-                )
+                self.alive = np.sum([p.alive for p in self.players.values()]) >= 2
 
     def can_purchase(self, position):
         """Returns if the property at position can be purchaseable
@@ -322,13 +294,8 @@ class Board:
         False
 
         """
-        if not (
-            self.is_utility(position)
-            or self.is_property(position)
-        ):
-            raise BoardError(
-                f"{position} is not a field that can be purchased"
-            )
+        if not (self.is_utility(position) or self.is_property(position)):
+            raise BoardError(f"{position} is not a field that can be purchased")
         return self._table.at[position, "can_purchase"]
 
     def can_downgrade(self, name, position):
@@ -358,16 +325,9 @@ class Board:
         """
         if name not in self._player_names:
             raise BoardError("Name does not exist in table")
-        if not (
-            self.is_utility(position)
-            or self.is_property(position)
-        ):
-            raise BoardError(
-                f"{position} cannot be downgraded"
-            )
-        return self._table.at[
-            position, name + ":can_downgrade"
-        ]
+        if not (self.is_utility(position) or self.is_property(position)):
+            raise BoardError(f"{position} cannot be downgraded")
+        return self._table.at[position, name + ":can_downgrade"]
 
     def can_upgrade(self, name, position):
         """Returns if the property at position can be upgraded
@@ -396,16 +356,9 @@ class Board:
         """
         if name not in self._player_names:
             raise BoardError("Name does not exist in table")
-        if not (
-            self.is_utility(position)
-            or self.is_property(position)
-        ):
-            raise BoardError(
-                "position does not exist in table"
-            )
-        return self._table.at[
-            position, name + ":can_upgrade"
-        ]
+        if not (self.is_utility(position) or self.is_property(position)):
+            raise BoardError("position does not exist in table")
+        return self._table.at[position, name + ":can_upgrade"]
 
     def can_mortgage(self, name, position):
         """Returns if the property at position can be mortgaged
@@ -436,16 +389,9 @@ class Board:
         """
         if name not in self._player_names:
             raise BoardError("Name does not exist in table")
-        if not (
-            self.is_utility(position)
-            or self.is_property(position)
-        ):
-            raise BoardError(
-                "position does not exist in table"
-            )
-        return self._table.at[
-            position, name + ":can_mortgage"
-        ]
+        if not (self.is_utility(position) or self.is_property(position)):
+            raise BoardError("position does not exist in table")
+        return self._table.at[position, name + ":can_mortgage"]
 
     def can_unmortgage(self, name, position):
         """Returns if the property at position can be unmortgaged
@@ -467,20 +413,11 @@ class Board:
 
         if name not in self._player_names:
             raise BoardError("Name does not exist in table")
-        if not (
-            self.is_utility(position)
-            or self.is_property(position)
-        ):
-            raise BoardError(
-                "position does not exist in table"
-            )
-        return self._table.at[
-            position, name + ":can_unmortgage"
-        ]
+        if not (self.is_utility(position) or self.is_property(position)):
+            raise BoardError("position does not exist in table")
+        return self._table.at[position, name + ":can_unmortgage"]
 
-    def is_monopoly(
-        self, position=None, color=None, name=None
-    ):
+    def is_monopoly(self, position=None, color=None, name=None):
         """Returns if the property at position is part of a monopoly
 
         Parameters
@@ -511,36 +448,20 @@ class Board:
         """
 
         if position is None and color is None:
-            raise BoardError(
-                "Both parameters cannot be None"
-            )
+            raise BoardError("Both parameters cannot be None")
         if color is None and position is not None:
-            if not (
-                self.is_utility(position)
-                or self.is_property(position)
-            ):
-                raise BoardError(
-                    "position does not exist in table"
-                )
+            if not (self.is_utility(position) or self.is_property(position)):
+                raise BoardError("position does not exist in table")
             color = self._table.loc[position, "color"]
         else:
             if color not in self.prop_colors:
-                raise BoardError(
-                    "Color not present on the Board"
-                )
+                raise BoardError("Color not present on the Board")
         if name is not None:
             if name not in self._player_names:
-                raise BoardError(
-                    "Name does not exist in table"
-                )
-            return self._table.loc[
-                self._table["color"] == color,
-                name + ":owned",
-            ].all()
+                raise BoardError("Name does not exist in table")
+            return self._table.loc[self._table["color"] == color, name + ":owned"].all()
         else:
-            return self._table.at[
-                position, "monopoly_owned"
-            ]
+            return self._table.at[position, "monopoly_owned"]
 
     def _is_any_in_color_mortgaged(self, color):
         """Returns true if any property in the given monopoly is mortgaged
@@ -549,16 +470,8 @@ class Board:
         the sum of the levels is less than 3 than the
         """
 
-        count = len(
-            self._table.loc[
-                self._table["color"] == color
-            ].index
-        )
-        return count > np.sum(
-            self._table.loc[
-                self._table["color"] == color, "level"
-            ]
-        )
+        count = len(self._table.loc[self._table["color"] == color].index)
+        return count > np.sum(self._table.loc[self._table["color"] == color, "level"])
 
     def is_any_purchaseable(self):
         """Returns if any property is still available to purchase
@@ -608,41 +521,21 @@ class Board:
         False
 
         """
-        if not (
-            self.is_utility(position)
-            or self.is_property(position)
-        ):
-            raise BoardError(
-                "position does not exist in table"
-            )
+        if not (self.is_utility(position) or self.is_property(position)):
+            raise BoardError("position does not exist in table")
         return self._table.at[position, name + ":owned"]
 
     def is_action(self, position):
         """Returns true if the given position is an action field"""
-        return (
-            position
-            in self._table.loc[
-                self._table["type"] == "action"
-            ].index
-        )
+        return position in self._table.loc[self._table["type"] == "action"].index
 
     def is_property(self, position):
         """Returns true if the given position is a property field"""
-        return (
-            position
-            in self._table.loc[
-                self._table["type"] == "property"
-            ].index
-        )
+        return position in self._table.loc[self._table["type"] == "property"].index
 
     def is_utility(self, position):
         """Returns true if the given position is utility field"""
-        return (
-            position
-            in self._table.loc[
-                self._table["type"] == "utility"
-            ].index
-        )
+        return position in self._table.loc[self._table["type"] == "utility"].index
 
     def _update_utility(self, name, color):
         """Updates the utility field data
@@ -668,20 +561,14 @@ class Board:
         amount_owned = np.sum(bool_arr)
         if color == "black":
             rent = 12.5 * pow(2, amount_owned)
-            self._table.loc[
-                bool_arr, "current_rent_amount"
-            ] = rent
+            self._table.loc[bool_arr, "current_rent_amount"] = rent
 
         elif color == "white":
             if amount_owned == 1:
-                self._table.loc[
-                    bool_arr, "current_rent_amount"
-                ] = (4 * 7)
+                self._table.loc[bool_arr, "current_rent_amount"] = 4 * 7
 
             elif amount_owned == 2:
-                self._table.loc[
-                    bool_arr, "current_rent_amount"
-                ] = (10 * 7)
+                self._table.loc[bool_arr, "current_rent_amount"] = 10 * 7
 
     def remove_ownership(self, name, position):
         """Removes the ownership of the given player at the given position
@@ -703,19 +590,10 @@ class Board:
         --------------------
 
         """
-        if not (
-            self.is_utility(position)
-            or self.is_property(position)
-        ):
-            raise BoardError(
-                "position does not exist in table"
-            )
+        if not (self.is_utility(position) or self.is_property(position)):
+            raise BoardError("position does not exist in table")
         if self.is_owned_by(name, position) == False:
-            raise BoardError(
-                name
-                + " does not own the property at "
-                + str(position)
-            )
+            raise BoardError(name + " does not own the property at " + str(position))
         # color of the property
         color = self._table.at[position, "color"]
 
@@ -726,19 +604,13 @@ class Board:
         self._table.at[position, "can_purchase"] = True
 
         # can_mortgage
-        self._table.at[
-            position, name + ":can_mortgage"
-        ] = False
+        self._table.at[position, name + ":can_mortgage"] = False
 
         # can unmortgage
-        self._table.at[
-            position, name + ":can_unmortgage"
-        ] = False
+        self._table.at[position, name + ":can_unmortgage"] = False
 
         # can downgrade
-        self._table.at[
-            position, name + ":can_downgrade"
-        ] = False
+        self._table.at[position, name + ":can_downgrade"] = False
 
         # value
         self._table.at[position, "value"] = 0
@@ -750,33 +622,25 @@ class Board:
             self._update_utility(name, color)
         else:
             # current_rent_amount
-            self._table.at[
-                position, "current_rent_amount"
-            ] = 0
+            self._table.at[position, "current_rent_amount"] = 0
 
             # update monopoly status
-            if self.is_monopoly(
-                position=position, name=name
-            ):
+            if self.is_monopoly(position=position, name=name):
                 # Set monopoly
                 self._table.loc[
-                    self._table["color"] == color,
-                    ["monopoly_owned"],
+                    self._table["color"] == color, ["monopoly_owned"]
                 ] = False
 
                 # if any in the monopoly are mortgaged then none can upgrade
                 self._table.loc[
-                    self._table["color"] == color,
-                    [name + ":can_upgrade"],
+                    self._table["color"] == color, [name + ":can_upgrade"]
                 ] = False
 
     def roll_dice(self):
         """Returns two random values between 1 and 6"""
         return randrange(1, 7), randrange(1, 7)
 
-    def move_player(
-        self, name, dice_roll=None, position=None
-    ):
+    def move_player(self, name, dice_roll=None, position=None):
         """Moves the player on the board based on a dice roll or absolute position
 
         The dice_roll parameter is used to move the player to the new field by
@@ -818,20 +682,14 @@ class Board:
             dice_roll is not None and position is not None
         ):
             raise ValueError("Wrong input")
-        old_position = self._table.loc[
-            self._table[name + ":position"] == 1
-        ].index[0]
-        self._table.loc[
-            old_position, name + ":position"
-        ] = 0
+        old_position = self._table.loc[self._table[name + ":position"] == 1].index[0]
+        self._table.loc[old_position, name + ":position"] = 0
 
         if dice_roll is not None:
             new_position = (old_position + dice_roll) % 40
         else:
             new_position = position
-        self._table.loc[
-            new_position, name + ":position"
-        ] = 1
+        self._table.loc[new_position, name + ":position"] = 1
 
         if new_position < old_position:
             self.add_player_cash(name, 200)
@@ -889,11 +747,7 @@ class Board:
         """
 
         if self.can_purchase(position) == False:
-            raise BoardError(
-                name
-                + " cannot purchase the property at "
-                + str(position)
-            )
+            raise BoardError(name + " cannot purchase the property at " + str(position))
         # color of the property
         color = self._table.at[position, "color"]
 
@@ -904,24 +758,16 @@ class Board:
         self._table.at[position, "can_purchase"] = False
 
         # can_mortgage
-        self._table.at[
-            position, name + ":can_mortgage"
-        ] = True
+        self._table.at[position, name + ":can_mortgage"] = True
 
         # can unmortgage
-        self._table.at[
-            position, name + ":can_unmortgage"
-        ] = False
+        self._table.at[position, name + ":can_unmortgage"] = False
 
         # can downgrade
-        self._table.at[
-            position, name + ":can_downgrade"
-        ] = False
+        self._table.at[position, name + ":can_downgrade"] = False
 
         # value
-        self._table.at[position, "value"] = self._table.at[
-            position, "purchase_amount"
-        ]
+        self._table.at[position, "value"] = self._table.at[position, "purchase_amount"]
 
         # level
         self._table.at[position, "level"] = 1
@@ -930,24 +776,20 @@ class Board:
             self._update_utility(name, color)
         else:
             # current_rent_amount
-            self._table.at[
-                position, "current_rent_amount"
-            ] = self._table.at[position, "rent_level:1"]
+            self._table.at[position, "current_rent_amount"] = self._table.at[
+                position, "rent_level:1"
+            ]
 
             # update monopoly status
-            if self.is_monopoly(
-                position=position, name=name
-            ):
+            if self.is_monopoly(position=position, name=name):
                 # Set monopoly
                 self._table.loc[
-                    self._table["color"] == color,
-                    ["monopoly_owned"],
+                    self._table["color"] == color, ["monopoly_owned"]
                 ] = True
 
                 # if any in the monopoly are mortgaged then none can upgrade
                 self._table.loc[
-                    self._table["color"] == color,
-                    [name + ":can_upgrade"],
+                    self._table["color"] == color, [name + ":can_upgrade"]
                 ] = ~self._is_any_in_color_mortgaged(color)
 
     def mortgage(self, name, position):
@@ -985,38 +827,23 @@ class Board:
         """
 
         if self.can_mortgage(name, position) == False:
-            raise BoardError(
-                name
-                + " cannot mortgage the property at "
-                + str(position)
-            )
+            raise BoardError(name + " cannot mortgage the property at " + str(position))
         color = self._table.at[position, "color"]
 
         # value
-        self._table.at[position, "value"] = self._table.at[
-            position, "mortgage_amount"
-        ]
+        self._table.at[position, "value"] = self._table.at[position, "mortgage_amount"]
 
         # can downgrade
-        self._table.at[
-            position, name + ":can_downgrade"
-        ] = False
+        self._table.at[position, name + ":can_downgrade"] = False
 
         # can upgrade with the same color (mortgaged props cant be developed)
-        self._table.loc[
-            self._table["color"] == color,
-            [name + ":can_upgrade"],
-        ] = False
+        self._table.loc[self._table["color"] == color, [name + ":can_upgrade"]] = False
 
         # can mortgage
-        self._table.at[
-            position, name + ":can_mortgage"
-        ] = False
+        self._table.at[position, name + ":can_mortgage"] = False
 
         # can unmortgage
-        self._table.at[
-            position, name + ":can_unmortgage"
-        ] = True
+        self._table.at[position, name + ":can_unmortgage"] = True
 
         # current_rent_amount
         self._table.at[position, "current_rent_amount"] = 0
@@ -1060,57 +887,42 @@ class Board:
 
         if self.can_unmortgage(name, position) == False:
             raise BoardError(
-                name
-                + " cannot unmortgage the property at "
-                + str(position)
+                name + " cannot unmortgage the property at " + str(position)
             )
         # color of the property
         color = self._table.at[position, "color"]
 
         # value
-        self._table.at[position, "value"] = self._table.at[
-            position, "purchase_amount"
-        ]
+        self._table.at[position, "value"] = self._table.at[position, "purchase_amount"]
 
         # can downgrade
-        self._table.at[
-            position, name + ":can_downgrade"
-        ] = False
+        self._table.at[position, name + ":can_downgrade"] = False
 
         # can mortgage
-        self._table.at[
-            position, name + ":can_mortgage"
-        ] = True
+        self._table.at[position, name + ":can_mortgage"] = True
 
         # can unmortgage
-        self._table.at[
-            position, name + ":can_unmortgage"
-        ] = False
+        self._table.at[position, name + ":can_unmortgage"] = False
 
         # level
         self._table.at[position, "level"] = 1
 
         if self.is_utility(position):
             # can upgrade
-            self._table.at[
-                position, name + ":can_upgrade"
-            ] = False
+            self._table.at[position, name + ":can_upgrade"] = False
 
             # current_rent_amount
             self._update_utility(name, color)
         else:
             # can upgrade
-            if self.is_monopoly(
-                position=position, name=name
-            ):
+            if self.is_monopoly(position=position, name=name):
                 self._table.loc[
-                    self._table["color"] == color,
-                    [name + ":can_upgrade"],
+                    self._table["color"] == color, [name + ":can_upgrade"]
                 ] = ~self._is_any_in_color_mortgaged(color)
             # current_rent_amount
-            self._table.at[
-                position, "current_rent_amount"
-            ] = self._table.at[position, "rent_level:1"]
+            self._table.at[position, "current_rent_amount"] = self._table.at[
+                position, "rent_level:1"
+            ]
 
     def upgrade(self, name, position):
         """Upgrades the property at the position by the player by name
@@ -1147,11 +959,7 @@ class Board:
         """
 
         if self.can_upgrade(name, position) == False:
-            raise BoardError(
-                name
-                + " cannot upgrade the property at "
-                + str(position)
-            )
+            raise BoardError(name + " cannot upgrade the property at " + str(position))
         color = self._table.at[position, "color"]
 
         # value
@@ -1165,30 +973,19 @@ class Board:
         self._table.at[position, "level"] = new_level
 
         # upgrade
-        self._table.at[position, name + ":can_upgrade"] = (
-            new_level != 6
-        )
+        self._table.at[position, name + ":can_upgrade"] = new_level != 6
 
         # downgrade
-        self._table.at[
-            position, name + ":can_downgrade"
-        ] = True
+        self._table.at[position, name + ":can_downgrade"] = True
 
         # can mortgage, all properties of the same color
-        self._table.loc[
-            self._table["color"] == color,
-            [name + ":can_mortgage"],
-        ] = False
+        self._table.loc[self._table["color"] == color, [name + ":can_mortgage"]] = False
 
         # can unmortgage
-        self._table.at[
-            position, name + ":can_unmortgage"
-        ] = False
+        self._table.at[position, name + ":can_unmortgage"] = False
 
         # current rent amount
-        self._table.at[
-            position, "current_rent_amount"
-        ] = self._table.at[
+        self._table.at[position, "current_rent_amount"] = self._table.at[
             position, "rent_level:" + str(new_level)
         ]
 
@@ -1246,9 +1043,7 @@ class Board:
 
         if self.can_downgrade(name, position) == False:
             raise BoardError(
-                name
-                + " cannot downgrade the property at "
-                + str(position)
+                name + " cannot downgrade the property at " + str(position)
             )
         color = self._table.at[position, "color"]
 
@@ -1263,32 +1058,21 @@ class Board:
         self._table.at[position, "level"] = new_level
 
         # can_downgrade
-        self._table.at[
-            position, name + ":can_downgrade"
-        ] = (new_level > 1)
+        self._table.at[position, name + ":can_downgrade"] = new_level > 1
 
         # can mortgage, all properties of the same color
         lvl_sum = np.sum(
-            self._table.loc[
-                self._table["color"] == color, ["level"]
-            ].values
+            self._table.loc[self._table["color"] == color, ["level"]].values
         )
 
-        prop_count = len(
-            self._table.loc[
-                self._table["color"] == color
-            ].index
-        )
+        prop_count = len(self._table.loc[self._table["color"] == color].index)
 
-        self._table.loc[
-            self._table["color"] == color,
-            [name + ":can_mortgage"],
-        ] = (prop_count == lvl_sum)
+        self._table.loc[self._table["color"] == color, [name + ":can_mortgage"]] = (
+            prop_count == lvl_sum
+        )
 
         # can unmortgage
-        self._table.at[
-            position, name + ":can_unmortgage"
-        ] = False
+        self._table.at[position, name + ":can_unmortgage"] = False
 
         n_house = self.available_houses
         n_hotel = self.available_hotels
@@ -1300,9 +1084,7 @@ class Board:
         elif new_level < 5:
             self.available_houses += 1
         # current rent amount
-        self._table.at[
-            position, "current_rent_amount"
-        ] = self._table.at[
+        self._table.at[position, "current_rent_amount"] = self._table.at[
             position, "rent_level:" + str(new_level)
         ]
 
@@ -1344,54 +1126,38 @@ class Board:
         self.players[from_player].cash -= amount
         self.players[to_player].cash += amount
 
-    def transfer_properties(
-        self, from_player, to_player, properties
-    ):
+    def transfer_properties(self, from_player, to_player, properties):
         """
 
         """
-        if set(properties).issubset(
-            set(self.get_all_properties_owned(from_player))
-        ):
+        if set(properties).issubset(set(self.get_all_properties_owned(from_player))):
             cash_gained = 0
             # Get the colors for the properties list
-            colors = set(
-                [
-                    self.get_property_color(p)
-                    for p in properties
-                ]
-            )
+            colors = set([self.get_property_color(p) for p in properties])
             properties_to_downgrade = [
-                self.get_properties_from_color(c)
-                for c in colors
+                self.get_properties_from_color(c) for c in colors
             ]
             # Downgrade all properties to level 1
             for property in properties_to_downgrade:
                 while self.get_level(property) > 1:
-                    cash_gained += self.get_downgrade_amount(
-                        property
-                    )
+                    cash_gained += self.get_downgrade_amount(property)
                     self.downgrade(from_player, property)
             for property in properties:
                 self.remove_ownership(from_player, property)
                 self.purchase(to_player, property)
             self.add_player_cash(from_player, cash_gained)
         else:
-            raise ValueError(
-                "Cannot transfer properties that are not owned"
-            )
+            raise ValueError("Cannot transfer properties that are not owned")
 
     def _houses_to_unavailable(self):
         for name in self._player_names:
             self._table.loc[
-                (self._table[name + ":owned"] == True)
-                & (self._table["level"] < 5),
+                (self._table[name + ":owned"] == True) & (self._table["level"] < 5),
                 [name + ":can_upgrade"],
             ] = False
 
             self._table.loc[
-                (self._table[name + ":owned"] == True)
-                & (self._table["level"] == 6),
+                (self._table[name + ":owned"] == True) & (self._table["level"] == 6),
                 [name + ":can_downgrade"],
             ] = False
 
@@ -1406,41 +1172,34 @@ class Board:
 
             # set false if at max level
             self._table.loc[
-                (self._table[name + ":owned"] == True)
-                & (self._table["level"] == 6),
+                (self._table[name + ":owned"] == True) & (self._table["level"] == 6),
                 name + ":can_upgrade",
             ] = False
 
             # set false if any in the monopoly is mortgaged
             for color in self.prop_colors:
                 if self.is_monopoly(name=name, color=color):
-                    if self._is_any_in_color_mortgaged(
-                        color
-                    ):
+                    if self._is_any_in_color_mortgaged(color):
                         self._table.loc[
-                            self._table["color"] == color,
-                            [name + ":can_upgrade"],
+                            self._table["color"] == color, [name + ":can_upgrade"]
                         ] = False
 
     def _hotels_to_unavailable(self):
         for name in self._player_names:
             self._table.loc[
-                (self._table[name + ":owned"] == True)
-                & (self._table["level"] == 5),
+                (self._table[name + ":owned"] == True) & (self._table["level"] == 5),
                 [name + ":can_upgrade"],
             ] = False
 
     def _hotels_to_available(self):
         for name in self._player_names:
             self._table.loc[
-                (self._table[name + ":owned"] == True)
-                & (self._table["level"] == 5),
+                (self._table[name + ":owned"] == True) & (self._table["level"] == 5),
                 [name + ":can_upgrade"],
             ] = True
 
             self._table.loc[
-                (self._table[name + ":owned"] == True)
-                & (self._table["level"] == 6),
+                (self._table[name + ":owned"] == True) & (self._table["level"] == 6),
                 [name + ":can_downgrade"],
             ] = True
 
@@ -1450,7 +1209,7 @@ class Board:
 
     def is_player_jailed(self, name):
         """Returns if the given player is immobile"""
-        return self.players[name].allowed_to_move
+        return not self.players[name].allowed_to_move
 
     def set_player_out_of_jail(self, name):
         """Lets the given player out of jail"""
@@ -1458,9 +1217,7 @@ class Board:
 
     def add_to_free_parking(self, amount):
         """Adds the given amount to free parking"""
-        self._table.loc[20, "action"][
-            "free parking"
-        ] += amount
+        self._table.loc[20, "action"]["free parking"] += amount
 
     def add_player_cash(self, name, amount):
         self.players[name].cash += amount
@@ -1480,9 +1237,7 @@ class Board:
         v = self._table.loc[20, "action"]["free parking"]
 
         if clear:
-            self._table.loc[20, "action"][
-                "free parking"
-            ] = 0
+            self._table.loc[20, "action"]["free parking"] = 0
         return v
 
     def get_rent(self, position, dice_roll):
@@ -1502,24 +1257,12 @@ class Board:
             When the position does not correspond to property or a utility
 
         """
-        if not (
-            self.is_utility(position)
-            or self.is_property(position)
-        ):
-            raise BoardError(
-                "position does not exist in table"
-            )
+        if not (self.is_utility(position) or self.is_property(position)):
+            raise BoardError("position does not exist in table")
         if position == 12 or position == 28:
-            return (
-                self._table.at[
-                    position, "current_rent_amount"
-                ]
-                / 7
-            ) * dice_roll
+            return (self._table.at[position, "current_rent_amount"] / 7) * dice_roll
         else:
-            return self._table.at[
-                position, "current_rent_amount"
-            ]
+            return self._table.at[position, "current_rent_amount"]
 
     def get_owner_name(self, position):
         """Returns the name of the owner at the given position
@@ -1535,13 +1278,8 @@ class Board:
             When the position does not correspond to property or a utility
 
         """
-        if not (
-            self.is_utility(position)
-            or self.is_property(position)
-        ):
-            raise BoardError(
-                "position does not exist in table"
-            )
+        if not (self.is_utility(position) or self.is_property(position)):
+            raise BoardError("position does not exist in table")
         s = [a + ":owned" for a in self._player_names]
         own = self._table.loc[position, s]
         if own.any():
@@ -1563,13 +1301,8 @@ class Board:
             When the position does not correspond to property or a utility
 
         """
-        if not (
-            self.is_utility(position)
-            or self.is_property(position)
-        ):
-            raise BoardError(
-                "position does not exist in table"
-            )
+        if not (self.is_utility(position) or self.is_property(position)):
+            raise BoardError("position does not exist in table")
         return self._table.at[position, "purchase_amount"]
 
     def get_value(self, position):
@@ -1587,13 +1320,8 @@ class Board:
 
         """
 
-        if not (
-            self.is_utility(position)
-            or self.is_property(position)
-        ):
-            raise BoardError(
-                "position does not exist in table"
-            )
+        if not (self.is_utility(position) or self.is_property(position)):
+            raise BoardError("position does not exist in table")
         return self._table.at[position, "value"]
 
     def get_mortgage_amount(self, position):
@@ -1610,13 +1338,8 @@ class Board:
             When the position does not correspond to property or a utility
 
         """
-        if not (
-            self.is_utility(position)
-            or self.is_property(position)
-        ):
-            raise BoardError(
-                "position does not exist in table"
-            )
+        if not (self.is_utility(position) or self.is_property(position)):
+            raise BoardError("position does not exist in table")
         return self._table.at[position, "mortgage_amount"]
 
     def get_upgrade_amount(self, position):
@@ -1634,13 +1357,8 @@ class Board:
 
         """
 
-        if not (
-            self.is_utility(position)
-            or self.is_property(position)
-        ):
-            raise BoardError(
-                "position does not exist in table"
-            )
+        if not (self.is_utility(position) or self.is_property(position)):
+            raise BoardError("position does not exist in table")
         return self._table.at[position, "upgrade_amount"]
 
     def get_downgrade_amount(self, position):
@@ -1657,13 +1375,8 @@ class Board:
             When the position does not correspond to property or a utility
 
         """
-        if not (
-            self.is_utility(position)
-            or self.is_property(position)
-        ):
-            raise BoardError(
-                "position does not exist in table"
-            )
+        if not (self.is_utility(position) or self.is_property(position)):
+            raise BoardError("position does not exist in table")
         return self._table.at[position, "downgrade_amount"]
 
     def get_level(self, position):
@@ -1680,13 +1393,8 @@ class Board:
             When the position does not correspond to property or a utility
 
         """
-        if not (
-            self.is_utility(position)
-            or self.is_property(position)
-        ):
-            raise BoardError(
-                "position does not exist in table"
-            )
+        if not (self.is_utility(position) or self.is_property(position)):
+            raise BoardError("position does not exist in table")
         return self._table.at[position, "level"]
 
     def get_property_name(self, position):
@@ -1709,9 +1417,7 @@ class Board:
             or self.is_property(position)
             or self.is_action(position)
         ):
-            raise BoardError(
-                "position does not exist in table"
-            )
+            raise BoardError("position does not exist in table")
         return self._table.at[position, "name"]
 
     def get_property_color(self, position):
@@ -1734,9 +1440,7 @@ class Board:
             or self.is_property(position)
             or self.is_action(position)
         ):
-            raise BoardError(
-                "position does not exist in table"
-            )
+            raise BoardError("position does not exist in table")
         return self._table.at[position, "color"]
 
     def get_action(self, position):
@@ -1752,18 +1456,14 @@ class Board:
         """
 
         if not self.is_action(position):
-            raise BoardError(
-                "position does not cirrespond to an action"
-            )
+            raise BoardError("position does not cirrespond to an action")
         var = self._table.loc[position, "action"]
         if type(var) == list:
             return var[randint(0, len(var) - 1)]
         else:
             return var
 
-    def get_all_properties_owned(
-        self, name, include_utility=True
-    ):
+    def get_all_properties_owned(self, name, include_utility=True):
         """Returns all the properties that the given player owns
 
         Returns a list of property location that the given player owns.
@@ -1788,9 +1488,7 @@ class Board:
         [1]
         """
         if include_utility:
-            prop = self._table.loc[
-                self._table[name + ":owned"] == True
-            ]
+            prop = self._table.loc[self._table[name + ":owned"] == True]
         else:
             prop = self._table.loc[
                 (self._table[name + ":owned"] == True)
@@ -1798,9 +1496,7 @@ class Board:
             ]
         return list(prop.index)
 
-    def get_amount_properties_owned(
-        self, name, include_utility=True
-    ):
+    def get_amount_properties_owned(self, name, include_utility=True):
         """Gets the total amount of properties owned by the given player
 
         Parameters
@@ -1823,9 +1519,7 @@ class Board:
         if include_utility:
             prop = self._table
         else:
-            prop = self._table.loc[
-                self._table["type"] == "property"
-            ]
+            prop = self._table.loc[self._table["type"] == "property"]
         return np.sum(prop[name + ":owned"])
 
     def get_total_levels_owned(self, name):
@@ -1846,10 +1540,7 @@ class Board:
 
         """
         return np.sum(
-            self._table.loc[
-                self._table[name + ":owned"] == True,
-                "level",
-            ].values
+            self._table.loc[self._table[name + ":owned"] == True, "level"].values
         )
 
     def get_total_value_owned(self, name, properties=None):
@@ -1875,33 +1566,18 @@ class Board:
 
         """
         if properties is None:
-            return np.sum(
-                self._table.loc[
-                    self._table[name + ":owned"] == True,
-                    value,
-                ]
-            )
+            return np.sum(self._table.loc[self._table[name + ":owned"] == True, value])
         else:
             temp = self._table.loc[properties]
-            return np.sum(
-                temp.loc[
-                    temp[name + ":owned"] == True, value
-                ]
-            )
+            return np.sum(temp.loc[temp[name + ":owned"] == True, value])
 
     def get_properties_from_color(self, color):
         """Returns the list of properties from the given color"""
-        return list(
-            self._table.loc[
-                self._table["color"] == color
-            ].index
-        )
+        return list(self._table.loc[self._table["color"] == color].index)
 
     def get_evaluation(self, name):
         """Returns the sum of potential rent and value of properties"""
-        owned = self._table.loc[
-            self._table[name + ":owned"] == True
-        ]
+        owned = self._table.loc[self._table[name + ":owned"] == True]
         rent = np.sum(owned["current_rent_amount"])
         value = np.sum(owned["value"])
         mono_props = np.sum(owned["monopoly_owned"])
@@ -1926,10 +1602,7 @@ class Board:
             return self._table["level"]
         else:
             return self._table.apply(
-                lambda x: x["level"]
-                if x[name + ":owned"] == True
-                else 0,
-                axis=1,
+                lambda x: x["level"] if x[name + ":owned"] == True else 0, axis=1
             )
 
     def get_general_state(self):
@@ -1950,9 +1623,7 @@ class Board:
         since the table is 28 rows deep this results in a table of 28 x 8
 
         """
-        prop = self._table.loc[
-            self._table["type"] != "action"
-        ]
+        prop = self._table.loc[self._table["type"] != "action"]
         return (
             prop[
                 [
@@ -1994,12 +1665,8 @@ class Board:
         """
 
         if name not in self._player_names:
-            raise BoardError(
-                "That name is not in the player list"
-            )
-        prop = self._table.loc[
-            self._table["type"] != "action"
-        ]
+            raise BoardError("That name is not in the player list")
+        prop = self._table.loc[self._table["type"] != "action"]
         v = (
             prop[
                 [
@@ -2014,8 +1681,9 @@ class Board:
             .astype("float")
             .values.flatten("F")
         )
+        # print(self.players[name].cash)
 
-        return np.concatenate((self.players[name].cash, v))
+        return np.concatenate(([self.players[name].cash], v))
 
 
 class BoardError(Exception):
