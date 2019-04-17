@@ -291,6 +291,7 @@ class OperationModel:
         single_label,
         optimizer,
         loss,
+        model_output_dims,
         metrics=["accuracy"],
         running_reward=0,
         episode_nb=0,
@@ -306,7 +307,7 @@ class OperationModel:
     ):
 
         self.model = model
-        self.model_output_dim = self.model.layers[-1].output_shape[1]
+        self.model_output_dims = model_output_dims
         self.name = name
         self.operation = operation
         self.loss = loss
@@ -363,17 +364,43 @@ class OperationModel:
 
         Returns
         --------------------
-        decision : numpy.ndarray
+        action : numpy.ndarray
             Array with decisions based on the x, that need to be
             interpreted
 
         """
-        if np.random.random() <= self.epsilon:
-            action_raw = np.random.rand(self.model_output_dim)
-        else:
-            action_raw = self.model.predict(state)[0]
-        action = np.zeros(self.model_output_dim)
 
+        if len(self.model_output_dims) > 1:
+            action = []
+            for i in range(len(self.model_output_dims)):
+                j = len(self.model.loss) - i
+                dim = self.model.layers[-j].output_shape[1]
+                loss = self.model.loss[i]
+
+                if np.random.random() <= self.epsilon:
+                    if loss != "mse":
+                        prediction = np.random.rand(dim)
+                        action.append(self.prediciton_to_action(prediction))
+                    else:
+                        prediction = np.random.randint(1, 1000, dim)
+                        action.append(prediction)
+                else:
+                    prediction = self.model.predict(state)[i][0]
+                    if loss != "mse":
+                        action.append(self.prediction_to_action(prediction))
+                    else:
+                        action.append(prediction)
+            return action
+        else:
+            if np.random.random() <= self.epsilon:
+                prediction = np.random.rand(self.model_output_dims[0])
+            else:
+                prediction = self.model.predict(state)[0]
+
+            return self.prediction_to_action(prediction)
+
+    def prediction_to_action(self, prediction):
+        action = np.zeros(len(prediction))
         if self.single_label:
             ind = np.argmax(action_raw)
             if action_raw[ind] >= self.true_threshold:
@@ -381,6 +408,7 @@ class OperationModel:
         else:
             ind = np.argwhere(action_raw >= self.true_threshold).flatten()
             np.put(action, ind, 1)
+
         return action
 
     def replay(self, batch_size=32):
@@ -398,13 +426,38 @@ class OperationModel:
 
             for (state, action, reward, next_state, done) in minibatch:
                 y_target = self.model.predict(state)
-                y_target[0][action] = (
-                    reward
-                    if done
-                    else reward + self.gamma * np.max(self.model.predict(next_state)[0])
-                )
-                x_batch.append(state[0])
-                y_batch.append(y_target[0])
+
+                if len(self.model_output_dims) > 1:
+                    for i in range(self.model.loss):
+                        if self.model.loss[i] == "mse":
+                            pass
+                        elif self.model.loss[i] == "categorical_crossentropy":
+                            r = (
+                                reward
+                                if done
+                                else reward
+                                + self.gamma * np.max(self.model.predict(next_state)[0])
+                            )
+                        elif self.model.loss[i] == "binary_crossentropy":
+                            r = (
+                                reward
+                                if done
+                                else reward
+                                + self.gamma * np.max(self.model.predict(next_state)[0])
+                            )
+
+                    pass
+                else:
+                    r = (
+                        reward
+                        if done
+                        else reward
+                        + self.gamma * np.max(self.model.predict(next_state)[0])
+                    )
+
+                    y_target[0][action] = r
+                    x_batch.append(state[0])
+                    y_batch.append(y_target[0])
             self.model.fit(
                 np.array(x_batch), np.array(y_batch), batch_size=len(x_batch), verbose=0
             )
@@ -446,6 +499,7 @@ class OperationModel:
                 "alpha_decay": self.alpha_decay,
                 "rho": self.rho,
                 "rho_mode": self.rho_mode,
+                "model_output_dims": self.model_output_dims,
             }
 
             self.model.save_weights(destination + config["h5_path"])
