@@ -291,7 +291,8 @@ class OperationModel:
         single_label,
         optimizer,
         loss,
-        model_output_dims,
+        input_dimensions,
+        output_dimensions,
         metrics=["accuracy"],
         running_reward=0,
         episode_nb=0,
@@ -307,7 +308,8 @@ class OperationModel:
     ):
 
         self.model = model
-        self.model_output_dims = model_output_dims
+        self.input_dimensions = input_dimensions
+        self.output_dimensions = output_dimensions
         self.name = name
         self.operation = operation
         self.loss = loss
@@ -327,6 +329,13 @@ class OperationModel:
         self.rho = rho
         self.rho_mode = rho_mode
         self.memory = deque(maxlen=100000)
+
+        if optimizer == "adam":
+            opt = Adam(lr=alpha, decay=alpha_decay)
+        else:
+            ValueError(f"cannot resolve Optimizer: {optimizer}")
+
+        self.model.compile(loss=self.loss, optimizer=opt, metrics=self.metrics)
 
     def remember(self, state, action, reward, next_state, done):
         """Stores the data in the Agents Memory
@@ -349,6 +358,16 @@ class OperationModel:
             if the game is finished
 
         """
+
+        if (
+            state is None
+            or action is None
+            or reward is None
+            or next_state is None
+            or done is None
+        ):
+            raise ValueError("Cannot have values be None")
+
         self.memory.append((state, action, reward, next_state, done))
 
     def get_action(self, state):
@@ -370,46 +389,63 @@ class OperationModel:
 
         """
 
-        if len(self.model_output_dims) > 1:
+        if len(self.output_dimensions) > 1:
             action = []
-            for i in range(len(self.model_output_dims)):
-                j = len(self.model.loss) - i
-                dim = self.model.layers[-j].output_shape[1]
+            for i in range(len(self.output_dimensions)):
+                dim = self.output_dimensions[i]
                 loss = self.model.loss[i]
 
                 if np.random.random() <= self.epsilon:
-                    if loss != "mse":
-                        prediction = np.random.rand(dim)
-                        action.append(self.prediciton_to_action(prediction))
-                    else:
+                    if loss == "mse":
                         prediction = np.random.randint(1, 1000, dim)
                         action.append(prediction)
+                    else:
+                        prediction = np.random.rand(dim)
+                        action.append(self.prediction_to_action(prediction))
                 else:
                     prediction = self.model.predict(state)[i][0]
-                    if loss != "mse":
-                        action.append(self.prediction_to_action(prediction))
-                    else:
+                    if loss == "mse":
                         action.append(prediction)
+                    else:
+                        action.append(self.prediction_to_action(prediction))
+
             return action
         else:
             if np.random.random() <= self.epsilon:
-                prediction = np.random.rand(self.model_output_dims[0])
+                prediction = np.random.rand(self.output_dimensions[0])
             else:
                 prediction = self.model.predict(state)[0]
 
             return self.prediction_to_action(prediction)
 
     def prediction_to_action(self, prediction):
+        """Turns a raw prediction with float values into 0/1 based on the true_threshold
+
+        Parameters
+        --------------------
+        prediction : numpy.ndarray
+            Array consisting of predictions with dimension (n,) with n labels
+
+        Returns
+        --------------------
+        action : numpy.ndarray
+            Array consisting of 1 or 0 predictions with dimension (n,) with n labels
+
+        """
         action = np.zeros(len(prediction))
         if self.single_label:
-            ind = np.argmax(action_raw)
-            if action_raw[ind] >= self.true_threshold:
+            ind = np.argmax(prediction)
+            if prediction[ind] >= self.true_threshold:
                 action[ind] = 1
         else:
-            ind = np.argwhere(action_raw >= self.true_threshold).flatten()
-            np.put(action, ind, 1)
+            action[np.where(prediction >= self.true_threshold)[0]] = 1
 
         return action
+
+    def clear_memory(self):
+        """Clears the Operation model's memory"""
+
+        self.memory.clear()
 
     def replay(self, batch_size=32):
         """Uses the Agent's memory to fit the model
@@ -421,16 +457,30 @@ class OperationModel:
 
         """
         if self.can_learn and self.memory:
-            x_batch, y_batch = [], []
+            if len(self.input_dimensions) > 1:
+                x_batch = [[] for dim in self.input_dimensions]
+            else:
+                x_batch = []
+
+            if len(self.output_dimensions) > 1:
+                y_batch = [[] for dim in self.output_dimensions]
+            else:
+                y_batch = []
+
             minibatch = random.sample(self.memory, min(len(self.memory), batch_size))
 
             for (state, action, reward, next_state, done) in minibatch:
                 y_target = self.model.predict(state)
 
-                if len(self.model_output_dims) > 1:
-                    for i in range(self.model.loss):
+                if len(self.output_dimensions) > 1:
+                    for i in range(len(y_target)):
                         if self.model.loss[i] == "mse":
-                            pass
+                            r = (
+                                reward
+                                if done
+                                else reward
+                                + self.gamma * np.max(self.model.predict(next_state)[0])
+                            )
                         elif self.model.loss[i] == "categorical_crossentropy":
                             r = (
                                 reward
@@ -446,7 +496,11 @@ class OperationModel:
                                 + self.gamma * np.max(self.model.predict(next_state)[0])
                             )
 
-                    pass
+                        y_target[i][0][np.where(action[i] == 1)] = r
+                        y_batch[i].append(y_target[i][0])
+
+                    x_batch.append(state[0])
+
                 else:
                     r = (
                         reward
@@ -454,13 +508,25 @@ class OperationModel:
                         else reward
                         + self.gamma * np.max(self.model.predict(next_state)[0])
                     )
-
-                    y_target[0][action] = r
+                    y_target[0][np.where(action == 1)] = r
                     x_batch.append(state[0])
                     y_batch.append(y_target[0])
-            self.model.fit(
-                np.array(x_batch), np.array(y_batch), batch_size=len(x_batch), verbose=0
-            )
+
+            if len(self.output_dimensions) > 1:
+                for i in range(len(self.output_dimensions)):
+                    y_batch[i] = np.asarray(y_batch[i])
+
+                self.model.fit(
+                    np.array(x_batch), y_batch, batch_size=len(x_batch), verbose=0
+                )
+
+            else:
+                self.model.fit(
+                    np.array(x_batch),
+                    np.array(y_batch),
+                    batch_size=len(x_batch),
+                    verbose=0,
+                )
             if self.epsilon > self.epsilon_min:
                 self.epsilon *= self.epsilon_decay
             self.episode_nb += 1
@@ -499,7 +565,7 @@ class OperationModel:
                 "alpha_decay": self.alpha_decay,
                 "rho": self.rho,
                 "rho_mode": self.rho_mode,
-                "model_output_dims": self.model_output_dims,
+                "output_dimensions": self.output_dimensions,
             }
 
             self.model.save_weights(destination + config["h5_path"])
@@ -520,7 +586,11 @@ class OperationModel:
     def __repr__(self):
         return (
             f"{self.__class__.__name__}("
-            f"{self.name!r}, {self.operation!r}, {self.episode_nb!r}, {self.epsilon!r}, {self.running_reward!r})"
+            f"name: {self.name!r}, "
+            f"operation: {self.operation!r}, "
+            f"trained episodes: {self.episode_nb!r}, "
+            f"epsilon: {self.epsilon!r}, "
+            f"running reward: {self.running_reward!r})"
         )
 
 
@@ -545,17 +615,6 @@ def load_operation_model(file_path):
     json_file.close()
     model = model_from_json(loaded_model_json)
     model.load_weights(file_path + config["h5_path"])
-    try:
-        model.name = config["name"]
-    except:
-        warnings.warn("Could not set name")
-
-    if config["optimizer"] == "adam":
-        opt = Adam(lr=config["alpha"], decay=config["alpha_decay"])
-    else:
-        ValueError("cannot resolve Optimizer")
-
-    model.compile(loss=config["loss"], optimizer=opt, metrics=config["metrics"])
 
     return OperationModel(model=model, **config)
 

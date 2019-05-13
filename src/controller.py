@@ -44,7 +44,7 @@ class GameController:
         available_houses=32,
         available_hotels=12,
         starting_cash=1500,
-        upgrade_limit=20,
+        # upgrade_limit=20,
         reward_scalars={"cash": 0.005, "value": 0.01, "rent": 0.005, "monopoly": 1.0},
     ):
 
@@ -55,7 +55,7 @@ class GameController:
         self.available_houses = available_houses
         self.starting_cash = starting_cash
         self.num_players = len(player_list)
-        self.upgrade_limit = upgrade_limit
+        # self.upgrade_limit = upgrade_limit
         self.reward_scalars = reward_scalars
         self.reset_game()
 
@@ -199,7 +199,7 @@ class GameController:
         offer_state = []
 
         if opponent is not None:
-            opp_state = self.board.get_normalized_player_state(opponent)
+            opp_state = self.board.get_player_state(opponent)
         if offer is not None:
             offer_state = offer
         concatenated = np.concatenate((offer_state, opp_state, pla_state, gen_state))
@@ -242,9 +242,8 @@ class GameController:
 
     def _purchase_turn(self, name, new_position):
         state = self._get_state(name)
-        y = self.players[name].get_action(state, "purchase")
-        action = np.argmax(y)
-        reward = self._execute_purchase(name, new_position, y)
+        action = self.players[name].get_action(state, "purchase")
+        reward = self._execute_purchase(name, new_position, action)
         next_state = self._get_state(name)
         done = not self.board.is_any_purchaseable()
         self.players[name].add_training_data(
@@ -252,18 +251,14 @@ class GameController:
         )
 
     def _up_down_grade_turn(self, name):
-        cont = True
-        count = 0
-        while cont and count < self.upgrade_limit:
-            state = self._get_state(name)
-            y = self.players[name].get_action(state, "up_down_grade")
-            action = np.argmax(y)
-            reward, cont = self._execute_up_down_grade(name, y)
-            next_state = self._get_state(name)
-            self.players[name].add_training_data(
-                "up_down_grade", state, action, reward, next_state, False
-            )
-            count += 1
+        state = self._get_state(name)
+        action = self.players[name].get_action(state, "up_down_grade")
+        reward = self._execute_up_down_grade(name, action)
+        next_state = self._get_state(name)
+        done = self.board.get_player_cash(name) < 0
+        self.players[name].add_training_data(
+            "up_down_grade", state, action, reward, next_state, False
+        )
 
     def _trade_turn(self, name):
         for opponent in self.players.keys():
@@ -347,18 +342,15 @@ class GameController:
                 return False
 
     def _execute_purchase(self, name, position, y):
-        value, rent, mono_props = self.board.get_evaluation(name)
-        ev_before = (self.board.get_player_cash(name), rent, value, mono_props)
-
+        ev_before = self.board.get_evaluation(name)
         if y[0] > y[1]:
             self.board.purchase(name, position)
             self.board.add_player_cash(name, -self.board.get_purchase_amount(position))
-        value, rent, mono_props = self.board.get_evaluation(name)
-        ev_after = (self.board.get_player_cash(name), rent, value, mono_props)
+        ev_after = self.board.get_evaluation(name)
 
         return self._get_reward(name, "purchase", ev_before, ev_after)
 
-    def _execute_up_down_grade(self, name, y):
+    def _execute_up_down_grade(self, name, action):
         """Executes the the given upgrade/downgrade move
 
         The decision (y) is executed by the player (name). First the decision
@@ -396,48 +388,53 @@ class GameController:
             selected to be changed
 
         """
-        upgrade = y[:28]
-        downgrade = y[28:-1]
-        do_nothing = [y[-1]]
-        cont = True
+        upgrade = action[0]
+        downgrade = action[1]
 
-        ind = np.argmax(y)
+        ev_before = self.board.get_evaluation(name)
 
-        value, rent, mono_props = self.board.get_evaluation(name)
-        ev_before = (self.board.get_player_cash(name), rent, value, mono_props)
-
-        if y[ind] in upgrade:
-            pos = self.board.index[np.argmax(upgrade)]
-
-            # if position can even be upgraded
-            if self.board.can_upgrade(name, pos):
-                self.board.add_player_cash(name, -self.board.get_upgrade_amount(pos))
-                self.board.upgrade(name, pos)
-            # if position can be unmortgaged
-            elif self.board.can_unmortgage(name, pos):
-                self.board.add_player_cash(name, -self.board.get_mortgage_amount(pos))
-                self.board.unmortgage(name, pos)
-            else:
-                cont = False
-        elif y[ind] in downgrade:
-            pos = self.board.index[np.argmax(downgrade)]
-
-            if self.board.can_downgrade(name, pos):
-                self.board.add_player_cash(name, self.board.get_downgrade_amount(pos))
-                self.board.downgrade(name, pos)
-            elif self.board.can_mortgage(name, pos):
-                self.board.add_player_cash(name, self.board.get_mortgage_amount(pos))
-                self.board.mortgage(name, pos)
-            else:
-                cont = False
-        elif y[ind] in do_nothing:
-            cont = False
+        if upgrade[-1] == 1:
+            pass
         else:
-            raise ValueError("whoops")
-        value, rent, mono_props = self.board.get_evaluation(name)
-        ev_after = (self.board.get_player_cash(name), rent, value, mono_props)
+            upgrade_list = self.board.get_prop_list_from_actiontable(
+                "up_down_grade", "upgrade", upgrade
+            )
 
-        return (self._get_reward(name, "up_down_grade", ev_before, ev_after), cont)
+            for position in upgrade_list:
+                if self.board.can_upgrade(name, position):
+                    self.board.add_player_cash(
+                        name, -self.board.get_upgrade_amount(position)
+                    )
+                    self.board.upgrade(name, position)
+                # if position can be unmortgaged
+                elif self.board.can_unmortgage(name, position):
+                    self.board.add_player_cash(
+                        name, -self.board.get_mortgage_amount(position)
+                    )
+                    self.board.unmortgage(name, position)
+
+        if downgrade[-1] == 1:
+            pass
+        else:
+            downgrade_list = self.board.get_prop_list_from_actiontable(
+                "up_down_grade", "downgrade", downgrade
+            )
+
+            for position in downgrade_list:
+                if self.board.can_downgrade(name, position):
+                    self.board.add_player_cash(
+                        name, self.board.get_downgrade_amount(position)
+                    )
+                    self.board.downgrade(name, position)
+                elif self.board.can_mortgage(name, position):
+                    self.board.add_player_cash(
+                        name, self.board.get_mortgage_amount(position)
+                    )
+                    self.board.mortgage(name, position)
+
+        ev_after = self.board.get_evaluation(name)
+
+        return self._get_reward(name, "up_down_grade", ev_before, ev_after)
 
     def _get_values_from_trade_offer(self, trade_offer):
         offer_cash = self._binary_to_cash(trade_offer[0:14], neg=False)
@@ -477,9 +474,9 @@ class GameController:
 
     def _get_reward(self, player, operation, ev_before, ev_after):
         rho, rho_mode = self.players[player].get_reward_scalars(operation)
-        c1 = ev_before[0]
+        c1 = ev_before["cash"]
         c1 = 0 if c1 < 0 else c1
-        c2 = ev_after[0]
+        c2 = ev_after["cash"]
         c2 = 0 if c2 < 0 else c2
 
         deg = (1.2 * c2 * rho - 1500) / (1000 + c2 * rho)
@@ -490,13 +487,13 @@ class GameController:
             y3 = self.reward_scalars["rent"]
             y4 = self.reward_scalars["monopoly"]
 
-            v1 = ev_before[1]
-            r1 = ev_before[2]
-            m1 = ev_before[3]
+            v1 = ev_before["value"]
+            r1 = ev_before["rent"]
+            m1 = ev_before["monopoly"]
 
-            v2 = ev_after[1]
-            r2 = ev_after[2]
-            m2 = ev_after[3]
+            v2 = ev_after["value"]
+            r2 = ev_after["rent"]
+            m2 = ev_after["monopoly"]
 
             return deg * (
                 y1 * (c2 - c1) + y2 * (v2 - v1) + y3 * (r2 - r1) + y4 * (m2 - m1)

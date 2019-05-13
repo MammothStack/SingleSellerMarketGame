@@ -174,6 +174,9 @@ class Board:
                 (self._table["type"] == "property") | (self._table["type"] == "utility")
             ].index
         )
+        self.action_table = pd.read_csv(
+            os.path.join(os.path.dirname(__file__), "actiontable.csv")
+        )
 
     def _set_table(self, players):
         """Creates the board information table
@@ -223,14 +226,11 @@ class Board:
 
             return conc
 
-        path = os.path.join(os.path.dirname(__file__), "fields.csv")
-        table = pd.read_csv(path)
+        # path = os.path.join(os.path.dirname(__file__), "fields.csv")
+        table = pd.read_csv(os.path.join(os.path.dirname(__file__), "fields.csv"))
         table.set_index("position", inplace=True)
-
         table["action"] = table["action"].map(lambda x: x if pd.isna(x) else eval(x))
-
         table.fillna(0, inplace=True)
-
         table = table.astype(
             {
                 "value": np.int,
@@ -256,6 +256,14 @@ class Board:
             table = pd.concat([table, make(p, table.index)], axis=1)
         return table
 
+    def get_prop_list_from_actiontable(self, operation, suboperation, array):
+        c = self.action_table.loc[
+            (self.action_table["operation"] == operation)
+            & (self.action_table["suboperation"] == suboperation)
+        ]
+
+        return c.loc[c["list_index"].isin(array), "property"].values
+
     def increment_turn(self):
         """Increments the current turn and sets the current player property"""
         self.players[self.current_player].alive = (
@@ -268,7 +276,9 @@ class Board:
                 self.current_turn % len(self._player_names)
             ]
             if len(self.players) == 1:
-                self.alive = self.players.values()[0].alive
+                # print(self.players[self.current_player].alive)
+
+                self.alive = self.players[self.current_player].alive
             else:
                 self.alive = np.sum([p.alive for p in self.players.values()]) >= 2
 
@@ -1581,8 +1591,9 @@ class Board:
         rent = np.sum(owned["current_rent_amount"])
         value = np.sum(owned["value"])
         mono_props = np.sum(owned["monopoly_owned"])
+        cash = self.get_player_cash(name)
 
-        return value, rent, mono_props
+        return {"cash": cash, "value": value, "rent": rent, "monopoly": mono_props}
 
     def get_levels(self, name=None):
         """Returns the levels of all the board properties
